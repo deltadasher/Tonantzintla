@@ -25,7 +25,7 @@ Surfaces:
   quick [timer|telemetry] Toggle the quick-action rail
   lock                    Engage the secure Umbra session veil
   preview-lock            Preview Umbra without locking the session
-  greeter ACTION          Preview, install, activate, deactivate, or inspect Umbra SDDM
+  greeter ACTION [TARGET] Manage Umbra adapters for SDDM, LightDM, greetd, Ly, or GDM
   capture ACTION          Run region-copy, region-save, full-copy, or full-save
   notify SUMMARY [BODY]   Show an Astralith-local notification
 
@@ -99,7 +99,7 @@ case "$command_name" in
         ;;
     greeter)
         action="${2:-help}"
-        exec "$script_dir/umbra-greeter" "$action"
+        exec "$script_dir/umbra-greeter-portable" "$action" "${3:-auto}"
         ;;
     reveal-lock)
         exec qs -p "$project_root" ipc call umbra reveal

@@ -1,260 +1,94 @@
 # Astralith
 
-An astronomy-forward desktop suite for **Niri**, built with **Quickshell**.
-
 ![Astralith orbital cartography](assets/wallpapers/orbital-cartography.png)
 
-Astralith is my Wayland desktop environment project: a quiet instrument bar
-when left alone, and a complete observatory console when opened. It includes
-an application launcher, media and lyrics, audio routing, networking, clipboard
-history, notifications, wallpapers, weather, focus cycles, system telemetry,
-screenshots, quick actions, and the Umbra session lock.
+I wanted my computer to look good, and i didn't like how Serpantinum, Caelestia, DMS,
+etc. looked. So i made my own desktop shell because i was incredibly bored and had a
+bunch of random uncommitted blobs from the summer FOR it that i left uncommitted since
+this wasn't a repository until mid august.
 
-> [!IMPORTANT]
-> This is currently a private development repository. It does not have a
-> redistribution license yet. The known unlicensed adaptation points have been
-> independently reimplemented; see [the provenance audit](docs/provenance-audit.md)
-> and [third-party notices](THIRD_PARTY.md). Choose Astralith's own license
-> before inviting reuse or contributions.
+Astralith is the result. It is my Niri + Quickshell desktop, built around what I
+think of when i think 'space'. Has most things made for it to be personal
+to you. It is the place I actually use to work, listen, search, tune, capture,
+and come back to whenever I am not using Enlightenment (dots for my E rice coming soon!)
 
-## The suite
+## What it supports
 
-| System | Purpose |
+The core session is working on Arch-based Niri systems. Astralith can run with
+only its core runtime, then grows features as their desktop integrations become
+available. I am only aware of it working flawlessly on Arch-based systems. If it
+works elsewhere, send an issue, and this readme will change.
+
+| Suite | What it does |
 | --- | --- |
-| **Aperture** | Top bar, workspaces, media, tray, and compact telemetry |
-| **Ephemeris** | Animated host for Astralith's expanding desktop instruments |
-| **Parallax** | Wallpaper archive and Niri workspace navigation |
-| **Resonance** | MPRIS media, lyrics, spectrum, and equalizer controls |
-| **Transit** | Notifications, history, and clipboard state |
-| **Chronos** | Countdown, stopwatch, focus cycles, and quick telemetry |
-| **Optics** | Screenshots, editing, recording, and capture history |
-| **Umbra** | Multi-output session lock and safe lock-screen preview |
+| **Aperture** | The top bar: workspaces, focused media, tray, time, and live system state. |
+| **Ephemeris** | The expanding desktop instruments: app search, settings, audio routing, networking, power, telemetry, wallpaper, capture, calendar, focus, clipboard, notifications, media, lyrics, and weather. |
+| **Parallax** | Wallpaper archive and workspace navigation. |
+| **Resonance** | MPRIS media, lyrics, spectrum, and equalizer controls. |
+| **Chronos** | Timers, stopwatch, focus cycles, and quick telemetry. |
+| **Optics** | Region/full-screen capture, annotation, recording, and history. |
+| **Transit** | Notifications, do-not-disturb, and clipboard history. |
+| **Umbra** | A multi-output session lock, a safe lock preview, and an SDDM login theme. |
 
-## Install on a new machine
+It also comes with Niri configuration, an Arch installer, a
+transactional installer for more deliberate setups, update and validation
+commands, Matugen-derived color, and optional native fluid surfaces.
 
-The Rust deployment interface can inspect an Arch machine, install missing
-profile dependencies, and activate a staged Astralith runtime transaction:
+## Install
 
-```bash
-./scripts/install dry-run
-./scripts/install dry-run --profile core
-./scripts/install dry-run --profile full --niri replace --format json
-./scripts/install apply --profile recommended
-```
-
-Run `./scripts/install` without arguments to open the keyboard-driven TUI. The
-review screen exits into the same executor as `apply`: it shows the final plan,
-requires typing `INSTALL`, writes an operation journal, stages and verifies the
-runtime, then atomically publishes the user links. If a later user-file or Niri
-operation fails, files owned by that transaction are rolled back automatically.
-
-The executor installs the user-local runtime under
-`${XDG_DATA_HOME:-~/.local/share}/astralith`; the repository checkout is only
-installation media. It never exposes a temporary clone or development workspace as
-the installed destination.
-
-The source bootstrap uses Cargo today. Published release binaries will not
-require a Rust toolchain.
-
-Astralith installs with reversible user-local symlinks. Existing destinations
-are backed up into `${XDG_STATE_HOME:-~/.local/state}/astralith/installer` before
-replacement.
+Astralith is made for Arch Linux and derivatives first. This is the normal
+bring-up route:
 
 ```bash
-git clone git@github.com:deltadasher/Astralith.git
+git clone https://github.com/deltadasher/Astralith.git
 cd Astralith
 
-./scripts/doctor
-./scripts/install-user
-astralithctl check
+./scripts/install-arch --recommended
+astralithctl run
+```
+
+The installer installs missing dependencies, creates the user links, runs the
+doctor and checks, and leaves the compositor configuration alone unless I ask
+for it. To install Astralith's Niri configuration too:
+
+```bash
+./scripts/install-arch --recommended --install-niri-config
+```
+
+For a staged, reviewable installer instead, run `./scripts/install`. It opens a
+small TUI and will show the plan before it changes anything.
+
+After the first foreground run looks right:
+
+```bash
 astralithctl start
 ```
 
-If `~/.local/bin` is not already in your `PATH`, add it to your shell profile:
-
-```bash
-export PATH="$HOME/.local/bin:$PATH"
-```
-
-The transactional installer creates only these links:
-
-- `~/.config/quickshell/astralith` → `~/.local/share/astralith`
-- `~/.local/bin/astralithctl` → the installed runtime's control command
-
-Runtime settings, caches, downloaded wallpapers, screenshots, and state remain
-outside the repository. Removing the checkout does not remove those files.
-
-### Install the Niri configuration
-
-Inspect and validate the bundled configuration first:
-
-```bash
-./scripts/sync-compositor-configs --check
-```
-
-Install it only when you are ready:
-
-```bash
-./scripts/sync-compositor-configs --niri
-```
-
-The installer creates a timestamped backup of an existing
-`~/.config/niri/config.kdl` before replacing it. Output blocks are deliberately
-left to Niri's automatic detection so the same configuration can boot on a
-desktop, laptop, or dock without stale connector names blanking a display.
-
-## Everyday commands
+## The commands I use, which are not limited to
 
 ```text
-astralithctl start                 Start the shell
-astralithctl stop                  Stop the shell
-astralithctl restart               Reload the shell cleanly
-astralithctl status                Show the matching Quickshell instance
-astralithctl doctor                Check this machine's integrations
-astralithctl profile               Show shell/helper CPU and resident memory
-astralithctl update                Pull, validate, and restart safely
-astralithctl build-native-blobs    Build the fluid Ephemeris renderer
-
-astralithctl open apps             Open an Ephemeris instrument
-astralithctl toggle settings       Toggle an instrument
-astralithctl close                 Close Ephemeris
-astralithctl quick timer           Open Chronos
-astralithctl preview-lock          Preview Umbra without locking
-astralithctl lock                  Engage the real session lock
-astralithctl greeter preview       Preview the Umbra SDDM greeter safely
-astralithctl capture region-copy   Copy a selected region to the clipboard
+astralithctl check                  Validate the checkout
+astralithctl update                 Pull a clean checkout, check it, then restart
+astralithctl restart                Reload the running shell
+astralithctl lock                   Lock for real
 ```
 
-Run `astralithctl help` for the complete command surface.
+`astralithctl help` is the complete map. `./scripts/doctor` tells me which
+optional integrations are missing and exactly which parts of the suite they
+would unlock.
 
-## Default controls
+## Controls I use
 
 | Binding | Action |
 | --- | --- |
-| `Mod+Enter` | Terminology |
+| `Mod+Enter` | Terminal |
 | `Mod+D` | Application catalog |
 | `Mod+Shift+N` | Observatory settings |
-| `Mod+Shift+Q` | Chronos quick actions |
-| `Mod+Shift+W` | Parallax wallpaper archive |
+| `Mod+Shift+Q` | Chronos |
+| `Mod+Shift+W` | Wallpaper archive |
 | `Mod+Shift+C` | Clipboard Orbit |
-| `Mod+Shift+A` | Transit notification history |
-| `Mod+Shift+S` | Open Niri's crop UI; copy the selected PNG |
-| `Super+Alt+L` | Lock with Umbra |
+| `Mod+Shift+A` | Notification history |
+| `Mod+Shift+S` | Region capture |
+| `Super+Alt+L` | Umbra lock |
 
-The default terminal is Terminology. Applications, formats, bar channels,
-wallpaper behavior, fonts, weather, and other preferences are editable in
-Observatory Settings and persist to:
-
-```text
-${XDG_CONFIG_HOME:-~/.config}/astralith/settings.json
-```
-
-Per-machine setup and safe synchronization are covered in
-[docs/machines.md](docs/machines.md).
-
-## Dependencies
-
-Core runtime:
-
-- Niri
-- Quickshell with Qt 6 and Wayland support
-- Bash and Python 3
-- PipeWire tools (`wpctl`) and PulseAudio compatibility tools (`pactl`)
-- JetBrains Mono and Iosevka Nerd Font
-
-Astralith degrades gracefully when optional integrations are missing. Run
-`./scripts/doctor` for a readable report. Networking, clipboard, screenshots,
-recording, wallpapers, Matugen palettes, media spectrum, equalization,
-brightness, and power profiles are documented in
-[docs/dependencies.md](docs/dependencies.md).
-
-### Fluid Ephemeris surfaces
-
-The shader-backed morph from Aperture into Ephemeris is an optional native
-runtime built from Caelestia Shell's GPL-3.0 `Caelestia.Blobs` module. On Arch
-Linux:
-
-```bash
-sudo pacman -S qt6-shadertools
-astralithctl build-native-blobs
-astralithctl restart
-```
-
-Without that module Astralith automatically uses its pure-QML Ephemeris
-surface. The pinned upstream revision, build boundary, and licensing notes live
-in [vendor/caelestia-blobs/README.md](vendor/caelestia-blobs/README.md).
-
-## Repository map
-
-```text
-Astralith/
-├── shell.qml                     Quickshell entrypoint
-├── Settings.qml                  Persistent behavior and application defaults
-├── Theme.qml                     Shared visual and motion tokens
-├── components/                   Reusable QML primitives
-├── design/                       Dormant identity and interaction studies
-├── services/                     System and compositor state adapters
-├── modules/
-│   ├── aperture/                 Bar and compact instrumentation
-│   ├── ephemeris/                Expanding instrument host and registry
-│   │   └── widgets/
-│   │       ├── catalog/          Launcher, tools, and flight manual
-│   │       ├── desktop/          Wallpapers, capture, and workspaces
-│   │       ├── media/            Resonance
-│   │       ├── productivity/     Calendar, focus, clipboard, notifications
-│   │       ├── shared/           Reusable instrument-local primitives
-│   │       └── system/           Audio, network, power, settings, telemetry
-│   ├── osd/                      Volume, microphone, brightness feedback
-│   ├── quickactions/             Chronos and compact telemetry
-│   ├── transit/                  Notification and clipboard presentation
-│   └── umbra/                    Secure lock, reveal, and SDDM greeter surfaces
-├── assets/                       Attributed controls and original visual assets
-├── config/                       Runtime backend configuration
-├── niri/                         Portable compositor configuration
-├── scripts/                      CLI, installers, adapters, and validation
-├── tests/                        Offline helper and command tests
-└── docs/                         Architecture, setup, provenance, and design notes
-```
-
-Read [docs/architecture.md](docs/architecture.md) before moving QML files or
-adding a new surface. Ephemeris widget categories are indexed in
-[modules/ephemeris/widgets/README.md](modules/ephemeris/widgets/README.md).
-
-## Updating
-
-The checkout is the source of truth; the installed Quickshell path is a symlink
-to it. On another machine, update with:
-
-```bash
-astralithctl update
-```
-
-The updater refuses to pull over local modifications, uses a fast-forward-only
-Git pull, runs the full validation suite, and restarts Astralith only after the
-checks pass.
-
-For development:
-
-```bash
-./scripts/check
-./scripts/dev
-```
-
-`scripts/check` compiles Python helpers, validates shell scripts, runs tests,
-checks the bundled Niri configuration when Niri is installed, and lints every
-QML component. Keep changes in focused commits; the first repository commit is
-the known-working rollback point.
-
-## Project status
-
-Astralith is usable on the author's Niri desktop and is being prepared for the
-rest of the author's computers. The immediate priorities are:
-
-1. prove clean installation on a second machine;
-2. select Astralith's own license and contribution terms;
-3. build a safe animation laboratory before changing Ephemeris geometry again;
-4. package optional dependencies after the supported distributions are known.
-
-This project is intentionally ambitious. Stability wins over visual rewrites:
-prototype risky layer-shell behavior outside the live shell, then port it only
-after it survives validation.
+Terminology is currently the only "Enlightenment" thing that comes with this system. If you don't want it, delete it. It's just what I use since its feature-rich and stays sub 50mb with my configuration.

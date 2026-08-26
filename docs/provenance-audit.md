@@ -38,8 +38,7 @@ behavioral compatibility are not bundled upstream expression.
   checkout or running configuration.
 - The six bundled space wallpapers are project-generated artwork documented in
   `wallpaper-flight-pack-01.md`.
-- The static Flight Manual black-hole illustration is project-generated artwork
-  documented under `assets/illustrations/README.md`.
+- The static Flight Manual black-hole illustration is project-generated artwork.
 - The compact controls under `assets/icons/` are unmodified GNOME
   AdwaitaLegacy icons. Their source, per-file mapping, attribution, and selected
   CC BY-SA 3.0 license are recorded in `THIRD_PARTY.md`.

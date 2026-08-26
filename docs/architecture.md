@@ -50,8 +50,6 @@ Rules:
 4. Machine-specific paths must come from environment variables or resolved
    project URLs.
 
-See [services/README.md](../services/README.md) for the service inventory.
-
 ## Components
 
 `components/` contains reusable visual primitives. A component should be
@@ -69,9 +67,6 @@ Modules own Wayland surfaces or complete instrument families:
 - **Quick Actions** owns Chronos and compact telemetry.
 - **Transit** owns notification and clipboard presentation.
 - **Umbra** owns the preview plus a separate secure Quickshell lock process.
-
-Ephemeris is documented separately in
-[modules/ephemeris/README.md](../modules/ephemeris/README.md).
 
 ## Ephemeris geometry rule
 
