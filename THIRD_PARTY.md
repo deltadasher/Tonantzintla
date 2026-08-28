@@ -35,17 +35,3 @@ Attribution-ShareAlike 3.0 Unported** option offered by the upstream package:
 
 They are a separately identified part of this collection; their CC BY-SA terms
 do not describe Astralith's independently written source code.
-
-## Optional Caelestia.Blobs runtime
-
-`astralithctl build-native-blobs` can fetch and locally build the unmodified
-`Caelestia.Blobs` module from Caelestia Shell. No Caelestia C++, QML, or shader
-source is stored in this repository. The fetched checkout retains its GPL-3.0
-license and attribution.
-
-- Source: <https://github.com/caelestia-dots/shell>
-- License: <https://github.com/caelestia-dots/shell/blob/main/LICENSE>
-- Pinned revision and build boundary: [`vendor/caelestia-blobs/README.md`](vendor/caelestia-blobs/README.md)
-
-Distributors enabling or bundling that optional renderer must satisfy the
-GPL-3.0 terms for the resulting distribution.

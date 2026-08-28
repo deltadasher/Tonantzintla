@@ -195,6 +195,40 @@ fn apply_installs_runtime_links_and_complete_journal() {
     assert!(!install.join(".git").exists());
     assert!(!install.join("installer/target").exists());
     assert_eq!(
+        fs::read_to_string(install.join(".astralith-install/source"))
+            .unwrap()
+            .trim(),
+        sandbox.source.canonicalize().unwrap().to_string_lossy()
+    );
+    assert_eq!(
+        fs::read_to_string(install.join(".astralith-install/profile"))
+            .unwrap()
+            .trim(),
+        "core"
+    );
+    assert_eq!(
+        fs::read_to_string(install.join(".astralith-install/niri"))
+            .unwrap()
+            .trim(),
+        "keep"
+    );
+    assert_eq!(
+        fs::read_to_string(install.join(".astralith-install/umbra"))
+            .unwrap()
+            .trim(),
+        "off"
+    );
+    let installed_executor = install.join("bin/astralith-installer");
+    assert!(installed_executor.is_file());
+    assert_ne!(
+        fs::metadata(installed_executor)
+            .unwrap()
+            .permissions()
+            .mode()
+            & 0o111,
+        0
+    );
+    assert_eq!(
         fs::read_link(sandbox.config.join("quickshell/astralith")).unwrap(),
         install
     );

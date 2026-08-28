@@ -19,7 +19,6 @@ PanelWindow {
         : Quickshell.screens.length > 0 && modelData === Quickshell.screens[0]
     readonly property int topClearance: (Settings.compact ? 38 : Theme.barHeight)
         + (Settings.barMode === "docked" ? 10 : Settings.barMargin * 2 + 8)
-    readonly property bool nativeRenderer: Quickshell.env("ASTRALITH_NATIVE_BLOBS") === "1"
     readonly property var widgetLayout: Registry.getLayout(
         ShellState.ephemerisTab, width, height, topClearance)
     readonly property color moduleTone: Theme.moduleAccent(ShellState.ephemerisTab)
@@ -103,6 +102,11 @@ PanelWindow {
             surfaceVisible = false;
     }
 
+    Component.onCompleted: {
+        if (ShellState.ephemerisVisible && targetScreen)
+            beginOpen();
+    }
+
     Timer {
         id: openDelay
         interval: 24
@@ -155,10 +159,8 @@ PanelWindow {
     Rectangle {
         id: veil
         anchors.fill: parent
-        color: root.nativeRenderer
-            ? Qt.rgba(Theme.void_.r, Theme.void_.g, Theme.void_.b,
-                root.immersiveWidget ? 0.24 : 0.16)
-            : Theme.veil
+        color: Qt.rgba(Theme.void_.r, Theme.void_.g, Theme.void_.b,
+            root.immersiveWidget ? 0.24 : 0.16)
         opacity: root.presentation
 
         MouseArea {
@@ -167,10 +169,10 @@ PanelWindow {
         }
 
         Loader {
-            id: nativeBackdrop
+            id: morphBackdrop
             anchors.fill: parent
-            active: root.nativeRenderer
-            source: active ? "NativeBlobBackdrop.qml" : ""
+            active: root.surfaceVisible
+            source: active ? "AstralithMorphBackdrop.qml" : ""
 
             property var layout: root.widgetLayout
             property real reveal: root.presentation
@@ -189,7 +191,7 @@ PanelWindow {
             color: "transparent"
             border.width: 0
             opacity: root.presentation
-            scale: root.nativeRenderer ? 1 : root.deckScale
+            scale: 1
             transformOrigin: Item.Center
             // The veil is deliberately inert. Every decorative signal belongs
             // to the popup and is clipped at this boundary.
@@ -229,7 +231,7 @@ PanelWindow {
 
             EccentricPlate {
                 anchors.fill: parent
-                visible: !root.nativeRenderer && !root.immersiveWidget
+                visible: false
                 fillColor: Theme.glass
                 lineColor: "transparent"
                 tone: root.moduleTone
@@ -292,6 +294,7 @@ PanelWindow {
                     id: widgetLoader
                     anchors.fill: parent
                     anchors.margins: root.immersiveWidget ? 8 : 20
+                    active: root.surfaceVisible
                     opacity: root.widgetPresentation
                     transform: Translate { y: (1 - root.widgetPresentation) * 14 }
                     sourceComponent: ShellState.ephemerisTab === "tools" ? toolsComponent

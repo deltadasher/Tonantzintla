@@ -10,10 +10,6 @@ silent_qmllint=0
 silent_qml_files=()
 qml_import_args=(-I .)
 
-if [[ -f "$project_root/.runtime/qml/Caelestia/Blobs/qmldir" ]]; then
-    qml_import_args+=(-I "$project_root/.runtime/qml")
-fi
-
 cd -- "$project_root"
 
 require_command() {
@@ -30,11 +26,12 @@ require_command cargo
 PYTHONPYCACHEPREFIX="$python_cache" python3 -m compileall -q scripts
 PYTHONPYCACHEPREFIX="$python_cache" python3 -m unittest discover -s tests -q
 bash tests/test_cli.sh
+bash tests/test_update_user.sh
 bash -n scripts/astralithctl scripts/check scripts/dev scripts/doctor scripts/install-user \
-    scripts/build-native-blobs \
     scripts/profile \
     scripts/snipping-tool scripts/sync-compositor-configs scripts/uninstall-user \
-    scripts/umbra-greeter scripts/update-user scripts/wallpaper-apply tests/test_cli.sh
+    scripts/umbra-greeter scripts/update-user scripts/wallpaper-apply tests/test_cli.sh \
+    tests/test_update_user.sh
 sh -n scripts/astralith-notify scripts/install
 cargo fmt --manifest-path installer/Cargo.toml -- --check
 cargo test --locked --manifest-path installer/Cargo.toml
@@ -46,10 +43,6 @@ else
 fi
 
 while IFS= read -r -d '' qml_file; do
-    if [[ "$qml_file" == "./modules/ephemeris/NativeBlobBackdrop.qml" ]] \
-            && [[ ! -f .runtime/qml/Caelestia/Blobs/qmldir ]]; then
-        continue
-    fi
     lint_output=""
     lint_status=0
     lint_output="$(qmllint "${qml_import_args[@]}" "$qml_file" 2>&1)" || lint_status=$?

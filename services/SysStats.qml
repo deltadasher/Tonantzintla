@@ -67,56 +67,87 @@ QtObject {
         return formatBytes(bytes) + "/s";
     }
 
-    function applySnapshot(data) {
-        const now = Date.now();
-        const total = Number(data.cpu_total || 0);
-        const idle = Number(data.cpu_idle || 0);
+    function applyCpu(raw) {
+        const firstLine = String(raw).split("\n")[0].trim().split(/\s+/);
+        if (firstLine.length < 5 || firstLine[0] !== "cpu")
+            return;
+        let total = 0;
+        for (let index = 1; index < firstLine.length; index++)
+            total += Number(firstLine[index] || 0);
+        const idle = Number(firstLine[4] || 0) + Number(firstLine[5] || 0);
         const totalDelta = total - previousCpuTotal;
         const idleDelta = idle - previousCpuIdle;
         if (previousCpuTotal > 0 && totalDelta > 0)
             cpuPercent = Math.round((1 - idleDelta / totalDelta) * 100);
+        previousCpuTotal = total;
+        previousCpuIdle = idle;
+    }
 
+    function applyMemory(raw) {
+        const values = {};
+        const lines = String(raw).split("\n");
+        for (let index = 0; index < lines.length; index++) {
+            const match = lines[index].match(/^([^:]+):\s+([0-9]+)/);
+            if (match)
+                values[match[1]] = Number(match[2]) * 1024;
+        }
+        const total = Number(values.MemTotal || 0);
+        const used = Math.max(0, total - Number(values.MemAvailable || total));
+        memoryPercent = total > 0 ? Math.round(used / total * 100) : 0;
+        memoryUsedGb = bytesToGb(used);
+        memoryTotalGb = bytesToGb(total);
+    }
+
+    function applyNetwork(raw) {
+        const now = Date.now();
+        let rx = 0;
+        let tx = 0;
+        const lines = String(raw).split("\n");
+        for (let index = 2; index < lines.length; index++) {
+            if (lines[index].indexOf(":") < 0)
+                continue;
+            const halves = lines[index].split(":");
+            if (halves[0].trim() === "lo")
+                continue;
+            const fields = halves[1].trim().split(/\s+/);
+            if (fields.length >= 9) {
+                rx += Number(fields[0] || 0);
+                tx += Number(fields[8] || 0);
+            }
+        }
         const elapsed = previousSampleMs > 0
             ? Math.max(0.25, (now - previousSampleMs) / 1000) : 0;
-        const rx = Number(data.rx_total || 0);
-        const tx = Number(data.tx_total || 0);
         if (elapsed > 0 && previousRxTotal > 0) {
             networkDown = Math.max(0, (rx - previousRxTotal) / elapsed);
             networkUp = Math.max(0, (tx - previousTxTotal) / elapsed);
         }
-
-        previousCpuTotal = total;
-        previousCpuIdle = idle;
         previousRxTotal = rx;
         previousTxTotal = tx;
         previousSampleMs = now;
+    }
 
-        const memoryTotal = Number(data.memory_total || 0);
-        const memoryUsed = Number(data.memory_used || 0);
-        memoryPercent = memoryTotal > 0
-            ? Math.round(memoryUsed / memoryTotal * 100) : 0;
-        memoryUsedGb = bytesToGb(memoryUsed);
-        memoryTotalGb = bytesToGb(memoryTotal);
+    function applySlowSnapshot(data) {
         cpuTemperature = Number(data.cpu_temp || 0);
         gpuTemperature = Number(data.gpu_temp || 0);
-
         const diskTotal = Number(data.disk_total || 0);
         const diskUsed = Number(data.disk_used || 0);
         diskPercent = diskTotal > 0
             ? Math.round(diskUsed / diskTotal * 100) : 0;
         diskUsedGb = bytesToGb(diskUsed);
         diskTotalGb = bytesToGb(diskTotal);
-        uptimeSeconds = Number(data.uptime || 0);
         hostname = data.hostname || "ASTRALITH";
         kernel = data.kernel || "";
-        loadAverage = data.load && data.load.length > 0
-            ? Number(data.load[0]) : 0;
         processCount = Number(data.processes || 0);
     }
 
     function refresh() {
-        if (!snapshotProcess.running)
-            snapshotProcess.running = true;
+        cpuFile.reload();
+        memoryFile.reload();
+        networkFile.reload();
+        uptimeFile.reload();
+        loadFile.reload();
+        if (!slowProcess.running)
+            slowProcess.running = true;
     }
 
     function refreshFolders() {
@@ -124,20 +155,47 @@ QtObject {
             folderProcess.running = true;
     }
 
-    property Process snapshotProcess: Process {
-        command: ["python3", "-u", root.helperPath, "--watch", "2"]
-        running: true
-        stdout: SplitParser {
-            splitMarker: "\n"
-            onRead: function(data) {
+    property FileView cpuFile: FileView {
+        path: "/proc/stat"
+        printErrors: false
+        onLoaded: root.applyCpu(text())
+    }
+
+    property FileView memoryFile: FileView {
+        path: "/proc/meminfo"
+        printErrors: false
+        onLoaded: root.applyMemory(text())
+    }
+
+    property FileView networkFile: FileView {
+        path: "/proc/net/dev"
+        printErrors: false
+        onLoaded: root.applyNetwork(text())
+    }
+
+    property FileView uptimeFile: FileView {
+        path: "/proc/uptime"
+        printErrors: false
+        onLoaded: root.uptimeSeconds = Number(text().trim().split(/\s+/)[0] || 0)
+    }
+
+    property FileView loadFile: FileView {
+        path: "/proc/loadavg"
+        printErrors: false
+        onLoaded: root.loadAverage = Number(text().trim().split(/\s+/)[0] || 0)
+    }
+
+    property Process slowProcess: Process {
+        command: ["python3", root.helperPath, "--slow"]
+        stdout: StdioCollector {
+            onStreamFinished: {
                 try {
-                    root.applySnapshot(JSON.parse(String(data)));
+                    root.applySlowSnapshot(JSON.parse(text));
                 } catch (error) {
-                    console.warn("[Astralith/System] Telemetry decode failed:", error);
+                    console.warn("[Astralith/System] Slow telemetry decode failed:", error);
                 }
             }
         }
-        onRunningChanged: if (!running) root.snapshotRestart.restart()
     }
 
     property Process folderProcess: Process {
@@ -153,9 +211,26 @@ QtObject {
         }
     }
 
-    property Timer snapshotRestart: Timer {
+    property Timer fastTimer: Timer {
         interval: 2000
-        onTriggered: root.refresh()
+        running: true
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: {
+            root.cpuFile.reload();
+            root.memoryFile.reload();
+            root.networkFile.reload();
+            root.uptimeFile.reload();
+            root.loadFile.reload();
+        }
+    }
+
+    property Timer slowTimer: Timer {
+        interval: 30000
+        running: true
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: if (!root.slowProcess.running) root.slowProcess.running = true
     }
 
     property Timer folderTimer: Timer {

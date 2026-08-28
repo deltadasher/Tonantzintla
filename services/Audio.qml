@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Services.Pipewire
 import ".."
 
 QtObject {
@@ -17,6 +18,8 @@ QtObject {
     property var inputs: []
     property var apps: []
     property bool mixerRefreshPending: false
+    readonly property var sinkNode: Pipewire.defaultAudioSink
+    readonly property var sourceNode: Pipewire.defaultAudioSource
     readonly property bool mixerActive: ShellState.ephemerisVisible
         && (ShellState.ephemerisTab === "audio" || ShellState.ephemerisTab === "media")
     readonly property var defaultOutput: {
@@ -36,10 +39,14 @@ QtObject {
     }
 
     function refreshLevels() {
-        if (!readProcess.running)
-            readProcess.running = true;
-        if (!sourceReadProcess.running)
-            sourceReadProcess.running = true;
+        if (sinkNode && sinkNode.ready && sinkNode.audio) {
+            volume = sinkNode.audio.volume;
+            muted = sinkNode.audio.muted;
+        }
+        if (sourceNode && sourceNode.ready && sourceNode.audio) {
+            inputVolume = sourceNode.audio.volume;
+            inputMuted = sourceNode.audio.muted;
+        }
     }
 
     function refresh() {
@@ -57,48 +64,65 @@ QtObject {
     }
 
     function scheduleRefresh() {
-        actionRefreshTimer.restart();
+        refreshLevels();
         if (mixerActive)
             mixerRefreshTimer.restart();
+    }
+
+    function runFallback(command) {
+        if (actionProcess.running)
+            return;
+        actionProcess.command = command;
+        actionProcess.running = true;
     }
 
     function change(delta) {
         Osd.show("volume", Math.max(0, Math.min(150, percent + delta)),
             muted ? "OUTPUT MUTED" : "OUTPUT VOLUME", muted);
-        actionProcess.command = ["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@",
-            Math.abs(delta) + "%" + (delta >= 0 ? "+" : "-")];
-        actionProcess.running = true;
+        if (sinkNode && sinkNode.ready && sinkNode.audio)
+            sinkNode.audio.volume = Math.max(0, Math.min(1.5, volume + delta / 100));
+        else
+            runFallback(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@",
+                Math.abs(delta) + "%" + (delta >= 0 ? "+" : "-")]);
         scheduleRefresh();
     }
 
     function toggleMute() {
         Osd.show("volume", percent, muted ? "OUTPUT VOLUME" : "OUTPUT MUTED", !muted);
-        actionProcess.command = ["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"];
-        actionProcess.running = true;
+        if (sinkNode && sinkNode.ready && sinkNode.audio)
+            sinkNode.audio.muted = !sinkNode.audio.muted;
+        else
+            runFallback(["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"]);
         scheduleRefresh();
     }
 
     function toggleMicrophone() {
         Osd.show("microphone", inputPercent,
             inputMuted ? "MICROPHONE LIVE" : "MICROPHONE MUTED", !inputMuted);
-        actionProcess.command = ["wpctl", "set-mute", "@DEFAULT_AUDIO_SOURCE@", "toggle"];
-        actionProcess.running = true;
+        if (sourceNode && sourceNode.ready && sourceNode.audio)
+            sourceNode.audio.muted = !sourceNode.audio.muted;
+        else
+            runFallback(["wpctl", "set-mute", "@DEFAULT_AUDIO_SOURCE@", "toggle"]);
         scheduleRefresh();
     }
 
     function setVolume(percent) {
         const target = Math.max(0, Math.min(150, percent));
         Osd.show("volume", target, "OUTPUT VOLUME", false);
-        actionProcess.command = ["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", target + "%"];
-        actionProcess.running = true;
+        if (sinkNode && sinkNode.ready && sinkNode.audio)
+            sinkNode.audio.volume = target / 100;
+        else
+            runFallback(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", target + "%"]);
         scheduleRefresh();
     }
 
     function setMicrophoneVolume(percent) {
         const target = Math.max(0, Math.min(150, percent));
         Osd.show("microphone", target, "MICROPHONE GAIN", inputMuted);
-        actionProcess.command = ["wpctl", "set-volume", "@DEFAULT_AUDIO_SOURCE@", target + "%"];
-        actionProcess.running = true;
+        if (sourceNode && sourceNode.ready && sourceNode.audio)
+            sourceNode.audio.volume = target / 100;
+        else
+            runFallback(["wpctl", "set-volume", "@DEFAULT_AUDIO_SOURCE@", target + "%"]);
         scheduleRefresh();
     }
 
@@ -137,30 +161,27 @@ QtObject {
         scheduleRefresh();
     }
 
-    property Process readProcess: Process {
-        command: ["wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"]
-        running: true
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const match = text.match(/Volume:\s*([0-9.]+)/);
-                if (match)
-                    root.volume = parseFloat(match[1]);
-                root.muted = text.indexOf("MUTED") >= 0;
-            }
-        }
+    property PwObjectTracker audioTracker: PwObjectTracker {
+        objects: [root.sinkNode, root.sourceNode]
     }
 
-    property Process sourceReadProcess: Process {
-        command: ["wpctl", "get-volume", "@DEFAULT_AUDIO_SOURCE@"]
-        running: true
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const match = text.match(/Volume:\s*([0-9.]+)/);
-                if (match)
-                    root.inputVolume = parseFloat(match[1]);
-                root.inputMuted = text.indexOf("MUTED") >= 0;
-            }
-        }
+    property Connections pipewireConnections: Connections {
+        target: Pipewire
+        function onReadyChanged() { root.refreshLevels(); }
+        function onDefaultAudioSinkChanged() { root.refreshLevels(); }
+        function onDefaultAudioSourceChanged() { root.refreshLevels(); }
+    }
+
+    property Connections sinkConnections: Connections {
+        target: root.sinkNode && root.sinkNode.audio ? root.sinkNode.audio : null
+        function onVolumesChanged() { root.refreshLevels(); }
+        function onMutedChanged() { root.refreshLevels(); }
+    }
+
+    property Connections sourceConnections: Connections {
+        target: root.sourceNode && root.sourceNode.audio ? root.sourceNode.audio : null
+        function onVolumesChanged() { root.refreshLevels(); }
+        function onMutedChanged() { root.refreshLevels(); }
     }
 
     property Process mixerProcess: Process {
@@ -189,26 +210,9 @@ QtObject {
 
     property Process actionProcess: Process {}
 
-    property Timer actionRefreshTimer: Timer {
-        interval: 180
-        onTriggered: {
-            if (!root.readProcess.running)
-                root.readProcess.running = true;
-            if (!root.sourceReadProcess.running)
-                root.sourceReadProcess.running = true;
-        }
-    }
-
     property Timer mixerRefreshTimer: Timer {
         interval: 260
         onTriggered: root.refreshMixer()
-    }
-
-    property Timer refreshTimer: Timer {
-        interval: 2000
-        running: true
-        repeat: true
-        onTriggered: root.refreshLevels()
     }
 
     property Timer mixerPollTimer: Timer {
@@ -219,4 +223,6 @@ QtObject {
     }
 
     onMixerActiveChanged: if (mixerActive) refreshMixer()
+
+    Component.onCompleted: refreshLevels()
 }

@@ -393,8 +393,8 @@ fn add_umbra_operation(source: &Path, mode: UmbraMode, operations: &mut Vec<Plan
             OperationState::Planned,
             "Install Umbra lock and greeter preview files".into(),
             format!(
-                "Show the {} preview command without writing /etc or activating SDDM",
-                source.join("scripts/umbra-greeter").display()
+                "Show the {} backend command without writing /etc or activating a greeter",
+                source.join("scripts/umbra-greeter-portable").display()
             ),
         ),
     };

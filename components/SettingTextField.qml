@@ -23,24 +23,13 @@ Rectangle {
         anchors.rightMargin: 10
         spacing: 12
 
-        ColumnLayout {
+        Text {
             Layout.fillWidth: true
-            spacing: 2
-            Text {
-                text: root.label
-                color: Theme.moon
-                font.family: Theme.fontText
-                font.pixelSize: 12
-                font.weight: Font.Medium
-            }
-            Text {
-                Layout.fillWidth: true
-                text: root.detail
-                color: Theme.muted
-                font.family: Theme.fontMono
-                font.pixelSize: 10
-                elide: Text.ElideRight
-            }
+            text: root.label
+            color: Theme.moon
+            font.family: Theme.fontText
+            font.pixelSize: 12
+            font.weight: Font.Medium
         }
 
         ColumnLayout {

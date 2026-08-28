@@ -141,7 +141,7 @@ environment {
 // Astralith is the nEri shell. Use the installed path explicitly because
 // display-manager sessions do not always include ~/.local/bin in PATH.
 spawn-at-startup "dbus-update-activation-environment" "--systemd" "WAYLAND_DISPLAY" "XDG_CURRENT_DESKTOP"
-spawn-at-startup "~/.local/bin/astralithctl" "start"
+    spawn-at-startup "~/.local/bin/astralithctl" "session-start"
 // Clipboard capture will be enabled when Transit owns clipboard history.
 // spawn-at-startup "wl-paste" "--watch" "cliphist" "store"
 spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"

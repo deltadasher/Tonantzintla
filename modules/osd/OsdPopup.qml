@@ -35,6 +35,11 @@ PanelWindow {
         reveal.restart();
     }
 
+    Component.onCompleted: {
+        if (Osd.visible && targetScreen)
+            pulse();
+    }
+
     onVisibleChanged: {
         if (visible)
             pulse();
@@ -48,16 +53,24 @@ PanelWindow {
         }
     }
 
-    Rectangle {
+    Loader {
         anchors.fill: parent
-        radius: Theme.radiusLarge
-        color: Theme.glass
-        border.width: 0
-        border.color: Theme.barHairlineHover
-        opacity: root.presentation
-        scale: 0.9 + root.presentation * 0.1
-        transform: Translate { y: (1 - root.presentation) * 18 }
-        clip: true
+        active: root.visible
+        sourceComponent: osdContent
+    }
+
+    Component {
+        id: osdContent
+
+        Rectangle {
+            radius: Theme.radiusLarge
+            color: Theme.glass
+            border.width: 0
+            border.color: Theme.barHairlineHover
+            opacity: root.presentation
+            scale: 0.9 + root.presentation * 0.1
+            transform: Translate { y: (1 - root.presentation) * 18 }
+            clip: true
 
         Rectangle {
             width: 126
@@ -76,7 +89,7 @@ PanelWindow {
             presentation: root.presentation
         }
 
-        RowLayout {
+            RowLayout {
             anchors.fill: parent
             anchors.leftMargin: 15
             anchors.rightMargin: 15
@@ -137,6 +150,7 @@ PanelWindow {
                         Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
                     }
                 }
+            }
             }
         }
     }

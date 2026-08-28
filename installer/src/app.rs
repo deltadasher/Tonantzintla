@@ -579,7 +579,7 @@ fn render_integrations(frame: &mut ratatui::Frame, area: Rect, state: &AppState)
             UmbraMode::Off => "Do not expose the session lock or stage the greeter.",
             UmbraMode::Lock => "Verify a visual preview before enabling the secure lock binding.",
             UmbraMode::GreeterPreview => {
-                "Stage an SDDM preview without installing or activating it."
+                "Stage display-manager greeter files without installing or activating them."
             }
         },
     );

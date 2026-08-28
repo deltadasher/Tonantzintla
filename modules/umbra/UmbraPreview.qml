@@ -23,10 +23,19 @@ PanelWindow {
         ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
     WlrLayershell.namespace: "astralith-umbra-preview"
 
-    UmbraSurface {
+    Loader {
         anchors.fill: parent
-        previewMode: true
-        screenInfo: root.modelData
-        onDismissPreview: Umbra.closePreview()
+        active: root.visible
+        sourceComponent: umbraSurfaceComponent
+    }
+
+    Component {
+        id: umbraSurfaceComponent
+
+        UmbraSurface {
+            previewMode: true
+            screenInfo: root.modelData
+            onDismissPreview: Umbra.closePreview()
+        }
     }
 }

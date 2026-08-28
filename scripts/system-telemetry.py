@@ -160,12 +160,14 @@ def folder_sizes() -> dict[str, object]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--folders", action="store_true")
+    parser.add_argument("--slow", action="store_true")
     parser.add_argument("--watch", type=float, metavar="SECONDS")
     args = parser.parse_args()
     if args.watch is not None:
         watch_snapshots(args.watch)
         return
-    print(json.dumps(folder_sizes() if args.folders else snapshot(), separators=(",", ":")))
+    payload = folder_sizes() if args.folders else slow_snapshot() if args.slow else snapshot()
+    print(json.dumps(payload, separators=(",", ":")))
 
 
 if __name__ == "__main__":

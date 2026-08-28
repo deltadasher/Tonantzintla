@@ -20,13 +20,22 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "astralith-umbra-reveal"
 
+    function beginReveal() {
+        transitionActive = true;
+        aperture = 0;
+        revealSequence.restart();
+    }
+
     Connections {
         target: ShellState
         function onUmbraRevealSerialChanged() {
-            root.transitionActive = true;
-            root.aperture = 0;
-            revealSequence.restart();
+            root.beginReveal();
         }
+    }
+
+    Component.onCompleted: {
+        if (ShellState.umbraRevealSerial > 0)
+            beginReveal();
     }
 
     SequentialAnimation {
@@ -51,25 +60,33 @@ PanelWindow {
         running: root.transitionActive
     }
 
-    Canvas {
-        id: veil
+    Loader {
         anchors.fill: parent
+        active: root.transitionActive
+        sourceComponent: veilComponent
+    }
 
-        Connections {
-            target: root
-            function onApertureChanged() { veil.requestPaint(); }
-            function onPhaseChanged() { veil.requestPaint(); }
-        }
-        onWidthChanged: requestPaint()
-        onHeightChanged: requestPaint()
+    Component {
+        id: veilComponent
 
-        function rgba(color, alpha) {
-            return "rgba(" + Math.round(color.r * 255) + ","
-                + Math.round(color.g * 255) + ","
-                + Math.round(color.b * 255) + "," + alpha + ")";
-        }
+        Canvas {
+            id: veil
 
-        onPaint: {
+            Connections {
+                target: root
+                function onApertureChanged() { veil.requestPaint(); }
+                function onPhaseChanged() { veil.requestPaint(); }
+            }
+            onWidthChanged: requestPaint()
+            onHeightChanged: requestPaint()
+
+            function rgba(color, alpha) {
+                return "rgba(" + Math.round(color.r * 255) + ","
+                    + Math.round(color.g * 255) + ","
+                    + Math.round(color.b * 255) + "," + alpha + ")";
+            }
+
+            onPaint: {
             const ctx = getContext("2d");
             ctx.reset();
             const cx = width * 0.5;
@@ -101,6 +118,7 @@ PanelWindow {
                         fade * (0.54 - ring * 0.08));
                     ctx.stroke();
                 }
+            }
             }
         }
     }

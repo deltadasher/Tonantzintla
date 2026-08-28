@@ -13,6 +13,97 @@ import "modules/umbra/reveal"
 import "services"
 
 ShellRoot {
+    id: root
+
+    property bool ephemerisResident: ShellState.ephemerisVisible
+    property bool quickActionsResident: ShellState.quickActionsVisible
+    property bool umbraPreviewResident: Umbra.previewActive
+    property bool umbraRevealResident: false
+    readonly property bool sessionIngress: Quickshell.env("ASTRALITH_SESSION_INGRESS") === "1"
+    readonly property var focusedScreens: {
+        const screens = Quickshell.screens;
+        if (screens.length === 0)
+            return [];
+        if (Niri.focusedOutput.length === 0)
+            return [screens[0]];
+        for (let index = 0; index < screens.length; index++) {
+            if (screens[index].name === Niri.focusedOutput)
+                return [screens[index]];
+        }
+        return [screens[0]];
+    }
+
+    Connections {
+        target: ShellState
+
+        function onEphemerisVisibleChanged() {
+            if (ShellState.ephemerisVisible) {
+                ephemerisUnload.stop();
+                root.ephemerisResident = true;
+            } else {
+                ephemerisUnload.restart();
+            }
+        }
+
+        function onQuickActionsVisibleChanged() {
+            if (ShellState.quickActionsVisible) {
+                quickActionsUnload.stop();
+                root.quickActionsResident = true;
+            } else {
+                quickActionsUnload.restart();
+            }
+        }
+
+        function onUmbraRevealSerialChanged() {
+            root.umbraRevealResident = true;
+            umbraRevealUnload.restart();
+        }
+    }
+
+    Connections {
+        target: Umbra
+
+        function onPreviewActiveChanged() {
+            if (Umbra.previewActive) {
+                umbraPreviewUnload.stop();
+                root.umbraPreviewResident = true;
+            } else {
+                umbraPreviewUnload.restart();
+            }
+        }
+    }
+
+    Timer {
+        id: ephemerisUnload
+        interval: Settings.motion ? 220 : 1
+        onTriggered: root.ephemerisResident = false
+    }
+
+    Component.onCompleted: {
+        if (sessionIngress) {
+            root.umbraRevealResident = true;
+            Qt.callLater(ShellState.startUmbraReveal);
+        }
+    }
+
+    Timer {
+        id: quickActionsUnload
+        interval: Settings.motion ? 210 : 1
+        onTriggered: root.quickActionsResident = false
+    }
+
+    Timer {
+        id: umbraPreviewUnload
+        interval: 80
+        onTriggered: root.umbraPreviewResident = false
+    }
+
+    Timer {
+        id: umbraRevealUnload
+        interval: Settings.motion && Settings.umbraMotion ? 2500 : 100
+        onTriggered: root.umbraRevealResident = false
+    }
+
     IpcHandler {
         target: "ephemeris"
 
@@ -83,27 +174,27 @@ ShellRoot {
     }
 
     Variants {
-        model: Quickshell.screens
+        model: root.ephemerisResident ? root.focusedScreens : []
         EphemerisSurface {}
     }
 
     Variants {
-        model: Quickshell.screens
+        model: Osd.visible ? root.focusedScreens : []
         OsdPopup {}
     }
 
     Variants {
-        model: Quickshell.screens
+        model: root.quickActionsResident ? root.focusedScreens : []
         QuickActionsRail {}
     }
 
     Variants {
-        model: Quickshell.screens
+        model: root.umbraPreviewResident ? root.focusedScreens : []
         UmbraPreview {}
     }
 
     Variants {
-        model: Quickshell.screens
+        model: root.umbraRevealResident ? Quickshell.screens : []
         UmbraReveal {}
     }
 

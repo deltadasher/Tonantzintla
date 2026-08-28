@@ -14,6 +14,7 @@ Usage: astralithctl COMMAND [ARGUMENTS]
 Lifecycle:
   run                     Run Astralith in the foreground
   start                   Start one detached Astralith instance
+  session-start           Start Astralith with the Umbra session ingress
   stop                    Stop Astralith
   restart                 Stop and start Astralith
   status                  Show matching Quickshell instances
@@ -31,10 +32,9 @@ Surfaces:
 
 Development:
   check                   Run the local validation suite
-  build-native-blobs      Build the optional Caelestia.Blobs renderer
   doctor                  Check required and optional machine integrations
   profile                 Show Astralith process, CPU, and resident-memory usage
-  update                  Pull, validate, and restart a clean Git checkout
+  update                  Pull the source and transactionally update Astralith
   version                 Print the Astralith development version
   path                    Print the active Astralith source path
 EOF
@@ -48,21 +48,15 @@ require_argument() {
     fi
 }
 
-configure_native_runtime() {
-    local qml_runtime="$project_root/.runtime/qml"
-    if [[ -f "$qml_runtime/Caelestia/Blobs/qmldir" ]]; then
-        export QML_IMPORT_PATH="$qml_runtime${QML_IMPORT_PATH:+:$QML_IMPORT_PATH}"
-        export ASTRALITH_NATIVE_BLOBS=1
-    fi
-}
-
 case "$command_name" in
     run)
-        configure_native_runtime
         exec qs -p "$project_root"
         ;;
     start)
-        configure_native_runtime
+        exec qs -d -n -p "$project_root"
+        ;;
+    session-start)
+        export ASTRALITH_SESSION_INGRESS=1
         exec qs -d -n -p "$project_root"
         ;;
     stop)
@@ -70,7 +64,6 @@ case "$command_name" in
         ;;
     restart)
         qs -p "$project_root" kill >/dev/null 2>&1 || true
-        configure_native_runtime
         exec qs -d -p "$project_root"
         ;;
     status)
@@ -122,9 +115,6 @@ case "$command_name" in
         ;;
     check)
         exec "$script_dir/check"
-        ;;
-    build-native-blobs)
-        exec "$script_dir/build-native-blobs"
         ;;
     doctor)
         exec "$script_dir/doctor"

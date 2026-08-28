@@ -42,12 +42,56 @@ if (( ${#pids[@]} == 0 )); then
     exit 1
 fi
 
-pid_csv="$(IFS=,; printf '%s' "${pids[*]}")"
 printf 'Astralith runtime profile\n'
 printf 'Source: %s\n' "$project_root"
 printf 'Processes: %s\n\n' "${#pids[@]}"
-ps -o pid=,ppid=,rss=,%cpu=,etime=,comm=,args= -p "$pid_csv" | sort -k3,3nr
+printf '%-7s %-7s %9s %9s %9s %9s %6s %-10s %s\n' \
+    PID PPID RSS PSS PRIVATE SWAP CPU ELAPSED COMMAND
 
-total_rss_kib="$(ps -o rss= -p "$pid_csv" | awk '{ total += $1 } END { print total + 0 }')"
-printf '\nResident set total: %.1f MiB\n' "$(awk -v kib="$total_rss_kib" 'BEGIN { print kib / 1024 }')"
-printf 'This total covers Astralith and direct helper descendants, not shared Qt pages or external wallpaper daemons.\n'
+total_rss_kib=0
+total_pss_kib=0
+total_private_kib=0
+total_swap_kib=0
+
+for pid in "${pids[@]}"; do
+    rollup="/proc/$pid/smaps_rollup"
+    [[ -r "$rollup" ]] || continue
+
+    read -r rss_kib pss_kib private_kib swap_kib < <(
+        awk '
+            /^Rss:/ { rss = $2 }
+            /^Pss:/ { pss = $2 }
+            /^Private_Clean:/ { private_clean = $2 }
+            /^Private_Dirty:/ { private_dirty = $2 }
+            /^SwapPss:/ { swap = $2 }
+            /^Swap:/ && !swap { swap = $2 }
+            END { print rss + 0, pss + 0, private_clean + private_dirty, swap + 0 }
+        ' "$rollup"
+    )
+
+    read -r ppid cpu elapsed command < <(
+        ps -o ppid=,%cpu=,etime=,comm= -p "$pid" | awk '{$1=$1; print}'
+    )
+    [[ -n "${ppid:-}" ]] || continue
+
+    printf '%-7s %-7s %8.1fM %8.1fM %8.1fM %8.1fM %5s%% %-10s %s\n' \
+        "$pid" "$ppid" \
+        "$(awk -v value="$rss_kib" 'BEGIN { print value / 1024 }')" \
+        "$(awk -v value="$pss_kib" 'BEGIN { print value / 1024 }')" \
+        "$(awk -v value="$private_kib" 'BEGIN { print value / 1024 }')" \
+        "$(awk -v value="$swap_kib" 'BEGIN { print value / 1024 }')" \
+        "$cpu" "$elapsed" "$command"
+
+    (( total_rss_kib += rss_kib )) || true
+    (( total_pss_kib += pss_kib )) || true
+    (( total_private_kib += private_kib )) || true
+    (( total_swap_kib += swap_kib )) || true
+done
+
+printf '\nTotals: RSS %.1f MiB | PSS %.1f MiB | private %.1f MiB | swap %.1f MiB\n' \
+    "$(awk -v value="$total_rss_kib" 'BEGIN { print value / 1024 }')" \
+    "$(awk -v value="$total_pss_kib" 'BEGIN { print value / 1024 }')" \
+    "$(awk -v value="$total_private_kib" 'BEGIN { print value / 1024 }')" \
+    "$(awk -v value="$total_swap_kib" 'BEGIN { print value / 1024 }')"
+printf 'PSS is the useful comparison: shared pages are divided among their users instead of counted once per process.\n'
+printf 'Scope: Astralith and its helper descendants; unrelated daemons such as wallpaper engines are excluded.\n'

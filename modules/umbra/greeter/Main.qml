@@ -22,6 +22,7 @@ Rectangle {
     property bool authenticating: false
     property bool failed: false
     property bool succeeded: false
+    property bool loginQueued: false
     property real intro: 0
     property real capture: 0
     property real shock: 0
@@ -69,7 +70,8 @@ Rectangle {
             return;
         failed = false;
         authenticating = true;
-        sddm.login(currentUserName, passwordField.text, currentSessionIndex);
+        loginQueued = true;
+        preAuthSequence.restart();
     }
 
     Component.onCompleted: {
@@ -93,6 +95,7 @@ Rectangle {
 
         function onLoginFailed() {
             root.authenticating = false;
+            root.loginQueued = false;
             root.failed = true;
             root.succeeded = false;
             passwordField.text = "";
@@ -104,6 +107,7 @@ Rectangle {
             root.failed = false;
             root.authenticating = false;
             root.succeeded = true;
+            root.loginQueued = false;
             successSequence.restart();
         }
 
@@ -138,15 +142,43 @@ Rectangle {
     }
 
     SequentialAnimation {
-        id: failureSequence
-        ScriptAction { script: root.shock = 1 }
+        id: preAuthSequence
         NumberAnimation {
             target: root
-            property: "shock"
-            from: 1
-            to: 0
-            duration: 1100
-            easing.type: Easing.OutCubic
+            property: "capture"
+            to: 0.82
+            duration: 760
+            easing.type: Easing.InCubic
+        }
+        ScriptAction {
+            script: {
+                if (!root.loginQueued)
+                    return;
+                sddm.login(root.currentUserName, passwordField.text,
+                    root.currentSessionIndex);
+            }
+        }
+    }
+
+    SequentialAnimation {
+        id: failureSequence
+        ScriptAction { script: root.shock = 1 }
+        ParallelAnimation {
+            NumberAnimation {
+                target: root
+                property: "shock"
+                from: 1
+                to: 0
+                duration: 1100
+                easing.type: Easing.OutCubic
+            }
+            NumberAnimation {
+                target: root
+                property: "capture"
+                to: 0
+                duration: 720
+                easing.type: Easing.OutExpo
+            }
         }
         PauseAnimation { duration: 900 }
         ScriptAction { script: root.failed = false }
@@ -157,16 +189,15 @@ Rectangle {
         NumberAnimation {
             target: root
             property: "capture"
-            from: 0
-            to: 0.18
-            duration: 180
+            to: 0.94
+            duration: 120
             easing.type: Easing.OutCubic
         }
         NumberAnimation {
             target: root
             property: "capture"
             to: 1
-            duration: 860
+            duration: 260
             easing.type: Easing.InCubic
         }
     }

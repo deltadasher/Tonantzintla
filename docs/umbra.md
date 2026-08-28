@@ -67,6 +67,12 @@ Astralith also ships a distinct Qt 6 SDDM theme under
 runtime or authentication state: SDDM remains responsible for users, sessions,
 login, and power actions.
 
+Authentication uses a visual handoff instead of waiting for SDDM's success
+signal. Submitting begins the event-horizon capture first; SDDM receives the
+login request once the screen is nearly consumed. A rejected password recoils
+the field. A successful Niri session starts Astralith through `session-start`,
+which holds an opaque Umbra veil and opens a circular aperture onto the desktop.
+
 Preview it safely without changing the active display manager theme:
 
 ```sh

@@ -16,16 +16,14 @@ Astralith process tree from that session without estimating it.
 
 ## Changes landed
 
-- System telemetry is one streaming helper instead of a fresh Python process
-  every two seconds. Temperatures, disk usage, process count, and other slow
-  values refresh every ten seconds; bar-rate CPU, memory, network, load, and
-  uptime values remain two-second data.
+- CPU, memory, network, load, and uptime telemetry comes directly from `/proc`
+  through Quickshell `FileView` objects. A short-lived Python probe refreshes
+  temperatures, disk usage, kernel data, and process count every 30 seconds.
 - Full PipeWire/Pulse inventory is collected only while Acoustic Array or
   Resonance is open. Lightweight output and microphone levels remain live for
   Aperture and OSD.
-- The Link Array uses a one-command connected-Wi-Fi summary once per minute
-  while closed. Its complete Wi-Fi, Bluetooth, and Ethernet inventory returns
-  to the original ten-second cadence while the widget is open.
+- The Link Array runs no command probe while closed. Its complete Wi-Fi,
+  Bluetooth, and Ethernet inventory refreshes every ten seconds while open.
 - CAVA runs only while Acoustic Array or Resonance is visible.
 - Synced lyric lookup runs only while Resonance is visible.
 - Clipboard indexing runs only while Clipboard Orbit is visible. The two
@@ -47,9 +45,9 @@ actions and the two persistent clipboard watchers:
 
 | Subsystem | Before, closed | After, closed | Open-widget behavior |
 | --- | ---: | ---: | --- |
-| System telemetry Python startups | 30 | 0 | one persistent helper |
+| System telemetry Python startups | 30 | 2 slow probes | same cadence |
 | Full mixer Python/backend launches | about 240 | 0 | about 96 per minute |
-| Full network Python/backend launches | up to 60 | 2 summary launches | original detail cadence |
+| Full network Python/backend launches | up to 60 | 0 | original detail cadence |
 | Recording status checks | 60 | 0 | 24 idle in Optics, 60 while recording |
 | Clipboard index helpers | 27 | 0 | original 27 per minute |
 | Brightness/profile reads | 30 | 0 on a desktop/default hidden channel | 7 to 8 per active channel |
@@ -63,13 +61,10 @@ remaining active merely because their singleton was instantiated once.
 
 - Niri, MPRIS, UPower, NetworkManager, Bluetooth, system tray, and notification
   state use event-driven Quickshell integrations.
-- The bar retains two-second `wpctl` level reads and two-second system samples
-  because those values are visibly live. A future native PipeWire/system-stats
-  service could remove those last helper boundaries, but is not justified until
-  a profile shows them dominating real session cost.
-- One Ephemeris, OSD, Quick Actions, and Umbra preview host exists per output.
-  Their heavy inner content is hidden or loader-owned. Replacing the host model
-  would be a compositor-sensitive architectural change, not a safe cleanup.
+- Audio levels use event-driven PipeWire objects; fast system samples are
+  direct kernel-file reads and spawn no helper.
+- Ephemeris, OSD, Quick Actions, Umbra preview, and Umbra reveal hosts are
+  demand-resident. Focused surfaces instantiate only for the focused output.
 
 ## Maintainability findings
 
@@ -79,9 +74,8 @@ remaining active merely because their singleton was instantiated once.
   remaining presentation files. Splitting them is useful before public API
   stabilization, but doing so during a performance pass would create broad
   import and animation risk without reducing runtime work.
-- Caelestia Blobs remains an optional GPL-3.0 native renderer. The former
-  unlicensed Serpantinum adaptation points were independently reimplemented in
-  the subsequent provenance pass; optimization did not itself resolve them.
+- Ephemeris uses Astralith's single-Canvas morph renderer and has no optional
+  Caelestia plugin process, shader module, or build bridge.
 
 ## Verification gate
 

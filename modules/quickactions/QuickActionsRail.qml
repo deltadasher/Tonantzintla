@@ -157,6 +157,7 @@ PanelWindow {
             Loader {
                 anchors.fill: parent
                 anchors.margins: 15
+                active: root.surfaceVisible
                 sourceComponent: ShellState.quickActionTab === "telemetry"
                     ? telemetryComponent : timerComponent
                 opacity: root.contentPresentation

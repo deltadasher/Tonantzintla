@@ -45,18 +45,11 @@ behavioral compatibility are not bundled upstream expression.
 - Online wallpaper downloads are user data and are never committed by the
   helper. Individual Commons results retain their own licenses.
 
-## Licensed optional integration
+## Surface renderer provenance
 
-The optional native Ephemeris silhouette renderer builds the unmodified
-`Caelestia.Blobs` C++ and shader sources from Caelestia Shell at pinned commit
-`1d0e5a588c61f1d905eba5fe8446ec222d37f50c`. Caelestia Shell is GPL-3.0.
-Astralith keeps that renderer outside the core runtime, downloads the complete
-upstream checkout into the user's cache, retains its license and attribution,
-and enables it only after a successful local build.
-
-No Caelestia implementation source is tracked by Astralith. A distributor that
-bundles or enables the native renderer must still satisfy GPL-3.0; the pure-QML
-fallback has no Caelestia runtime dependency.
+Ephemeris uses Astralith's project-owned Canvas morph renderer. It does not
+import, fetch, build, or distribute Caelestia's C++, QML, or shader sources.
+Caelestia remains a named visual reference, not a runtime dependency.
 
 ## Remaining release decisions
 

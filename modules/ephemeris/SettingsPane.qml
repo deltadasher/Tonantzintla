@@ -52,78 +52,112 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
-            spacing: 6
+            Layout.fillHeight: true
+            spacing: 18
 
-            Repeater {
-                model: [
-                    { "key": "appearance", "code": "VIS", "label": "Appearance" },
-                    { "key": "bar", "code": "BAR", "label": "Aperture" },
-                    { "key": "launcher", "code": "EPH", "label": "Launcher" },
-                    { "key": "umbra", "code": "UMB", "label": "Lock" },
-                    { "key": "system", "code": "SYS", "label": "System" },
-                    { "key": "extensions", "code": "EXT", "label": "Extensions" }
-                ]
+            Rectangle {
+                Layout.preferredWidth: 188
+                Layout.fillHeight: true
+                radius: Theme.radiusLarge
+                color: Qt.rgba(Theme.mantle.r, Theme.mantle.g, Theme.mantle.b, 0.74)
+                border.width: 0
 
-                Rectangle {
-                    id: sectionButton
-                    required property var modelData
-                    readonly property bool active: ShellState.settingsSection === modelData.key
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 38
-                    radius: Theme.radiusSmall
-                    color: active ? Theme.controlActive
-                        : sectionPointer.containsMouse ? Theme.controlHover : Theme.controlRest
-                    border.width: 0
-                    border.color: active ? Theme.accentLine : Theme.line
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 8
+                    spacing: 4
 
-                    Text {
-                        anchors.centerIn: parent
-                        text: sectionButton.modelData.label
-                        color: sectionButton.active ? Theme.moon : Theme.muted
-                        font.family: Theme.fontText
-                        font.pixelSize: 12
-                        font.weight: sectionButton.active ? Font.DemiBold : Font.Normal
-                    }
+                    Repeater {
+                        model: [
+                            { "key": "appearance", "code": "01", "label": "Appearance" },
+                            { "key": "bar", "code": "02", "label": "Aperture" },
+                            { "key": "launcher", "code": "03", "label": "Ephemeris" },
+                            { "key": "umbra", "code": "04", "label": "Umbra" },
+                            { "key": "system", "code": "05", "label": "System" },
+                            { "key": "extensions", "code": "06", "label": "Extensions" }
+                        ]
 
-                    MouseArea {
-                        id: sectionPointer
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            ShellState.settingsSection = sectionButton.modelData.key;
-                            settingsFlick.contentY = 0;
+                        Rectangle {
+                            id: sectionButton
+                            required property var modelData
+                            readonly property bool active: ShellState.settingsSection === modelData.key
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 44
+                            radius: 15
+                            color: active ? Theme.accent
+                                : sectionPointer.containsMouse ? Theme.controlHover : "transparent"
+                            border.width: 0
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 11
+                                anchors.rightMargin: 10
+                                spacing: 10
+
+                                Text {
+                                    text: sectionButton.modelData.code
+                                    color: sectionButton.active ? Theme.void_ : Theme.accent
+                                    font.family: Theme.fontMono
+                                    font.pixelSize: 10
+                                    font.weight: Font.Bold
+                                }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: sectionButton.modelData.label
+                                    color: sectionButton.active ? Theme.void_ : Theme.moon
+                                    font.family: Theme.fontText
+                                    font.pixelSize: 12
+                                    font.weight: Font.DemiBold
+                                }
+                                Rectangle {
+                                    Layout.preferredWidth: sectionButton.active ? 7 : 3
+                                    Layout.preferredHeight: sectionButton.active ? 7 : 3
+                                    radius: width
+                                    color: sectionButton.active ? Theme.void_ : Theme.lineBright
+                                }
+                            }
+
+                            MouseArea {
+                                id: sectionPointer
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    ShellState.settingsSection = sectionButton.modelData.key;
+                                    settingsFlick.contentY = 0;
+                                }
+                            }
+                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
                         }
                     }
 
-                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                    Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
+                    Item { Layout.fillHeight: true }
                 }
             }
-        }
 
-        Flickable {
-            id: settingsFlick
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            clip: true
-            boundsBehavior: Flickable.StopAtBounds
-            contentWidth: width
-            contentHeight: pageLoader.height
+            Flickable {
+                id: settingsFlick
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                contentWidth: width
+                contentHeight: pageLoader.height
 
-            Loader {
-                id: pageLoader
-                readonly property Item loadedPage: item as Item
-                width: settingsFlick.width
-                height: loadedPage ? loadedPage.implicitHeight : 0
-                opacity: root.sectionReveal
-                transform: Translate { y: (1 - root.sectionReveal) * 16 }
-                sourceComponent: ShellState.settingsSection === "appearance" ? appearancePage
-                    : ShellState.settingsSection === "bar" ? barPage
-                    : ShellState.settingsSection === "launcher" ? launcherPage
-                    : ShellState.settingsSection === "umbra" ? umbraPage
-                    : ShellState.settingsSection === "extensions" ? extensionsPage
-                    : systemPage
+                Loader {
+                    id: pageLoader
+                    readonly property Item loadedPage: item as Item
+                    width: settingsFlick.width
+                    height: loadedPage ? loadedPage.implicitHeight : 0
+                    opacity: root.sectionReveal
+                    transform: Translate { y: (1 - root.sectionReveal) * 16 }
+                    sourceComponent: ShellState.settingsSection === "appearance" ? appearancePage
+                        : ShellState.settingsSection === "bar" ? barPage
+                        : ShellState.settingsSection === "launcher" ? launcherPage
+                        : ShellState.settingsSection === "umbra" ? umbraPage
+                        : ShellState.settingsSection === "extensions" ? extensionsPage
+                        : systemPage
+                }
             }
         }
     }
@@ -135,7 +169,7 @@ Item {
             spacing: 10
 
             Text {
-                text: "SPECTRAL PALETTE"
+                text: "COLOR"
                 color: Theme.muted
                 font.family: Theme.fontMono
                 font.pixelSize: 11
@@ -195,36 +229,8 @@ Item {
                 onToggled: Settings.adaptivePalette = !Settings.adaptivePalette
             }
 
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 42
-                radius: Theme.radiusSmall
-                color: Theme.mantle
-                border.width: 0
-                border.color: Settings.adaptivePalette ? Theme.accentLine : Theme.line
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 12
-                    anchors.rightMargin: 12
-                    Text {
-                        Layout.fillWidth: true
-                        text: Settings.adaptivePalette ? "WALLPAPER-DERIVED SPECTRUM" : "ASTRALITH LAVENDER SPECTRUM"
-                        color: Theme.moon
-                        font.family: Theme.fontMono
-                        font.pixelSize: 11
-                        font.weight: Font.Bold
-                    }
-                    Text {
-                        text: AdaptivePalette.status
-                        color: Settings.adaptivePalette && AdaptivePalette.ready ? Theme.success : Theme.muted
-                        font.family: Theme.fontMono
-                        font.pixelSize: 11
-                    }
-                }
-            }
-
             Text {
-                text: "TYPOGRAPHY ARRAY"
+                text: "TYPE"
                 color: Theme.muted
                 font.family: Theme.fontMono
                 font.pixelSize: 11
@@ -364,7 +370,7 @@ Item {
             spacing: 10
 
             Text {
-                text: "APERTURE WIDGET MATRIX"
+                text: "BAR ITEMS"
                 color: Theme.muted
                 font.family: Theme.fontMono
                 font.pixelSize: 11
@@ -592,7 +598,7 @@ Item {
             spacing: 10
 
             Text {
-                text: "EPHEMERIS CATALOG BEHAVIOR"
+                text: "CATALOG"
                 color: Theme.muted
                 font.family: Theme.fontMono
                 font.pixelSize: 11
@@ -659,7 +665,7 @@ Item {
                     anchors.margins: 14
                     spacing: 4
                     Text {
-                        text: "CATALOG INDEX"
+                        text: "INDEX"
                         color: Theme.accent
                         font.family: Theme.fontMono
                         font.pixelSize: 11
@@ -691,7 +697,7 @@ Item {
                     Layout.fillWidth: true
                     spacing: 2
                     Text {
-                        text: "UMBRA SESSION VEIL"
+                        text: "UMBRA"
                         color: Theme.moon
                         font.family: Theme.fontDisplay
                         font.pixelSize: 16
@@ -796,7 +802,7 @@ Item {
                         Layout.fillWidth: true
                         spacing: 3
                         Text {
-                            text: "SAFE VISUAL TEST"
+                            text: "PREVIEW"
                             color: Theme.cyan
                             font.family: Theme.fontMono
                             font.pixelSize: 11
@@ -855,7 +861,7 @@ Item {
                     spacing: 12
                     Text {
                         Layout.fillWidth: true
-                        text: "REAL LOCK // ONLY PAM SUCCESS RELEASES THE SESSION"
+                        text: "SECURE SESSION"
                         color: Theme.muted
                         font.family: Theme.fontMono
                         font.pixelSize: 11
@@ -901,7 +907,7 @@ Item {
             spacing: 10
 
             Text {
-                text: "DEFAULT APPLICATIONS"
+                text: "APPS"
                 color: Theme.muted
                 font.family: Theme.fontMono
                 font.pixelSize: 11
@@ -931,7 +937,7 @@ Item {
             }
 
             Text {
-                text: "CELESTIAL WEATHER LINK"
+                text: "WEATHER"
                 color: Theme.muted
                 font.family: Theme.fontMono
                 font.pixelSize: 11
@@ -973,7 +979,7 @@ Item {
             }
 
             Text {
-                text: "SERVICE DIAGNOSTICS"
+                text: "STATUS"
                 color: Theme.muted
                 font.family: Theme.fontMono
                 font.pixelSize: 11
@@ -1057,20 +1063,11 @@ Item {
             spacing: 10
 
             Text {
-                text: "BUILT-IN EXTENSION DECK"
+                text: "EXTENSIONS"
                 color: Theme.muted
                 font.family: Theme.fontMono
                 font.pixelSize: 11
                 font.letterSpacing: 1.1
-            }
-
-            Text {
-                Layout.fillWidth: true
-                text: "Astralith modules share the shell state and theme engine. Click a configurable module to toggle it; service-only modules report their live readiness."
-                color: Theme.lineBright
-                font.family: Theme.fontText
-                font.pixelSize: 10
-                wrapMode: Text.WordWrap
             }
 
             GridLayout {

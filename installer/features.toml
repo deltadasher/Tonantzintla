@@ -208,28 +208,3 @@ id = "power-profiles"
 label = "Power profile control"
 command = "powerprofilesctl"
 official_packages = ["power-profiles-daemon"]
-
-[[groups]]
-id = "native-morph"
-label = "Native Ephemeris morph"
-description = "Optional GPL shader-backed surface renderer."
-profiles = ["full"]
-required = false
-
-[[groups.capabilities]]
-id = "cmake"
-label = "CMake build system"
-command = "cmake"
-official_packages = ["cmake"]
-
-[[groups.capabilities]]
-id = "ninja"
-label = "Ninja build system"
-command = "ninja"
-official_packages = ["ninja"]
-
-[[groups.capabilities]]
-id = "qt6-shadertools"
-label = "Qt Shader Tools"
-file = "/usr/lib/cmake/Qt6ShaderTools/Qt6ShaderToolsConfig.cmake"
-official_packages = ["qt6-shadertools"]

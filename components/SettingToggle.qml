@@ -4,7 +4,7 @@ import ".."
 
 Rectangle {
     id: root
-    implicitHeight: 54
+    implicitHeight: 46
     radius: Theme.radiusMedium
     color: root.checked ? Theme.controlActive
         : pointer.containsMouse ? Theme.controlHover : Theme.controlRest
@@ -21,24 +21,13 @@ Rectangle {
         anchors.rightMargin: 12
         spacing: 12
 
-        ColumnLayout {
+        Text {
             Layout.fillWidth: true
-            spacing: 2
-            Text {
-                text: root.label
-                color: Theme.moon
-                font.family: Theme.fontText
-                font.pixelSize: 12
-                font.weight: Font.Medium
-            }
-            Text {
-                text: root.detail
-                color: Theme.muted
-                font.family: Theme.fontMono
-                font.pixelSize: 10
-                elide: Text.ElideRight
-                Layout.fillWidth: true
-            }
+            text: root.label
+            color: Theme.moon
+            font.family: Theme.fontText
+            font.pixelSize: 12
+            font.weight: Font.Medium
         }
 
         Rectangle {

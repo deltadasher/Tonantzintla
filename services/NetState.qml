@@ -113,10 +113,7 @@ QtObject {
     }
 
     property Process stateProcess: Process {
-        command: root.detailedActive
-            ? ["python3", root.helperPath]
-            : ["python3", root.helperPath, "--summary"]
-        running: true
+        command: ["python3", root.helperPath]
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
@@ -169,11 +166,11 @@ QtObject {
     }
 
     property Timer pollTimer: Timer {
-        interval: root.detailedActive ? 10000 : 60000
-        running: true
+        interval: 10000
+        running: root.detailedActive
         repeat: true
         onTriggered: root.refresh()
     }
 
-    onDetailedActiveChanged: refreshDelay.restart()
+    onDetailedActiveChanged: if (detailedActive) refreshDelay.restart()
 }

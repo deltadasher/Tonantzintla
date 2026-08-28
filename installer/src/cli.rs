@@ -93,6 +93,13 @@ pub enum NiriMode {
 impl NiriMode {
     pub const ALL: [Self; 2] = [Self::Keep, Self::Replace];
 
+    pub fn id(self) -> &'static str {
+        match self {
+            Self::Keep => "keep",
+            Self::Replace => "replace",
+        }
+    }
+
     pub fn label(self) -> &'static str {
         match self {
             Self::Keep => "Keep current config",
@@ -113,11 +120,19 @@ pub enum UmbraMode {
 impl UmbraMode {
     pub const ALL: [Self; 3] = [Self::Off, Self::Lock, Self::GreeterPreview];
 
+    pub fn id(self) -> &'static str {
+        match self {
+            Self::Off => "off",
+            Self::Lock => "lock",
+            Self::GreeterPreview => "greeter-preview",
+        }
+    }
+
     pub fn label(self) -> &'static str {
         match self {
             Self::Off => "Disabled",
             Self::Lock => "Session lock preview",
-            Self::GreeterPreview => "Lock + SDDM greeter preview",
+            Self::GreeterPreview => "Lock + display-manager greeter files",
         }
     }
 }

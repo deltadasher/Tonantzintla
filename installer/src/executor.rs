@@ -93,7 +93,7 @@ fn execute_inner(
     journal: &mut TransactionJournal,
 ) -> Result<()> {
     install_packages(plan, store, journal)?;
-    install_runtime(plan, store, journal)?;
+    install_runtime(plan, options, store, journal)?;
     install_entrypoints(plan, store, journal)?;
     validate_runtime(&plan.install_root)?;
     run_recorded(
@@ -252,10 +252,14 @@ fn run_recorded(
 
 fn install_runtime(
     plan: &InstallPlan,
+    options: &InstallOptions,
     store: &JournalStore,
     journal: &mut TransactionJournal,
 ) -> Result<()> {
-    if plan.install_root.is_dir() && trees_equal(&plan.source, &plan.install_root)? {
+    if plan.install_root.is_dir()
+        && trees_equal(&plan.source, &plan.install_root)?
+        && runtime_support_files_current(plan, options)?
+    {
         println!("✓ Runtime is already current");
         return complete("install-runtime", store, journal);
     }
@@ -272,6 +276,7 @@ fn install_runtime(
     let stage = parent.join(format!(".{name}.stage-{}", journal.id));
     remove_path(&stage)?;
     copy_tree(&plan.source, &stage, true)?;
+    write_runtime_support_files(&stage, plan, options)?;
     if let Err(error) = validate_runtime(&stage) {
         let _ = remove_path(&stage);
         return Err(error.context("staged Astralith validation failed"));
@@ -301,6 +306,86 @@ fn install_runtime(
     journal.created_paths.push(plan.install_root.clone());
     store.save(journal)?;
     complete("install-runtime", store, journal)
+}
+
+fn write_runtime_support_files(
+    stage: &Path,
+    plan: &InstallPlan,
+    options: &InstallOptions,
+) -> Result<()> {
+    let receipt = stage.join(".astralith-install");
+    fs::create_dir_all(&receipt)?;
+    let source = plan
+        .source
+        .canonicalize()
+        .unwrap_or_else(|_| plan.source.clone());
+    for (name, value) in [
+        ("source", source.display().to_string()),
+        ("profile", plan.profile.clone()),
+        ("niri", options.niri.id().to_string()),
+        ("umbra", options.umbra.id().to_string()),
+    ] {
+        fs::write(receipt.join(name), format!("{value}\n"))?;
+    }
+
+    let current_exe =
+        std::env::current_exe().context("could not locate the installer executable")?;
+    let installed_exe = stage.join("bin/astralith-installer");
+    fs::create_dir_all(
+        installed_exe
+            .parent()
+            .context("installer path has no parent")?,
+    )?;
+    fs::copy(&current_exe, &installed_exe).with_context(|| {
+        format!(
+            "could not install executor {} -> {}",
+            current_exe.display(),
+            installed_exe.display()
+        )
+    })?;
+    fs::set_permissions(&installed_exe, fs::Permissions::from_mode(0o755))?;
+    Ok(())
+}
+
+fn runtime_support_files_current(plan: &InstallPlan, options: &InstallOptions) -> Result<bool> {
+    let receipt = plan.install_root.join(".astralith-install");
+    let source = plan
+        .source
+        .canonicalize()
+        .unwrap_or_else(|_| plan.source.clone());
+    let expected = [
+        ("source", source.display().to_string()),
+        ("profile", plan.profile.clone()),
+        ("niri", options.niri.id().to_string()),
+        ("umbra", options.umbra.id().to_string()),
+    ];
+    if expected.iter().any(|(name, value)| {
+        fs::read_to_string(receipt.join(name))
+            .map(|actual| actual.trim() != value)
+            .unwrap_or(true)
+    }) {
+        return Ok(false);
+    }
+
+    let current_exe =
+        std::env::current_exe().context("could not locate the installer executable")?;
+    files_equal(
+        &current_exe,
+        &plan.install_root.join("bin/astralith-installer"),
+    )
+}
+
+fn files_equal(left: &Path, right: &Path) -> Result<bool> {
+    let Ok(left_metadata) = fs::metadata(left) else {
+        return Ok(false);
+    };
+    let Ok(right_metadata) = fs::metadata(right) else {
+        return Ok(false);
+    };
+    if left_metadata.len() != right_metadata.len() {
+        return Ok(false);
+    }
+    Ok(fs::read(left)? == fs::read(right)?)
 }
 
 fn install_entrypoints(
@@ -506,6 +591,11 @@ fn validate_runtime(root: &Path) -> Result<()> {
         "niri/config.kdl",
         "scripts/astralithctl",
         "scripts/doctor",
+        ".astralith-install/source",
+        ".astralith-install/profile",
+        ".astralith-install/niri",
+        ".astralith-install/umbra",
+        "bin/astralith-installer",
     ];
     for relative in REQUIRED_FILES {
         let path = root.join(relative);
@@ -515,7 +605,11 @@ fn validate_runtime(root: &Path) -> Result<()> {
             path.display()
         );
     }
-    for relative in ["scripts/astralithctl", "scripts/doctor"] {
+    for relative in [
+        "scripts/astralithctl",
+        "scripts/doctor",
+        "bin/astralith-installer",
+    ] {
         let path = root.join(relative);
         let mode = fs::metadata(&path)?.permissions().mode();
         ensure!(
@@ -531,11 +625,11 @@ fn validate_runtime(root: &Path) -> Result<()> {
     Ok(())
 }
 
-fn skip_runtime_entry(name: &str, _relative: &Path) -> bool {
+fn skip_runtime_entry(name: &str, relative: &Path) -> bool {
     matches!(
         name,
-        ".git" | "target" | "__pycache__" | ".pytest_cache" | ".mypy_cache"
-    )
+        ".git" | ".astralith-install" | "target" | "__pycache__" | ".pytest_cache" | ".mypy_cache"
+    ) || relative == Path::new("bin/astralith-installer")
 }
 
 fn trees_equal(left: &Path, right: &Path) -> Result<bool> {
