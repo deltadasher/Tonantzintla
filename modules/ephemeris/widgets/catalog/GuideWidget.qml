@@ -23,24 +23,24 @@ Item {
     readonly property var modules: [
         { "name": "Application catalog", "code": "APP", "widget": "apps", "glyph": "󰀻", "detail": "Desktop entry search and launch" },
         { "name": "Celestial calendar", "code": "CAL", "widget": "calendar", "glyph": "󰃭", "detail": "Calendar, weather, and orbital forecast" },
-        { "name": "Optics bay", "code": "OPT", "widget": "capture", "glyph": "󰹑", "detail": "Screenshots, Satty editing, and 60 FPS recording" },
+        { "name": "Screenshot tools", "code": "OPT", "widget": "capture", "glyph": "󰹑", "detail": "Screenshots, Satty editing, and 60 FPS recording" },
         { "name": "Resonance console", "code": "MPR", "widget": "media", "glyph": "󰎆", "detail": "Lyrics, expanded MPRIS controls, spectrum, and EQ" },
         { "name": "Acoustic array", "code": "AUD", "widget": "audio", "glyph": "󰕾", "detail": "PipeWire outputs, inputs, and streams" },
         { "name": "Link array", "code": "NET", "widget": "network", "glyph": "󰤨", "detail": "Wi-Fi, Bluetooth, and Ethernet" },
-        { "name": "Reactor telemetry", "code": "PWR", "widget": "battery", "glyph": "󰁹", "detail": "Battery health, energy flow, and power profiles" },
+        { "name": "Battery details", "code": "PWR", "widget": "battery", "glyph": "󰁹", "detail": "Battery health, energy flow, and power profiles" },
         { "name": "Parallax archive", "code": "WAL", "widget": "walls", "glyph": "󰸉", "detail": "Persistent wallpaper observatory" },
         { "name": "Transit signals", "code": "SIG", "widget": "notifications", "glyph": "󰂚", "detail": "Notification history and DND" },
-        { "name": "Clipboard orbit", "code": "CLP", "widget": "clipboard", "glyph": "󰅌", "detail": "Searchable clipboard history" },
-        { "name": "Focus orbit", "code": "FCS", "widget": "focus", "glyph": "󰔟", "detail": "Persistent focus/drift cycles, seven-day totals, and streaks" },
-        { "name": "Chronos array", "code": "TMR", "widget": "timer", "glyph": "󰔟", "detail": "Countdown, lap stopwatch, and focus controls" },
+        { "name": "Clipboard", "code": "CLP", "widget": "clipboard", "glyph": "󰅌", "detail": "Searchable clipboard history" },
+        { "name": "Focus timer", "code": "FCS", "widget": "focus", "glyph": "󰔟", "detail": "Persistent focus/drift cycles, seven-day totals, and streaks" },
+        { "name": "Timers", "code": "TMR", "widget": "timer", "glyph": "󰔟", "detail": "Countdown, lap stopwatch, and focus controls" },
         { "name": "Quick telemetry", "code": "TEL", "widget": "quickstats", "glyph": "󰍛", "detail": "Compact animated workstation signals" },
-        { "name": "System observatory", "code": "SYS", "widget": "system", "glyph": "󰍛", "detail": "Live Niri workstation telemetry" },
+        { "name": "System monitor", "code": "SYS", "widget": "system", "glyph": "󰍛", "detail": "Live Niri workstation telemetry" },
         { "name": "Field tools", "code": "FLD", "widget": "tools", "glyph": "󰒓", "detail": "Capture, overview, lock, and terminal" },
         { "name": "Observatory settings", "code": "CFG", "widget": "settings", "glyph": "󰒓", "detail": "Live suite configuration" }
     ]
 
     readonly property var controls: [
-        { "keys": "META + ENTER", "name": "Terminology", "detail": "Open the nEri terminal" },
+        { "keys": "META + ENTER", "name": "Terminology", "detail": "Open the terminal" },
         { "keys": "META + UP / DOWN", "name": "Workspace travel", "detail": "Move one desktop up or down" },
         { "keys": "META + K / J", "name": "Vertical window focus", "detail": "Focus the window above or below" },
         { "keys": "META + D", "name": "Application catalog", "detail": "Search installed desktop entries" },
@@ -116,7 +116,7 @@ Item {
 
             Text {
                 Layout.fillWidth: true
-                text: "FLIGHT MANUAL"
+                text: "MANUAL"
                 color: Theme.moon
                 font.family: Theme.fontDisplay
                 font.pixelSize: 24
@@ -200,7 +200,7 @@ Item {
                     }
                     Text {
                         Layout.fillWidth: true
-                        text: "A composable observatory for Niri."
+                        text: "A desktop shell for Niri."
                         color: Theme.muted
                         font.family: Theme.fontText
                         font.pixelSize: 13
@@ -216,7 +216,7 @@ Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 spacing: 12
-                SectionTitle { title: "Launch coordinates"; detail: "" }
+                SectionTitle { title: "Startup"; detail: "" }
                 GridLayout {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
@@ -247,7 +247,7 @@ Item {
         id: modulesPage
         ColumnLayout {
             spacing: 10
-            SectionTitle { title: "Interactive modules"; detail: "EVERY ACTIVE EPHEMERIS SURFACE // CLICK TO MORPH" }
+            SectionTitle { title: "Interactive modules"; detail: "ALL OPEN PANELS // CLICK TO SWITCH" }
             GridLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -277,7 +277,7 @@ Item {
         id: controlsPage
         ColumnLayout {
             spacing: 10
-            SectionTitle { title: "Niri flight controls"; detail: "WINDOWS-FAMILIAR BINDS // ASTRALITH ACTIONS" }
+            SectionTitle { title: "Niri controls"; detail: "WINDOWS-STYLE SHORTCUTS" }
             Repeater {
                 model: root.controls
                 Rectangle {
@@ -320,7 +320,7 @@ Item {
         id: parityPage
         ColumnLayout {
             spacing: 10
-            SectionTitle { title: "Serpantinum port map"; detail: "FEATURE PARITY // REBUILT FOR NIRI // HYPRLAND UNTOUCHED" }
+            SectionTitle { title: "Port map"; detail: "REBUILT FOR NIRI" }
             GridLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true

@@ -16,16 +16,16 @@ QtObject {
     property bool failed: false
     property bool pamAvailable: true
     property string password: ""
-    property string statusText: "UMBRA STANDING BY"
+    property string statusText: "READY"
     property string pamMessage: ""
     property int attempts: 0
     property int eventSerial: 0
 
-    readonly property string userName: Quickshell.env("USER") || "traveler"
+    readonly property string userName: Quickshell.env("USER") || "user"
     readonly property string controlPath: Environment.script("astralithctl")
-    readonly property string stateCode: previewActive ? "SIMULATION"
+    readonly property string stateCode: previewActive ? "PREVIEW"
         : !active ? "STANDBY"
-        : !secure ? "SEALING"
+        : !secure ? "LOCKING"
         : authenticating ? "AUTHENTICATING"
         : failed ? "ACCESS DENIED" : "SESSION SECURED"
 
@@ -40,7 +40,7 @@ QtObject {
         authenticating = false;
         unlocking = false;
         pamMessage = "";
-        statusText = "IDENTITY CONFIRMATION REQUIRED";
+        statusText = "ENTER YOUR PASSWORD";
         eventSerial++;
     }
 
@@ -63,7 +63,7 @@ QtObject {
         if (active)
             return;
         resetState();
-        statusText = "VISUAL SIMULATION // ESC TO EXIT";
+        statusText = "PREVIEW ONLY // ESC TO EXIT";
         previewActive = true;
     }
 
@@ -72,15 +72,15 @@ QtObject {
             return;
         previewActive = false;
         resetState();
-        statusText = "UMBRA STANDING BY";
+        statusText = "READY";
     }
 
     function clearInput() {
         password = "";
         failed = false;
         pamMessage = "";
-        statusText = previewActive ? "VISUAL SIMULATION // ESC TO EXIT"
-            : "IDENTITY CONFIRMATION REQUIRED";
+        statusText = previewActive ? "PREVIEW ONLY // ESC TO EXIT"
+            : "ENTER YOUR PASSWORD";
         eventSerial++;
     }
 
@@ -95,7 +95,7 @@ QtObject {
         failed = false;
         authenticating = true;
         pamMessage = "";
-        statusText = "VERIFYING FLIGHT SIGNATURE";
+        statusText = "CHECKING PASSWORD";
         eventSerial++;
         if (!pam.start()) {
             pamAvailable = false;
@@ -123,7 +123,7 @@ QtObject {
         unlocking = false;
         if (wasPreview) {
             previewActive = false;
-            statusText = "UMBRA STANDING BY";
+            statusText = "READY";
             return;
         }
         active = false;
@@ -158,9 +158,9 @@ QtObject {
             root.failed = true;
             root.attempts++;
             root.statusText = result === PamResult.Error
-                ? "PAM HANDSHAKE FAILED // CHECK PROFILE"
+                ? "PAM FAILED // CHECK PROFILE"
                 : result === PamResult.MaxTries ? "MAXIMUM ATTEMPTS REACHED"
-                : "SIGNATURE REJECTED // TRY AGAIN";
+                : "WRONG PASSWORD // TRY AGAIN";
             root.eventSerial++;
         }
 

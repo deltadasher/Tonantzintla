@@ -14,9 +14,9 @@ QtObject {
     property string error: ""
     property int generatedAt: 0
     property string status: Settings.adaptivePalette
-        ? (busy ? "SAMPLING NEBULA" : ready ? "WALLPAPER SPECTRUM ONLINE"
-            : error.length ? "SPECTRUM ERROR" : "PALETTE UNAVAILABLE")
-        : "LAVENDER CONSTANT"
+        ? (busy ? "READING WALLPAPER" : ready ? "USING WALLPAPER COLORS"
+            : error.length ? "COLOR ERROR" : "PALETTE UNAVAILABLE")
+        : "DEFAULT COLORS"
     readonly property string helperPath: Environment.script("palette-state.py")
 
     property color void_: "#080910"

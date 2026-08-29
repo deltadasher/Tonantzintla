@@ -17,8 +17,8 @@ Item {
     }
 
     component SectionLabel: ColumnLayout {
-        property string title: "OPTICS"
-        property string detail: "CAPTURE ARRAY"
+        property string title: "SCREENSHOTS"
+        property string detail: "SCREENSHOTS"
         spacing: 2
         Text {
             text: parent.title
@@ -38,7 +38,7 @@ Item {
 
     component CaptureTile: Rectangle {
         id: tile
-        property string code: "REG/COPY"
+        property string code: "COPY"
         property string title: "Copy region"
         property string detail: "Slurp → Grim → clipboard"
         property string glyph: "󰹑"
@@ -131,7 +131,7 @@ Item {
 
             Text {
                 Layout.fillWidth: true
-                text: "OPTICS"
+                text: "SCREENSHOTS"
                 color: Theme.moon
                 font.family: Theme.fontDisplay
                 font.pixelSize: 23
@@ -185,8 +185,8 @@ Item {
                 spacing: 10
 
                 SectionLabel {
-                    title: "STILL CAPTURE"
-                    detail: "REGION OR COMPLETE OUTPUT"
+                    title: "SCREENSHOT"
+                    detail: "REGION OR FULL SCREEN"
                 }
 
                 GridLayout {
@@ -196,38 +196,38 @@ Item {
                     rowSpacing: 8
 
                     CaptureTile {
-                        code: "REG/COPY"; title: "Copy region"; glyph: "󰆏"
+                        code: "COPY"; title: "Copy region"; glyph: "󰆏"
                         detail: "Fast clipboard snip"
                         available: Environment.canCaptureRegion
                         onActivated: root.captureRegion("copy")
                     }
                     CaptureTile {
-                        code: "REG/SAVE"; title: "Save region"; glyph: "󰆓"
-                        detail: "Archive selected pixels"
+                        code: "SAVE"; title: "Save region"; glyph: "󰆓"
+                        detail: "Save the selected area"
                         available: Environment.canCaptureRegion
                         onActivated: root.captureRegion("save")
                     }
                     CaptureTile {
-                        code: "REG/EDIT"; title: "Edit region"; glyph: "󰏫"
+                        code: "EDIT"; title: "Edit region"; glyph: "󰏫"
                         detail: "Annotate through Satty"
                         available: Environment.canEditCapture
                         onActivated: root.captureRegion("edit")
                     }
                     CaptureTile {
-                        code: "OUT/COPY"; title: "Copy output"; glyph: "󰍹"
-                        detail: "Full screen to clipboard"
+                        code: "OUT/COPY"; title: "Copy screen"; glyph: "󰍹"
+                        detail: "Whole screen to clipboard"
                         available: Environment.canCaptureScreen && Environment.hasWlCopy
                         onActivated: root.captureScreen("copy")
                     }
                     CaptureTile {
-                        code: "OUT/SAVE"; title: "Save output"; glyph: "󰋩"
-                        detail: "Timestamped PNG archive"
+                        code: "OUT/SAVE"; title: "Save screen"; glyph: "󰋩"
+                        detail: "Timestamped PNG files"
                         available: Environment.canCaptureScreen
                         onActivated: root.captureScreen("save")
                     }
                     CaptureTile {
-                        code: "OUT/EDIT"; title: "Edit output"; glyph: "󰏫"
-                        detail: "Full output into Satty"
+                        code: "OUT/EDIT"; title: "Edit screen"; glyph: "󰏫"
+                        detail: "Full screen into Satty"
                         available: Environment.hasGrim && Environment.hasSatty
                         onActivated: root.captureScreen("edit")
                     }
@@ -270,7 +270,7 @@ Item {
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: 1
-                            Text { text: "CAPTURE STREAM"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 16; font.weight: Font.Black }
+                            Text { text: "SCREEN RECORDING"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 16; font.weight: Font.Black }
                             Text { text: "GPU SCREEN RECORDER"; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.letterSpacing: 0.9 }
                         }
                         Rectangle {

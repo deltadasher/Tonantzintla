@@ -305,7 +305,7 @@ FocusScope {
             x: 30 * root.sf
             y: 320 * root.sf
             text: Math.round(Number(Weather.current.temp || 0)) + Weather.unitSymbol
-                + "  /  " + String(Weather.current.condition || "SKY ACQUIRING").toUpperCase()
+                + "  /  " + String(Weather.current.condition || "LOADING").toUpperCase()
             color: Theme.cyan
             font.family: Theme.fontMono
             font.pixelSize: 10 * root.sf

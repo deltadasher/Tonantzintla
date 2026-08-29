@@ -27,11 +27,11 @@ QtObject {
     readonly property bool playing: available && player.isPlaying
     readonly property bool canSeek: available && player.canSeek
     readonly property string title: available && player.trackTitle
-        ? player.trackTitle : "No transmission"
+        ? player.trackTitle : "Nothing playing"
     readonly property string artist: available && player.trackArtist
-        ? player.trackArtist : available ? player.identity : "Media offline"
+        ? player.trackArtist : available ? player.identity : "Nothing playing"
     readonly property string album: available && player.trackAlbum
-        ? player.trackAlbum : "Unknown release"
+        ? player.trackAlbum : "Unknown album"
     readonly property string albumArtist: available && player.trackAlbumArtist
         ? player.trackAlbumArtist : artist
     readonly property string artUrl: available ? player.trackArtUrl : ""

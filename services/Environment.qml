@@ -74,9 +74,9 @@ QtObject {
     readonly property bool canEditCapture: hasGrim && hasSlurp && hasWlCopy && hasSatty
     readonly property bool canRecord: hasRecorder
     readonly property string screenshotStatus: canCaptureRegion
-        ? "OPTICS CLIPBOARD ONLINE" : "INSTALL GRIM + SLURP + WL-COPY"
+        ? "READY" : "INSTALL GRIM + SLURP + WL-COPY"
     readonly property bool canSetWallpaper: hasAwww || hasSwaybg || hasSwww || hasMpvpaper
-    readonly property string wallpaperStatus: wallpaperBusy ? "SYNCHRONIZING WORLD"
+    readonly property string wallpaperStatus: wallpaperBusy ? "APPLYING WALLPAPER"
         : hasAwww && hasMpvpaper ? "AWWW + MPVPAPER ONLINE"
         : hasAwww ? "AWWW TRANSITIONS ONLINE" : hasSwaybg
             ? "SWAYBG ONLINE" : hasSwww ? "SWWW ONLINE" : "NO BACKEND"

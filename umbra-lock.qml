@@ -20,7 +20,7 @@ ShellRoot {
             if (!sessionLock.locked) {
                 Umbra.active = false;
                 Umbra.failed = true;
-                Umbra.statusText = "SESSION LOCK PROTOCOL UNAVAILABLE";
+                Umbra.statusText = "SCREEN LOCK UNAVAILABLE";
                 Umbra.eventSerial++;
                 Qt.quit();
             }
@@ -47,7 +47,7 @@ ShellRoot {
                 Umbra.active = false;
                 Umbra.secure = false;
                 Umbra.failed = true;
-                Umbra.statusText = "SESSION LOCK PROTOCOL UNAVAILABLE";
+                Umbra.statusText = "SCREEN LOCK UNAVAILABLE";
                 Umbra.eventSerial++;
                 Qt.quit();
             }

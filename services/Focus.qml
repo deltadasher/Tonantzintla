@@ -30,8 +30,8 @@ QtObject {
             ? shortBreakMinutes * 60 : workMinutes * 60
     readonly property real progress: durationSeconds > 0
         ? Math.max(0, Math.min(1, 1 - remainingSeconds / durationSeconds)) : 0
-    readonly property string phaseLabel: phase === "long-break" ? "LONG DRIFT"
-        : phase === "short-break" ? "SHORT DRIFT" : "FOCUS ORBIT"
+    readonly property string phaseLabel: phase === "long-break" ? "LONG BREAK"
+        : phase === "short-break" ? "SHORT BREAK" : "FOCUS"
     readonly property string phaseCode: phase === "long-break" ? "LNG"
         : phase === "short-break" ? "BRK" : "FCS"
     readonly property string displayTime: formatTime(remainingSeconds)

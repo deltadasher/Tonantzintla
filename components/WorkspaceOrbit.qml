@@ -133,7 +133,7 @@ Item {
     Text {
         anchors.centerIn: parent
         visible: root.workspaces.length === 0
-        text: Niri.available ? "ACQUIRING ORBIT" : "NO NIRI LINK"
+        text: Niri.available ? "CONNECTING" : "NIRI NOT RUNNING"
         color: Theme.muted
         font.family: Theme.fontMono
         font.pixelSize: 10

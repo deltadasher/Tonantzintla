@@ -103,10 +103,10 @@ Item {
             columns: 4
             columnSpacing: 10
             rowSpacing: 10
-            GaugeCard { code: "CPU"; label: "Compute load"; valueText: SysStats.cpuPercent + "%"; detail: SysStats.cpuTemperature > 0 ? SysStats.cpuTemperature + "°C PACKAGE" : "THERMAL SENSOR OFFLINE"; value: SysStats.cpuPercent / 100; accentColor: Theme.violet }
-            GaugeCard { code: "MEM"; label: "Memory field"; valueText: SysStats.memoryPercent + "%"; detail: SysStats.memoryUsedGb + " / " + SysStats.memoryTotalGb + " GB"; value: SysStats.memoryPercent / 100; accentColor: Theme.cyan }
-            GaugeCard { code: "THERM"; label: "Thermal core"; valueText: (SysStats.gpuTemperature || SysStats.cpuTemperature) + "°C"; detail: SysStats.gpuTemperature > 0 ? "GPU " + SysStats.gpuTemperature + "° // CPU " + SysStats.cpuTemperature + "°" : "CPU PACKAGE SENSOR"; value: (SysStats.gpuTemperature || SysStats.cpuTemperature) / 100; accentColor: Theme.rose }
-            GaugeCard { code: "DISK"; label: "Storage mass"; valueText: SysStats.diskPercent + "%"; detail: SysStats.diskUsedGb + " / " + SysStats.diskTotalGb + " GB"; value: SysStats.diskPercent / 100; accentColor: Theme.warning }
+            GaugeCard { code: "CPU"; label: "CPU load"; valueText: SysStats.cpuPercent + "%"; detail: SysStats.cpuTemperature > 0 ? SysStats.cpuTemperature + "°C CPU" : "NO SENSOR"; value: SysStats.cpuPercent / 100; accentColor: Theme.violet }
+            GaugeCard { code: "MEM"; label: "Memory"; valueText: SysStats.memoryPercent + "%"; detail: SysStats.memoryUsedGb + " / " + SysStats.memoryTotalGb + " GB"; value: SysStats.memoryPercent / 100; accentColor: Theme.cyan }
+            GaugeCard { code: "THERM"; label: "Temperature"; valueText: (SysStats.gpuTemperature || SysStats.cpuTemperature) + "°C"; detail: SysStats.gpuTemperature > 0 ? "GPU " + SysStats.gpuTemperature + "° // CPU " + SysStats.cpuTemperature + "°" : "CPU SENSOR"; value: (SysStats.gpuTemperature || SysStats.cpuTemperature) / 100; accentColor: Theme.rose }
+            GaugeCard { code: "DISK"; label: "Storage"; valueText: SysStats.diskPercent + "%"; detail: SysStats.diskUsedGb + " / " + SysStats.diskTotalGb + " GB"; value: SysStats.diskPercent / 100; accentColor: Theme.warning }
         }
 
         RowLayout {
@@ -118,7 +118,7 @@ Item {
                 radius: Theme.radiusLarge; color: Theme.mantle; border.width: 0; border.color: Theme.line
                 ColumnLayout {
                     anchors.fill: parent; anchors.margins: 15; spacing: 10
-                    Text { text: "LINK VELOCITY"; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Bold; font.letterSpacing: 1 }
+                    Text { text: "SPEED"; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Bold; font.letterSpacing: 1 }
                     Repeater {
                         model: [
                             { "glyph": "↓", "label": "RECEIVE", "value": SysStats.networkDownLabel, "color": Theme.cyan },
@@ -146,7 +146,7 @@ Item {
                 radius: Theme.radiusLarge; color: Theme.mantle; border.width: 0; border.color: Theme.line
                 ColumnLayout {
                     anchors.fill: parent; anchors.margins: 15; spacing: 7
-                    Text { text: "LARGEST ORBITS"; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Bold; font.letterSpacing: 1 }
+                    Text { text: "LARGEST FOLDERS"; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Bold; font.letterSpacing: 1 }
                     Repeater {
                         model: SysStats.folders
                         Rectangle {
@@ -162,7 +162,7 @@ Item {
                     Text {
                         visible: SysStats.folders.length === 0
                         Layout.fillWidth: true; Layout.fillHeight: true
-                        text: "SCANNING LOCAL ORBITS…"
+                        text: "SCANNING…"
                         horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
                         color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10
                     }

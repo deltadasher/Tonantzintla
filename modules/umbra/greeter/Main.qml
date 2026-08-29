@@ -595,7 +595,7 @@ Rectangle {
     Text {
         x: root.width * 0.058
         y: root.height * 0.875
-        text: root.failed ? "TRAJECTORY REJECTED"
+        text: root.failed ? "WRONG PASSWORD"
             : root.authenticating ? "CAPTURE IN PROGRESS"
             : root.passwordCount > 0 ? "PRESS ENTER"
             : ""

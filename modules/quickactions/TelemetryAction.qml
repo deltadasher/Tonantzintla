@@ -70,7 +70,7 @@ Item {
             Layout.fillWidth: true
             ColumnLayout {
                 Layout.fillWidth: true; spacing: 1
-                Text { text: "LOCAL CONSTELLATION"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 18; font.weight: Font.Black; font.letterSpacing: 0.5 }
+                Text { text: "NOTIFICATIONS"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 18; font.weight: Font.Black; font.letterSpacing: 0.5 }
                 Text { text: SysStats.hostname.toUpperCase() + " // " + SysStats.uptimeLabel + " UPTIME"; color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Bold; font.letterSpacing: 0.8 }
             }
             ColumnLayout { spacing: 0
@@ -84,10 +84,10 @@ Item {
             columns: 2
             columnSpacing: 8
             rowSpacing: 8
-            MetricCard { code: "CPU"; value: SysStats.cpuPercent + "%"; detail: SysStats.cpuTemperature > 0 ? SysStats.cpuTemperature + "°C PACKAGE" : "THERMAL LINK IDLE"; amount: SysStats.cpuPercent / 100; tone: Theme.violet }
+            MetricCard { code: "CPU"; value: SysStats.cpuPercent + "%"; detail: SysStats.cpuTemperature > 0 ? SysStats.cpuTemperature + "°C CPU" : "NO READING"; amount: SysStats.cpuPercent / 100; tone: Theme.violet }
             MetricCard { code: "MEM"; value: SysStats.memoryPercent + "%"; detail: SysStats.memoryUsedGb + " / " + SysStats.memoryTotalGb + " GB"; amount: SysStats.memoryPercent / 100; tone: Theme.cyan }
             MetricCard { code: "DISK"; value: SysStats.diskPercent + "%"; detail: SysStats.diskUsedGb + " / " + SysStats.diskTotalGb + " GB"; amount: SysStats.diskPercent / 100; tone: Theme.warning }
-            MetricCard { code: "THERM"; value: (SysStats.gpuTemperature || SysStats.cpuTemperature) + "°C"; detail: SysStats.gpuTemperature > 0 ? "GPU " + SysStats.gpuTemperature + "° // CPU " + SysStats.cpuTemperature + "°" : "CPU PACKAGE"; amount: (SysStats.gpuTemperature || SysStats.cpuTemperature) / 100; tone: Theme.rose }
+            MetricCard { code: "THERM"; value: (SysStats.gpuTemperature || SysStats.cpuTemperature) + "°C"; detail: SysStats.gpuTemperature > 0 ? "GPU " + SysStats.gpuTemperature + "° // CPU " + SysStats.cpuTemperature + "°" : "CPU"; amount: (SysStats.gpuTemperature || SysStats.cpuTemperature) / 100; tone: Theme.rose }
         }
 
         Rectangle {

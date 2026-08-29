@@ -92,7 +92,7 @@ QtObject {
 
     function change(delta) {
         Osd.show("volume", Math.max(0, Math.min(150, percent + delta)),
-            muted ? "OUTPUT MUTED" : "OUTPUT VOLUME", muted);
+            muted ? "MUTED" : "VOLUME", muted);
         if (sinkNode && sinkNode.ready && sinkNode.audio)
             sinkNode.audio.volume = Math.max(0, Math.min(1.5, volume + delta / 100));
         else
@@ -102,7 +102,7 @@ QtObject {
     }
 
     function toggleMute() {
-        Osd.show("volume", percent, muted ? "OUTPUT VOLUME" : "OUTPUT MUTED", !muted);
+        Osd.show("volume", percent, muted ? "VOLUME" : "MUTED", !muted);
         if (sinkNode && sinkNode.ready && sinkNode.audio)
             sinkNode.audio.muted = !sinkNode.audio.muted;
         else
@@ -112,7 +112,7 @@ QtObject {
 
     function toggleMicrophone() {
         Osd.show("microphone", inputPercent,
-            inputMuted ? "MICROPHONE LIVE" : "MICROPHONE MUTED", !inputMuted);
+            inputMuted ? "MIC ON" : "MIC MUTED", !inputMuted);
         if (sourceNode && sourceNode.ready && sourceNode.audio)
             sourceNode.audio.muted = !sourceNode.audio.muted;
         else
@@ -122,7 +122,7 @@ QtObject {
 
     function setVolume(percent) {
         const target = Math.max(0, Math.min(150, percent));
-        Osd.show("volume", target, "OUTPUT VOLUME", false);
+        Osd.show("volume", target, "VOLUME", false);
         if (sinkNode && sinkNode.ready && sinkNode.audio)
             sinkNode.audio.volume = target / 100;
         else
@@ -132,7 +132,7 @@ QtObject {
 
     function setMicrophoneVolume(percent) {
         const target = Math.max(0, Math.min(150, percent));
-        Osd.show("microphone", target, "MICROPHONE GAIN", inputMuted);
+        Osd.show("microphone", target, "MIC LEVEL", inputMuted);
         if (sourceNode && sourceNode.ready && sourceNode.audio)
             sourceNode.audio.volume = target / 100;
         else
@@ -146,8 +146,8 @@ QtObject {
         const target = Math.max(0, Math.min(150, Math.round(percent)));
         node.audio.volume = target / 100;
         Osd.show(!node.isStream && !node.isSink ? "microphone" : "volume", target,
-            node.isStream ? "APPLICATION STREAM"
-                : node.isSink ? "OUTPUT VOLUME" : "INPUT GAIN", false);
+            node.isStream ? "APP VOLUME"
+                : node.isSink ? "VOLUME" : "MIC LEVEL", false);
         refreshLevels();
     }
 
@@ -157,7 +157,7 @@ QtObject {
         const nowMuted = !node.audio.muted;
         node.audio.muted = nowMuted;
         Osd.show(!node.isStream && !node.isSink ? "microphone" : "volume", 0,
-            nowMuted ? "STREAM MUTED" : "STREAM LIVE", nowMuted);
+            nowMuted ? "MUTED" : "UNMUTED", nowMuted);
         refreshLevels();
     }
 

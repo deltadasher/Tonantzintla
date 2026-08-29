@@ -34,7 +34,7 @@ QtObject {
     property var wifiNetworks: []
     property var bluetoothDevices: []
     property var ethernetDevices: []
-    property string statusMessage: "LINK ARRAY READY"
+    property string statusMessage: "READY"
     property string pendingAction: ""
     property bool refreshPending: false
     readonly property bool detailedActive: ShellState.ephemerisVisible
@@ -42,14 +42,14 @@ QtObject {
 
     function toggleWifi() {
         Networking.wifiEnabled = !Networking.wifiEnabled;
-        statusMessage = Networking.wifiEnabled ? "WIFI RADIO ONLINE" : "WIFI RADIO OFFLINE";
+        statusMessage = Networking.wifiEnabled ? "WI-FI ON" : "WI-FI OFF";
         refreshDelay.restart();
     }
 
     function toggleBluetooth() {
         DeviceState.toggleBluetooth();
         statusMessage = DeviceState.bluetoothEnabled
-            ? "BLUETOOTH ARRAY OFFLINE" : "BLUETOOTH ARRAY ONLINE";
+            ? "BLUETOOTH OFF" : "BLUETOOTH ON";
         refreshDelay.restart();
     }
 
@@ -72,7 +72,7 @@ QtObject {
     }
 
     function scanWifi() {
-        runAction(["nmcli", "device", "wifi", "rescan"], "SCANNING WIFI ORBITS…");
+        runAction(["nmcli", "device", "wifi", "rescan"], "SCANNING WI-FI…");
     }
 
     function connectWifi(ssid, password) {
@@ -94,7 +94,7 @@ QtObject {
 
     function scanBluetooth() {
         runAction(["bluetoothctl", "--timeout", "5", "scan", "on"],
-            "SCANNING BLUETOOTH ORBITS…");
+            "SCANNING BLUETOOTH…");
     }
 
     function bluetoothAction(address, connected, paired) {
@@ -120,10 +120,10 @@ QtObject {
                         root.bluetoothDevices = data.bluetooth || [];
                         root.ethernetDevices = data.ethernet || [];
                     }
-                    root.statusMessage = "LINK ARRAY SYNCHRONIZED";
+                    root.statusMessage = "NETWORK UPDATED";
                 } catch (error) {
                     root.managerAvailable = false;
-                    root.statusMessage = "LINK ARRAY DECODE FAILURE";
+                    root.statusMessage = "COULD NOT READ NETWORK STATE";
                     console.warn("[Astralith/Network] State decode failed:", error);
                 }
                 root.loading = false;

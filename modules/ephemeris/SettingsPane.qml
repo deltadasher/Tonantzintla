@@ -93,9 +93,9 @@ Item {
                     Repeater {
                         model: [
                             { "key": "appearance", "code": "01", "label": "Appearance" },
-                            { "key": "bar", "code": "02", "label": "Aperture" },
-                            { "key": "launcher", "code": "03", "label": "Ephemeris" },
-                            { "key": "umbra", "code": "04", "label": "Umbra" },
+                            { "key": "bar", "code": "02", "label": "Bar" },
+                            { "key": "launcher", "code": "03", "label": "Panels" },
+                            { "key": "umbra", "code": "04", "label": "Lock screen" },
                             { "key": "system", "code": "05", "label": "System" },
                             { "key": "extensions", "code": "06", "label": "Extensions" }
                         ]
@@ -246,8 +246,8 @@ Item {
 
             SettingToggle {
                 Layout.fillWidth: true
-                label: "Adaptive Nebula"
-                detail: "Derive Astralith's shell spectrum from the active wallpaper using Matugen"
+                label: "Wallpaper colors"
+                detail: "Pick theme colors from your wallpaper using Matugen"
                 checked: Settings.adaptivePalette
                 onToggled: Settings.adaptivePalette = !Settings.adaptivePalette
             }
@@ -262,8 +262,8 @@ Item {
 
             SettingChoice {
                 Layout.fillWidth: true
-                label: "Typeface profile"
-                detail: "Serpantinum's mono-first voice, a softer reading mix, or system aliases"
+                label: "Font preset"
+                detail: "Monospace-first, a softer reading mix, or system fonts"
                 value: Settings.typographyProfile
                 choices: [
                     { "label": "SERP", "value": "serpantinum" },
@@ -281,8 +281,8 @@ Item {
 
                 SettingTextField {
                     Layout.fillWidth: true
-                    label: "Display face"
-                    detail: "Headings, clock, and hero telemetry"
+                    label: "Display font"
+                    detail: "Headings, clock, and large readouts"
                     value: Settings.fontDisplay
                     status: FontState.displayStatus
                     statusOk: FontState.displayOk
@@ -293,8 +293,8 @@ Item {
                 }
                 SettingTextField {
                     Layout.fillWidth: true
-                    label: "Interface face"
-                    detail: "Labels and longer readable copy"
+                    label: "Interface font"
+                    detail: "Labels and longer text"
                     value: Settings.fontText
                     status: FontState.textStatus
                     statusOk: FontState.textOk
@@ -305,8 +305,8 @@ Item {
                 }
                 SettingTextField {
                     Layout.fillWidth: true
-                    label: "Telemetry face"
-                    detail: "Codes, values, and compact metadata"
+                    label: "Monospace font"
+                    detail: "Numbers, codes, and small labels"
                     value: Settings.fontMono
                     status: FontState.monoStatus
                     statusOk: FontState.monoOk
@@ -317,8 +317,8 @@ Item {
                 }
                 SettingTextField {
                     Layout.fillWidth: true
-                    label: "Symbol face"
-                    detail: "Nerd Font glyphs used by shell controls"
+                    label: "Icon font"
+                    detail: "Nerd Font icons used by the shell"
                     value: Settings.fontIcon
                     status: FontState.iconStatus
                     statusOk: FontState.iconOk
@@ -331,8 +331,8 @@ Item {
 
             SettingChoice {
                 Layout.fillWidth: true
-                label: "Ephemeris entrance"
-                detail: "Choose how command surfaces arrive"
+                label: "Panel animation"
+                detail: "How panels appear when opened"
                 value: Settings.motionStyle
                 choices: [
                     { "label": "RISE", "value": "rise" },
@@ -343,8 +343,8 @@ Item {
 
             SettingChoice {
                 Layout.fillWidth: true
-                label: "Orbital atmosphere"
-                detail: "Background telemetry density across expanding instruments"
+                label: "Background detail"
+                detail: "Amount of background detail in panels"
                 value: Settings.atmosphereStyle
                 choices: [
                     { "label": "QUIET", "value": "quiet" },
@@ -357,9 +357,9 @@ Item {
             ToggleGrid {
                 Layout.fillWidth: true
                 rows: [
-                    { "key": "motion", "label": "Motion systems", "detail": "Enable transitions and interface choreography" },
-                    { "key": "animateStars", "label": "Stellar field", "detail": "Animate stars behind Ephemeris" },
-                    { "key": "compact", "label": "Compact density", "detail": "Reduce the vertical aperture footprint" }
+                    { "key": "motion", "label": "Animations", "detail": "Enable transitions and animations" },
+                    { "key": "animateStars", "label": "Animated stars", "detail": "Animate stars behind panels" },
+                    { "key": "compact", "label": "Compact mode", "detail": "Make the bar shorter" }
                 ]
             }
             Item { Layout.preferredHeight: 8 }
@@ -382,8 +382,8 @@ Item {
 
             SettingChoice {
                 Layout.fillWidth: true
-                label: "Bar silhouette"
-                detail: "Docked plane, floating glass, or independent orbital capsules"
+                label: "Bar style"
+                detail: "Docked, floating, or separate capsules"
                 value: Settings.barMode
                 choices: [
                     { "label": "DOCKED", "value": "docked" },
@@ -396,8 +396,8 @@ Item {
             SettingChoice {
                 Layout.fillWidth: true
                 visible: Settings.barMode !== "docked"
-                label: "Orbital clearance"
-                detail: "Distance between the bar surface and screen edge"
+                label: "Edge spacing"
+                detail: "Space between the bar and the screen edge"
                 value: Settings.barMargin
                 choices: [
                     { "label": "TIGHT", "value": 8 },
@@ -410,10 +410,10 @@ Item {
             SettingChoice {
                 Layout.fillWidth: true
                 label: "Glass density"
-                detail: "Opacity of docked, floating, and capsule surfaces"
+                detail: "How see-through the bar is"
                 value: Settings.barOpacity
                 choices: [
-                    { "label": "VEIL", "value": 0.82 },
+                    { "label": "LIGHT", "value": 0.82 },
                     { "label": "GLASS", "value": 0.94 },
                     { "label": "SOLID", "value": 1.0 }
                 ]
@@ -422,13 +422,13 @@ Item {
 
             SettingChoice {
                 Layout.fillWidth: true
-                label: "Widget constellation"
+                label: "Widget preset"
                 detail: "Apply a quick visibility preset, then tune individual channels"
                 value: ""
                 choices: [
                     { "label": "MINIMAL", "value": "minimal" },
                     { "label": "BALANCED", "value": "balanced" },
-                    { "label": "TELEMETRY", "value": "telemetry" }
+                    { "label": "FULL", "value": "telemetry" }
                 ]
                 onSelected: function(value) { Settings.applyBarPreset(value); }
             }
@@ -441,8 +441,8 @@ Item {
 
                 SettingToggle {
                     Layout.fillWidth: true
-                    label: "Quick-action rail"
-                    detail: "On-demand Chronos and performance telemetry"
+                    label: "Quick actions"
+                    detail: "Timers and system stats on demand"
                     checked: Settings.quickActionsEnabled
                     onToggled: {
                         Settings.quickActionsEnabled = !Settings.quickActionsEnabled;
@@ -453,8 +453,8 @@ Item {
                 SettingChoice {
                     Layout.fillWidth: true
                     enabled: Settings.quickActionsEnabled
-                    label: "Rail orbit"
-                    detail: "Screen edge used by the floating quick-action capsule"
+                    label: "Quick actions side"
+                    detail: "Which screen edge quick actions sit on"
                     value: Settings.quickActionsEdge
                     choices: [
                         { "label": "LEFT", "value": "left" },
@@ -467,23 +467,23 @@ Item {
             ToggleGrid {
                 Layout.fillWidth: true
                 rows: [
-                    { "key": "showLauncherButton", "label": "Launcher control", "detail": "Show the catalog control at far left" },
-                    { "key": "showSettingsButton", "label": "Settings control", "detail": "Show direct configuration access" },
-                    { "key": "showWorkspaces", "label": "Workspace array", "detail": "Show Niri workspaces for this output" },
-                    { "key": "showFocusedWindow", "label": "Focused signal", "detail": "Show the active app and window title" },
-                    { "key": "showMedia", "label": "Media capsule", "detail": "MPRIS artwork, title, and playback control" },
-                    { "key": "showTray", "label": "System tray", "detail": "Expose StatusNotifier applications" },
-                    { "key": "showMediaProgress", "label": "Playback progress", "detail": "Show the live MPRIS timeline" },
-                    { "key": "showMediaTime", "label": "Playback time", "detail": "Show elapsed and total media time" },
-                    { "key": "showSystemStats", "label": "System telemetry", "detail": "CPU and memory readings" },
-                    { "key": "showAudio", "label": "Audio telemetry", "detail": "Volume with click and scroll controls" },
+                    { "key": "showLauncherButton", "label": "Launcher control", "detail": "Show the app launcher button" },
+                    { "key": "showSettingsButton", "label": "Settings control", "detail": "Show the settings button" },
+                    { "key": "showWorkspaces", "label": "Workspaces", "detail": "Show Niri workspaces on this screen" },
+                    { "key": "showFocusedWindow", "label": "Focused window", "detail": "Show the active app and window title" },
+                    { "key": "showMedia", "label": "Media", "detail": "Album art, title, and playback controls" },
+                    { "key": "showTray", "label": "System tray", "detail": "Show tray icons from apps" },
+                    { "key": "showMediaProgress", "label": "Playback progress", "detail": "Show the playback progress bar" },
+                    { "key": "showMediaTime", "label": "Playback time", "detail": "Show elapsed and total time" },
+                    { "key": "showSystemStats", "label": "System stats", "detail": "CPU and memory readings" },
+                    { "key": "showAudio", "label": "Volume", "detail": "Volume, click or scroll to change" },
                     { "key": "showNetworkLabel", "label": "Network label", "detail": "Show active connection name" },
-                    { "key": "showBluetooth", "label": "Bluetooth channel", "detail": "Adapter state and connected-device count" },
-                    { "key": "showBrightness", "label": "Brightness channel", "detail": "Backlight value with wheel control" },
-                    { "key": "showBattery", "label": "Battery channel", "detail": "UPower charge state and low-power warning" },
-                    { "key": "showMicrophone", "label": "Microphone channel", "detail": "Input level and instant mute control" },
-                    { "key": "showSeconds", "label": "Mission seconds", "detail": "Use second-level clock precision" },
-                    { "key": "showDate", "label": "Date channel", "detail": "Show the calendar under mission time" }
+                    { "key": "showBluetooth", "label": "Bluetooth", "detail": "Bluetooth state and connected devices" },
+                    { "key": "showBrightness", "label": "Brightness", "detail": "Screen brightness, scroll to change" },
+                    { "key": "showBattery", "label": "Battery", "detail": "Charge level and low-battery warning" },
+                    { "key": "showMicrophone", "label": "Microphone", "detail": "Mic level and mute button" },
+                    { "key": "showSeconds", "label": "Show seconds", "detail": "Show seconds on the clock" },
+                    { "key": "showDate", "label": "Date", "detail": "Show the date under the clock" }
                 ]
             }
             Item { Layout.preferredHeight: 8 }
@@ -506,8 +506,8 @@ Item {
 
             SettingChoice {
                 Layout.fillWidth: true
-                label: "Search result ceiling"
-                detail: "Maximum applications retained after ranking"
+                label: "Max search results"
+                detail: "Most apps to show in results"
                 value: Settings.launcherMaxResults
                 choices: [
                     { "label": "40", "value": 40 },
@@ -520,7 +520,7 @@ Item {
             SettingChoice {
                 Layout.fillWidth: true
                 label: "Wallpaper columns"
-                detail: "Density of the Parallax archive"
+                detail: "How many wallpaper columns to show"
                 value: Settings.wallpaperColumns
                 choices: [
                     { "label": "2", "value": 2 },
@@ -533,8 +533,8 @@ Item {
             ToggleGrid {
                 Layout.fillWidth: true
                 rows: [
-                    { "key": "showLauncherHints", "label": "Navigation legend", "detail": "Show keyboard hints in the catalog header" },
-                    { "key": "showAppDescriptions", "label": "Application metadata", "detail": "Show descriptions below application names" }
+                    { "key": "showLauncherHints", "label": "Keyboard hints", "detail": "Show keyboard hints in the catalog header" },
+                    { "key": "showAppDescriptions", "label": "App descriptions", "detail": "Show descriptions below application names" }
                 ]
             }
 
@@ -557,7 +557,7 @@ Item {
                         font.letterSpacing: 1
                     }
                     Text {
-                        text: "Desktop entries are indexed live by Quickshell. Substring and ordered fuzzy matching are both active."
+                        text: "Apps are indexed live. Both exact and fuzzy search work."
                         color: Theme.moon
                         font.family: Theme.fontText
                         font.pixelSize: 10
@@ -582,14 +582,14 @@ Item {
                     Layout.fillWidth: true
                     spacing: 2
                     Text {
-                        text: "UMBRA"
+                        text: "LOCK SCREEN"
                         color: Theme.moon
                         font.family: Theme.fontDisplay
                         font.pixelSize: 16
                         font.weight: Font.DemiBold
                     }
                     Text {
-                        text: "EXT-SESSION-LOCK-V1  //  PAM IDENTITY HANDSHAKE"
+                        text: "SCREEN LOCK  //  PASSWORD REQUIRED"
                         color: Theme.muted
                         font.family: Theme.fontMono
                         font.pixelSize: 11
@@ -618,18 +618,18 @@ Item {
             ToggleGrid {
                 Layout.fillWidth: true
                 rows: [
-                    { "key": "umbraMotion", "label": "Fluid orbital motion", "detail": "Animate the star field, satellites, and authentication energy" },
-                    { "key": "umbraUseWallpaper", "label": "Active wallpaper", "detail": "Use the current image wall behind the session veil" },
-                    { "key": "umbraBlurWallpaper", "enabledKey": "umbraUseWallpaper", "label": "Diffuse optics", "detail": "Blur and desaturate the wallpaper under secure telemetry" },
-                    { "key": "umbraShowMedia", "label": "Resonance controls", "detail": "Show safe MPRIS artwork and playback controls" },
-                    { "key": "umbraShowWeather", "label": "Weather telemetry", "detail": "Show the cached temperature beside mission time" }
+                    { "key": "umbraMotion", "label": "Animations", "detail": "Animate the background and login effects" },
+                    { "key": "umbraUseWallpaper", "label": "Active wallpaper", "detail": "Use your current wallpaper behind the lock screen" },
+                    { "key": "umbraBlurWallpaper", "enabledKey": "umbraUseWallpaper", "label": "Blur wallpaper", "detail": "Blur and dim the wallpaper behind the lock screen" },
+                    { "key": "umbraShowMedia", "label": "Music controls", "detail": "Show album art and playback controls" },
+                    { "key": "umbraShowWeather", "label": "Weather", "detail": "Show the temperature next to the clock" }
                 ]
             }
 
             SettingTextField {
                 Layout.fillWidth: true
                 label: "PAM service"
-                detail: "Authentication profile in /etc/pam.d; login is the portable default"
+                detail: "PAM profile in /etc/pam.d; login is the safe default"
                 value: Settings.umbraPamService
                 status: Umbra.pamAvailable ? "AVAILABLE" : "CHECK PROFILE"
                 statusOk: Umbra.pamAvailable
@@ -663,7 +663,7 @@ Item {
                         }
                         Text {
                             Layout.fillWidth: true
-                            text: "Preview the complete surface without invoking the compositor lock or PAM. Press Escape to return."
+                            text: "See the full lock screen without actually locking. Press Escape to return."
                             color: Theme.moon
                             font.family: Theme.fontText
                             font.pixelSize: 10
@@ -679,7 +679,7 @@ Item {
                         border.color: Theme.accentLine
                         Text {
                             anchors.centerIn: parent
-                            text: "PREVIEW UMBRA"
+                            text: "PREVIEW LOCK SCREEN"
                             color: previewPointer.containsMouse ? Theme.void_ : Theme.accent
                             font.family: Theme.fontMono
                             font.pixelSize: 11
@@ -799,8 +799,8 @@ Item {
 
             SettingToggle {
                 Layout.fillWidth: true
-                label: "Forecast telemetry"
-                detail: "Current, hourly, and five-day conditions in the Celestial Calendar"
+                label: "Weather forecast"
+                detail: "Current, hourly, and five-day forecast in the calendar"
                 checked: Settings.weatherEnabled
                 onToggled: Settings.weatherEnabled = !Settings.weatherEnabled
             }
@@ -821,7 +821,7 @@ Item {
                 Layout.fillWidth: true
                 enabled: Settings.weatherEnabled
                 label: "Temperature scale"
-                detail: "Units used across the weather console"
+                detail: "Units used for weather"
                 value: Settings.temperatureUnit
                 choices: [
                     { "label": "CELSIUS", "value": "celsius" },
@@ -935,7 +935,7 @@ Item {
                         id: extensionCard
                         required property var modelData
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 84
+                        Layout.preferredHeight: 92
                         radius: Theme.radiusMedium
                         color: extensionPointer.containsMouse ? Theme.elevated : Theme.mantle
                         border.width: 0
@@ -978,6 +978,8 @@ Item {
                                     color: Theme.muted
                                     font.family: Theme.fontText
                                     font.pixelSize: 11
+                                    wrapMode: Text.WordWrap
+                                    maximumLineCount: 2
                                     elide: Text.ElideRight
                                 }
                             }

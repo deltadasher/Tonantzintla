@@ -11,9 +11,9 @@ RowLayout {
         return window.id === Niri.focusedWindowId;
     })
     readonly property string appId: focusedWindow && focusedWindow.app_id
-        ? focusedWindow.app_id : "DEEP SPACE"
+        ? focusedWindow.app_id : "DESKTOP"
     readonly property string title: focusedWindow && focusedWindow.title
-        ? focusedWindow.title : "NO SIGNAL"
+        ? focusedWindow.title : "NO WINDOW"
 
     Rectangle {
         Layout.preferredWidth: 4

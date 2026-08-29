@@ -180,7 +180,7 @@ Item {
                     Text {
                         width: parent.width
                         horizontalAlignment: Text.AlignHCenter
-                        text: "ORBIT " + (Focus.completedCycles % Math.max(1, Focus.longBreakEvery) + 1)
+                        text: "CYCLE " + (Focus.completedCycles % Math.max(1, Focus.longBreakEvery) + 1)
                             + " / " + Focus.longBreakEvery
                         color: Theme.muted
                         font.family: Theme.fontMono
@@ -259,8 +259,8 @@ Item {
                         anchors.leftMargin: 13
                         anchors.rightMargin: 12
                         ColumnLayout { Layout.fillWidth: true; spacing: 1
-                            Text { text: "AUTOMATIC FLIGHT CYCLE"; color: Theme.moon; font.family: Theme.fontMono; font.pixelSize: 11; font.weight: Font.Bold }
-                            Text { text: "FOCUS → SHORT DRIFT // LONG DRIFT EVERY " + Focus.longBreakEvery; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.letterSpacing: 0.5 }
+                            Text { text: "AUTO-ADVANCE"; color: Theme.moon; font.family: Theme.fontMono; font.pixelSize: 11; font.weight: Font.Bold }
+                            Text { text: "FOCUS → SHORT BREAK // LONG BREAK EVERY " + Focus.longBreakEvery; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.letterSpacing: 0.5 }
                         }
                         Rectangle {
                             Layout.preferredWidth: 36; Layout.preferredHeight: 20; radius: 10
@@ -277,7 +277,7 @@ Item {
                     OrbitButton {
                         Layout.fillWidth: true
                         primary: true
-                        label: Focus.running ? "PAUSE ORBIT" : Focus.progress > 0 ? "RESUME ORBIT" : "BEGIN ORBIT"
+                        label: Focus.running ? "PAUSE" : Focus.progress > 0 ? "RESUME" : "START"
                         onActivated: Focus.toggle()
                     }
                     OrbitButton { label: "RESET"; onActivated: Focus.reset() }
@@ -295,7 +295,7 @@ Item {
                     Text {
                         anchors.centerIn: parent
                         visible: Focus.weekFocusSeconds === 0
-                        text: "NO ORBITS LOGGED YET\nFIRST SESSION WILL CHART HERE"
+                        text: "NO SESSIONS YET\nYOUR FIRST ONE WILL SHOW HERE"
                         color: Theme.muted
                         opacity: 0.52
                         font.family: Theme.fontMono
@@ -345,10 +345,10 @@ Item {
         RowLayout {
             Layout.fillWidth: true
             spacing: 8
-            StatCard { code: "TODAY"; value: Focus.formatDuration(Focus.todayFocusSeconds); detail: Focus.todaySessions + " COMPLETED ORBITS"; tone: root.phaseColor }
-            StatCard { code: "SEVEN DAY"; value: Focus.formatDuration(Focus.weekFocusSeconds); detail: "FOCUS TIME LOGGED"; tone: Theme.cyan }
+            StatCard { code: "TODAY"; value: Focus.formatDuration(Focus.todayFocusSeconds); detail: Focus.todaySessions + " SESSIONS DONE"; tone: root.phaseColor }
+            StatCard { code: "SEVEN DAY"; value: Focus.formatDuration(Focus.weekFocusSeconds); detail: "FOCUS TIME"; tone: Theme.cyan }
             StatCard { code: "STREAK"; value: Focus.currentStreak + " DAYS"; detail: "BEST " + Focus.bestStreak + " DAYS"; tone: Theme.warning }
-            StatCard { code: "ALL TIME"; value: Focus.completedSessions; detail: "SECURED ORBITS"; tone: Theme.success }
+            StatCard { code: "ALL TIME"; value: Focus.completedSessions; detail: "SESSIONS DONE"; tone: Theme.success }
         }
     }
 }

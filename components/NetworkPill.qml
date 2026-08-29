@@ -77,7 +77,7 @@ Rectangle {
             spacing: -1
             Text {
                 Layout.maximumWidth: 112
-                text: Settings.showNetworkLabel ? NetState.label : "UPLINK"
+                text: Settings.showNetworkLabel ? NetState.label : "NETWORK"
                 color: Theme.moon
                 font.family: Theme.fontText
                 font.pixelSize: 12
@@ -86,8 +86,8 @@ Rectangle {
             }
             Text {
                 text: NetState.connected
-                    ? "ORBIT LOCK" + (root.signal > 0 ? "  " + root.signal + "%" : "")
-                    : "NO SIGNAL"
+                    ? "CONNECTED" + (root.signal > 0 ? "  " + root.signal + "%" : "")
+                    : "DISCONNECTED"
                 color: NetState.connected ? Theme.cyan : Theme.danger
                 font.family: Theme.fontText
                 font.pixelSize: 10

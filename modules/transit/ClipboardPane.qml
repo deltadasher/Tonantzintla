@@ -156,7 +156,7 @@ Item {
             Text {
                 anchors.centerIn: parent
                 visible: clipGrid.count === 0
-                text: Clipboard.available ? "NO CLIPS IN TRANSIT" : "INSTALL CLIPHIST + WL-CLIPBOARD"
+                text: Clipboard.available ? "NO CLIPS YET" : "INSTALL CLIPHIST + WL-CLIPBOARD"
                 color: Theme.muted
                 font.family: Theme.fontMono
                 font.pixelSize: 10

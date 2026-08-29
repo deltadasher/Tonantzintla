@@ -107,7 +107,7 @@ Item {
             spacing: 14
             Text {
                 Layout.fillWidth: true
-                text: "RESONANCE"
+                text: "MEDIA"
                 color: Theme.moon
                 font.family: Theme.fontDisplay
                 font.pixelSize: 23
@@ -275,7 +275,7 @@ Item {
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.bottom: parent.bottom
                     anchors.bottomMargin: 8
-                    text: Spectrum.available ? "LIVE RESONANCE" : "AMBIENT FIELD"
+                    text: Spectrum.available ? "LIVE AUDIO" : "NO AUDIO"
                     color: Spectrum.available ? Theme.cyan : Theme.muted
                     font.family: Theme.fontMono
                     font.pixelSize: 11
@@ -492,7 +492,7 @@ Item {
                         Text {
                             id: lyricSource
                             anchors.centerIn: parent
-                            text: Lyrics.busy ? "SEARCHING ORBIT…"
+                            text: Lyrics.busy ? "SEARCHING…"
                                 : Lyrics.source.length > 0 ? Lyrics.source : "NO LYRIC LINK"
                             color: Lyrics.busy ? Theme.warning : Lyrics.available ? Theme.success : Theme.muted
                             font.family: Theme.fontMono
@@ -520,8 +520,8 @@ Item {
                     RowLayout {
                         Layout.fillWidth: true
                         ColumnLayout { Layout.fillWidth: true; spacing: 1
-                            Text { text: "LYRIC TRANSMISSION"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 17; font.weight: Font.Black }
-                            Text { text: Lyrics.hasTiming ? "TIMECODE SYNCHRONIZED TO MPRIS" : "PLAIN TEXT READING ARRAY"; color: Lyrics.hasTiming ? Theme.cyan : Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Bold; font.letterSpacing: 0.8 }
+                            Text { text: "LYRICS"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 17; font.weight: Font.Black }
+                            Text { text: Lyrics.hasTiming ? "SYNCED TO PLAYER" : "PLAIN TEXT"; color: Lyrics.hasTiming ? Theme.cyan : Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Bold; font.letterSpacing: 0.8 }
                         }
                         ModeButton {
                             glyph: "↻"
@@ -605,10 +605,10 @@ Item {
                         }
                         Text {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            text: Lyrics.busy ? "SEARCHING THE LYRIC ARCHIVE"
-                                : Lyrics.instrumental ? "INSTRUMENTAL TRANSMISSION"
+                            text: Lyrics.busy ? "SEARCHING FOR LYRICS"
+                                : Lyrics.instrumental ? "INSTRUMENTAL"
                                 : Lyrics.status === "offline" ? "LYRIC ARCHIVE OFFLINE"
-                                : Media.available ? "NO LYRICS FOUND FOR THIS TRACK" : "NO ACTIVE MEDIA TRANSMISSION"
+                                : Media.available ? "NO LYRICS FOUND FOR THIS TRACK" : "NOTHING PLAYING"
                             color: Theme.moon
                             font.family: Theme.fontMono
                             font.pixelSize: 10
@@ -635,7 +635,7 @@ Item {
             RowLayout {
                 Layout.fillWidth: true
                 ColumnLayout { Layout.fillWidth: true; spacing: 2
-                    Text { text: "TEN-BAND ORBITAL EQUALIZER"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 17; font.weight: Font.Black }
+                    Text { text: "TEN-BAND EQUALIZER"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 17; font.weight: Font.Black }
                     Text { text: "EASY EFFECTS OUTPUT CURVE // PRESETS APPLY IMMEDIATELY"; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 11; font.letterSpacing: 0.9 }
                 }
                 Rectangle {

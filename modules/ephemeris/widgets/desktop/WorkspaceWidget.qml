@@ -207,7 +207,7 @@ Item {
                             visible: workspaceDelegate.workspaceWindows.length === 0
                             width: parent.width
                             height: 70
-                            text: "EMPTY ORBIT\nclick to focus this workspace"
+                            text: "EMPTY\nclick to switch to this workspace"
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
                             color: Theme.muted
@@ -233,7 +233,7 @@ Item {
             Text {
                 anchors.centerIn: parent
                 visible: Niri.workspaces.length === 0
-                text: Niri.available ? "WAITING FOR NIRI'S EVENT STREAM" : "PARALLAX REQUIRES A NIRI SESSION"
+                text: Niri.available ? "WAITING FOR NIRI'S EVENT STREAM" : "REQUIRES A NIRI SESSION"
                 color: Theme.muted
                 font.family: Theme.fontMono
                 font.pixelSize: 10

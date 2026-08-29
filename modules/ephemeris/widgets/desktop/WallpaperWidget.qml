@@ -248,7 +248,7 @@ Item {
                     }
                     Text {
                         width: parent.width
-                        text: Environment.wallpaperBusy ? "SHIFTING HORIZON…" : "CLICK TO LAND"
+                        text: Environment.wallpaperBusy ? "APPLYING…" : "CLICK TO APPLY"
                         color: Environment.wallpaperBusy ? Theme.warning : Theme.accent
                         font.family: Theme.fontMono; font.pixelSize: 11; font.weight: Font.Bold; font.letterSpacing: 1
                         horizontalAlignment: Text.AlignHCenter
@@ -276,7 +276,7 @@ Item {
             border.width: 0
             Text { anchors.centerIn: parent; text: "↻"; color: Theme.void_; font.family: Theme.fontDisplay; font.pixelSize: 24; font.weight: Font.Bold }
             MouseArea { id: shufflePointer; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.shuffleOrbit() }
-            ToolTipBubble { text: "SHUFFLE ORBIT"; shown: shufflePointer.containsMouse }
+            ToolTipBubble { text: "SHUFFLE"; shown: shufflePointer.containsMouse }
         }
 
         Column {
@@ -298,7 +298,7 @@ Item {
                     onTextChanged: root.query = text
                     Keys.onReturnPressed: root.runSearch()
                 }
-                Text { visible: root.searchOpen && !searchInput.text.length; anchors.left: searchInput.left; anchors.verticalCenter: parent.verticalCenter; text: "name a world…"; color: Theme.lineBright; font.family: Theme.fontText; font.pixelSize: 12 }
+                Text { visible: root.searchOpen && !searchInput.text.length; anchors.left: searchInput.left; anchors.verticalCenter: parent.verticalCenter; text: "search wallpapers…"; color: Theme.lineBright; font.family: Theme.fontText; font.pixelSize: 12 }
                 Text { visible: root.searchOpen; anchors.right: parent.right; anchors.rightMargin: 17; anchors.verticalCenter: parent.verticalCenter; text: Environment.onlineBusy ? "⌁" : "↵"; color: Theme.cyan; font.family: Theme.fontMono; font.pixelSize: 14 }
                 MouseArea {
                     anchors.left: parent.left; anchors.top: parent.top; anchors.bottom: parent.bottom; width: 50
@@ -336,7 +336,7 @@ Item {
                 border.width: 0
                 Text { anchors.centerIn: parent; text: "⋯"; color: root.optionsOpen ? Theme.void_ : Theme.accent; font.family: Theme.fontDisplay; font.pixelSize: 24; font.weight: Font.Bold }
                 MouseArea { id: optionsPointer; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.optionsOpen = !root.optionsOpen }
-                ToolTipBubble { text: "FLIGHT OPTIONS"; shown: optionsPointer.containsMouse && !root.optionsOpen; anchors.left: undefined; anchors.right: parent.left; anchors.rightMargin: 8 }
+                ToolTipBubble { text: "OPTIONS"; shown: optionsPointer.containsMouse && !root.optionsOpen; anchors.left: undefined; anchors.right: parent.left; anchors.rightMargin: 8 }
             }
             Rectangle {
                 width: 52; height: 52; radius: 26
@@ -360,7 +360,7 @@ Item {
             opacity: root.optionsOpen ? 1 : 0; clip: true; z: 11
             ColumnLayout {
                 anchors.fill: parent; anchors.margins: 32; spacing: 12
-                Text { text: "FLIGHT OPTIONS"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 14; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
+                Text { text: "OPTIONS"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 14; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
                 Text { text: "OUTPUT"; color: Theme.muted; font.family: Theme.fontText; font.pixelSize: 11; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
                 RowLayout {
                     Layout.alignment: Qt.AlignHCenter
@@ -377,7 +377,7 @@ Item {
                         }
                     }
                 }
-                Text { text: "ARRIVAL"; color: Theme.muted; font.family: Theme.fontText; font.pixelSize: 11; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
+                Text { text: "TRANSITION"; color: Theme.muted; font.family: Theme.fontText; font.pixelSize: 11; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
                 RowLayout {
                     Layout.alignment: Qt.AlignHCenter
                     Repeater {

@@ -47,7 +47,7 @@ Item {
                         color: Settings.doNotDisturb ? Theme.warning : Theme.success
                     }
                     Text {
-                        text: Settings.doNotDisturb ? "DND ACTIVE" : "SIGNALS LIVE"
+                        text: Settings.doNotDisturb ? "DND ACTIVE" : "NOTIFICATIONS ON"
                         color: Settings.doNotDisturb ? Theme.warning : Theme.moon
                         font.family: Theme.fontMono
                         font.pixelSize: 10
@@ -113,7 +113,7 @@ Item {
             Text {
                 anchors.centerIn: parent
                 visible: historyList.count === 0
-                text: Settings.doNotDisturb ? "SILENCE ACROSS THE ARRAY" : "NO SIGNALS RECEIVED"
+                text: Settings.doNotDisturb ? "NO SOUND" : "NO NOTIFICATIONS"
                 color: Theme.muted
                 font.family: Theme.fontMono
                 font.pixelSize: 10

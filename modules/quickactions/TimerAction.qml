@@ -64,7 +64,7 @@ Item {
             spacing: 10
             Text {
                 Layout.fillWidth: true
-                text: "CHRONOS"
+                text: "TIMERS"
                 color: Theme.moon
                 font.family: Theme.fontDisplay
                 font.pixelSize: 21
@@ -164,7 +164,7 @@ Item {
                             anchors.centerIn: parent
                             spacing: 1
                             Text { anchors.horizontalCenter: parent.horizontalCenter; text: Timekeeper.timerDisplay; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: root.railMode ? 39 : 48; font.weight: Font.Black; font.letterSpacing: 1 }
-                            Text { anchors.horizontalCenter: parent.horizontalCenter; text: Timekeeper.timerRunning ? "ORBIT IN MOTION" : Timekeeper.timerProgress > 0 ? "ORBIT PAUSED" : "COUNTDOWN READY"; color: Timekeeper.timerRunning ? Theme.success : Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Bold; font.letterSpacing: 1 }
+                            Text { anchors.horizontalCenter: parent.horizontalCenter; text: Timekeeper.timerRunning ? "RUNNING" : Timekeeper.timerProgress > 0 ? "PAUSED" : "COUNTDOWN READY"; color: Timekeeper.timerRunning ? Theme.success : Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Bold; font.letterSpacing: 1 }
                         }
                     }
                     RowLayout {
@@ -197,7 +197,7 @@ Item {
                             anchors.centerIn: parent
                             spacing: 5
                             Text { anchors.horizontalCenter: parent.horizontalCenter; text: Timekeeper.stopwatchDisplay; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: root.railMode ? 36 : 48; font.weight: Font.Black; font.letterSpacing: 1 }
-                            Text { anchors.horizontalCenter: parent.horizontalCenter; text: Timekeeper.stopwatchRunning ? "MEASURING LOCAL TIME" : Timekeeper.stopwatchDisplayMs > 0 ? "CHRONOGRAPH PAUSED" : "CHRONOGRAPH READY"; color: Timekeeper.stopwatchRunning ? Theme.cyan : Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Bold; font.letterSpacing: 1 }
+                            Text { anchors.horizontalCenter: parent.horizontalCenter; text: Timekeeper.stopwatchRunning ? "MEASURING LOCAL TIME" : Timekeeper.stopwatchDisplayMs > 0 ? "STOPWATCH PAUSED" : "STOPWATCH READY"; color: Timekeeper.stopwatchRunning ? Theme.cyan : Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Bold; font.letterSpacing: 1 }
                         }
                     }
                     Rectangle {
@@ -249,7 +249,7 @@ Item {
                             }
                             Text {
                                 anchors.horizontalCenter: parent.horizontalCenter
-                                text: "COMPACT CONTROL // EXPAND FOR CYCLES + STATISTICS"
+                                text: "EXPAND FOR CYCLES AND STATS"
                                 color: Theme.muted
                                 font.family: Theme.fontMono
                                 font.pixelSize: 10
@@ -266,17 +266,17 @@ Item {
                         }
                     }
                     RowLayout { Layout.alignment: Qt.AlignHCenter; spacing: 8
-                        CapsuleButton { label: Focus.running ? "PAUSE ORBIT" : Focus.progress > 0 ? "RESUME ORBIT" : "BEGIN ORBIT"; primary: true; onActivated: Focus.toggle() }
+                        CapsuleButton { label: Focus.running ? "PAUSE" : Focus.progress > 0 ? "RESUME" : "START"; primary: true; onActivated: Focus.toggle() }
                         CapsuleButton { label: "RESET"; onActivated: Focus.reset() }
                         CapsuleButton {
-                            label: "OPEN FULL ORBIT"
+                            label: "OPEN FULL VIEW"
                             onActivated: {
                                 ShellState.hideQuickActions();
                                 ShellState.openEphemeris("focus");
                             }
                         }
                     }
-                    Text { Layout.alignment: Qt.AlignHCenter; text: Focus.completedSessions + " COMPLETED ORBITS"; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.letterSpacing: 1 }
+                    Text { Layout.alignment: Qt.AlignHCenter; text: Focus.completedSessions + " SESSIONS DONE"; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.letterSpacing: 1 }
                 }
             }
         }

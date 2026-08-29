@@ -110,7 +110,7 @@ case "$command_name" in
     quick)
         tab="${2:-timer}"
         if [[ "$tab" != "timer" && "$tab" != "telemetry" ]]; then
-            printf 'Unknown quick-action surface: %s\n' "$tab" >&2
+            printf 'Unknown quick-action: %s\n' "$tab" >&2
             exit 2
         fi
         call_ipc quickactions toggle "$tab"

@@ -44,11 +44,11 @@ printf 'Astralith machine doctor\n'
 printf 'Source: %s\n\n' "$project_root"
 
 printf 'Core runtime\n'
-check_required qs "Quickshell command surface"
+check_required qs "Quickshell runtime"
 check_required niri "Niri compositor and config validator"
-check_required python3 "Astralith service adapters"
-check_required wpctl "PipeWire volume telemetry"
-check_required pactl "PipeWire/Pulse mixer inventory"
+check_required python3 "Astralith helper scripts"
+check_required wpctl "PipeWire volume control"
+check_required pactl "PipeWire/Pulse mixer"
 
 printf '\nDesktop integrations\n'
 check_optional nmcli "Wi-Fi and Ethernet controls"
@@ -66,7 +66,7 @@ check_optional awww "Animated image wallpapers"
 check_optional mpvpaper "Video wallpapers"
 check_optional matugen "Wallpaper-derived palettes"
 check_optional ffmpeg "Video wallpaper palette sampling"
-check_optional cava "Media spectrum"
+check_optional cava "Audio visualizer"
 check_optional easyeffects "Equalizer presets"
 check_optional fc-match "Font resolution diagnostics"
 

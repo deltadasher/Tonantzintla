@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.9.1 - 2026-08-29
+
+- Rewrote every user-facing string in plain language. Status readouts, setting
+  names, empty states, and button labels now say what they do instead of
+  leaning on spaceflight metaphors, so the shell reads correctly to someone
+  who has never seen it before.
+- Renamed the extension entries and their codes after what they control, gave
+  their counters correct singular and plural forms, and let the descriptions
+  wrap to two lines so none of them are cut off.
+- Shortened the settings section names and page headings to match the plain
+  vocabulary used everywhere else.
+
 ## 0.9.0 - 2026-08-29
 
 - Licensed Astralith's project-owned work under GPL-3.0-or-later and restored

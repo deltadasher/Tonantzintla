@@ -115,7 +115,7 @@ Item {
                 anchors.leftMargin: 16
                 anchors.verticalCenter: parent.verticalCenter
                 visible: searchInput.text.length === 0
-                text: "Search the catalog…"
+                text: "Search apps…"
                 color: Theme.lineBright
                 font.family: Theme.fontMono
                 font.pixelSize: 11

@@ -46,7 +46,7 @@ QtObject {
     readonly property real batteryRate: batteryAvailable
         ? Math.round(Math.abs(battery.changeRate) * 10) / 10 : 0
     readonly property string batteryModel: batteryAvailable && battery.model.length > 0
-        ? battery.model : "MOBILE REACTOR"
+        ? battery.model : "BATTERY"
 
     property bool powerProfileAvailable: false
     property string powerProfile: "balanced"
@@ -79,7 +79,7 @@ QtObject {
         if (!brightnessAvailable)
             return;
         Osd.show("brightness", Math.max(0, Math.min(100, brightnessPercent + delta)),
-            "DISPLAY LUMINANCE", false);
+            "BRIGHTNESS", false);
         brightnessWrite.command = ["brightnessctl", "set",
             Math.abs(delta) + "%" + (delta >= 0 ? "+" : "-")];
         brightnessWrite.running = true;

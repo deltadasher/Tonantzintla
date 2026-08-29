@@ -48,7 +48,7 @@ Item {
                     }
                     Text {
                         text: DeviceState.powerProfileAvailable
-                            ? DeviceState.powerProfile.toUpperCase() : "PROFILE LINK OFFLINE"
+                            ? DeviceState.powerProfile.toUpperCase() : "UNAVAILABLE"
                         color: DeviceState.powerProfileAvailable ? Theme.moon : Theme.warning
                         font.family: Theme.fontMono
                         font.pixelSize: 10
@@ -206,8 +206,8 @@ Item {
                             Text {
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 text: DeviceState.batteryAvailable
-                                    ? DeviceState.batteryCharging ? "CHARGING" : "CELL LEVEL"
-                                    : "DESKTOP CORE"
+                                    ? DeviceState.batteryCharging ? "CHARGING" : "CHARGE"
+                                    : "DESKTOP"
                                 color: Theme.muted
                                 font.family: Theme.fontMono
                                 font.pixelSize: 10
@@ -246,7 +246,7 @@ Item {
                         model: [
                             { "code": "HEALTH", "value": DeviceState.batteryHealthPercent >= 0 ? DeviceState.batteryHealthPercent + "%" : "NO SENSOR", "detail": "DESIGN CAPACITY" },
                             { "code": "ENERGY", "value": DeviceState.batteryAvailable ? DeviceState.batteryEnergy + " WH" : "EXTERNAL", "detail": DeviceState.batteryAvailable ? DeviceState.batteryCapacity + " WH FULL" : "WALL POWER" },
-                            { "code": "RATE", "value": DeviceState.batteryAvailable ? DeviceState.batteryRate + " W" : "NOMINAL", "detail": DeviceState.batteryCharging ? "INPUT FLOW" : "SYSTEM DRAW" },
+                            { "code": "RATE", "value": DeviceState.batteryAvailable ? DeviceState.batteryRate + " W" : "NOMINAL", "detail": DeviceState.batteryCharging ? "INPUT FLOW" : "POWER DRAW" },
                             { "code": "STATE", "value": DeviceState.batteryLow ? "LOW POWER" : DeviceState.batteryCharging ? "CHARGING" : DeviceState.batteryAvailable ? "ON CELL" : "DESKTOP", "detail": DeviceState.batteryTimeLabel }
                         ]
 
@@ -275,7 +275,7 @@ Item {
                 Item { Layout.fillHeight: true }
 
                 Text {
-                    text: "POWER FLIGHT MODE"
+                    text: "POWER MODE"
                     color: Theme.muted
                     font.family: Theme.fontMono
                     font.pixelSize: 10
@@ -343,7 +343,7 @@ Item {
                     Layout.fillWidth: true
                     text: DeviceState.powerProfileAvailable
                         ? "POWER-PROFILES-DAEMON ONLINE // CHANGES APPLY IMMEDIATELY"
-                        : "POWER PROFILE SERVICE UNAVAILABLE // REACTOR TELEMETRY REMAINS READ-ONLY"
+                        : "POWER PROFILES UNAVAILABLE // BATTERY INFO IS READ-ONLY"
                     color: DeviceState.powerProfileAvailable ? Theme.success : Theme.warning
                     font.family: Theme.fontMono
                     font.pixelSize: 10

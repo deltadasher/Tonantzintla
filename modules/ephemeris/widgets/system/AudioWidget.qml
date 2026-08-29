@@ -16,8 +16,8 @@ Item {
     readonly property bool masterIsInput: activeTab === "inputs"
     readonly property real masterValue: masterIsInput ? Audio.inputPercent : Audio.percent
     readonly property bool masterMuted: masterIsInput ? Audio.inputMuted : Audio.muted
-    readonly property string masterName: masterIsInput ? "MASTER MICROPHONE"
-        : activeTab === "apps" ? "APPLICATION MIX BUS" : Audio.defaultOutputName
+    readonly property string masterName: masterIsInput ? "MICROPHONE"
+        : activeTab === "apps" ? "APP VOLUME" : Audio.defaultOutputName
     readonly property string masterDetail: masterIsInput
         ? "Default PipeWire input gain" : Audio.defaultOutputDetail
 
@@ -113,7 +113,7 @@ Item {
                         Layout.fillWidth: true
                         Text {
                             Layout.fillWidth: true
-                            text: root.masterIsInput ? "INPUT GAIN" : "OUTPUT VOLUME"
+                            text: root.masterIsInput ? "MIC LEVEL" : "VOLUME"
                             color: root.activeColor
                             font.family: Theme.fontMono
                             font.pixelSize: 10
@@ -151,7 +151,7 @@ Item {
                         Text {
                             id: muteLabel
                             anchors.centerIn: parent
-                            text: root.masterMuted ? "RESTORE SIGNAL" : "MUTE SIGNAL"
+                            text: root.masterMuted ? "UNMUTE" : "MUTE"
                             color: root.masterMuted ? Theme.success : Theme.muted
                             font.family: Theme.fontMono
                             font.pixelSize: 11
@@ -214,8 +214,8 @@ Item {
                     : Audio.mixerAvailable ? "NO AUDIO NODES DETECTED"
                     : "PIPEWIRE LINK OFFLINE"
                 detail: Spectrum.available
-                    ? "ROOM RESPONSE REMAINS ACTIVE"
-                    : "AMBIENT SPECTRUM // SIGNAL STANDBY"
+                    ? "VISUALIZER ACTIVE"
+                    : "NO AUDIO PLAYING"
             }
 
             delegate: Rectangle {

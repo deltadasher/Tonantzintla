@@ -30,9 +30,9 @@ Item {
             Layout.fillWidth: true
             ColumnLayout {
                 Layout.fillWidth: true; spacing: 2
-                Text { text: "LINK ARRAY"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 24; font.weight: Font.Bold }
+                Text { text: "NETWORK"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 24; font.weight: Font.Bold }
                 Text {
-                    text: NetState.connected ? NetState.kind + " // " + NetState.label : "NO ACTIVE UPLINK"
+                    text: NetState.connected ? NetState.kind + " // " + NetState.label : "NOT CONNECTED"
                     color: NetState.connected ? Theme.success : Theme.warning
                     font.family: Theme.fontText; font.pixelSize: 11; font.weight: Font.DemiBold
                 }
@@ -44,7 +44,7 @@ Item {
                 border.width: 0
                 Text {
                     anchors.centerIn: parent
-                    text: NetState.loading ? "SCANNING…" : "REFRESH ARRAY"
+                    text: NetState.loading ? "SCANNING…" : "REFRESH"
                     color: scanPointer.containsMouse ? Theme.void_ : NetState.loading ? Theme.warning : Theme.moon
                     font.family: Theme.fontText; font.pixelSize: 10; font.weight: Font.Bold
                 }
@@ -75,7 +75,7 @@ Item {
                     Text {
                         id: radioLabel
                         text: root.activeTab === "bluetooth" ? "BLUETOOTH"
-                            : root.activeTab === "wifi" ? "WIFI RADIO" : "ETHERNET"
+                            : root.activeTab === "wifi" ? "WI-FI" : "ETHERNET"
                         color: parent.parent.radioOn ? Theme.void_ : Theme.moon; font.family: Theme.fontText; font.pixelSize: 10; font.weight: Font.Bold
                     }
                 }
@@ -137,7 +137,7 @@ Item {
                 anchors.fill: parent; anchors.leftMargin: 13; anchors.rightMargin: 10; spacing: 9
                 ColumnLayout {
                     Layout.preferredWidth: 150; spacing: 1
-                    Text { text: "SECURE ORBIT"; color: Theme.accent; font.family: Theme.fontText; font.pixelSize: 10; font.weight: Font.Bold }
+                    Text { text: "SECURED"; color: Theme.accent; font.family: Theme.fontText; font.pixelSize: 10; font.weight: Font.Bold }
                     Text { Layout.fillWidth: true; text: root.pendingSsid; color: Theme.moon; font.family: Theme.fontText; font.pixelSize: 12; font.weight: Font.DemiBold; elide: Text.ElideRight }
                 }
                 Rectangle {
@@ -198,14 +198,14 @@ Item {
                     ColumnLayout {
                         spacing: 1
                         Text {
-                            text: "UPLINK OBSERVATORY"
+                            text: "NETWORK"
                             color: Theme.moon
                             font.family: Theme.fontDisplay
                             font.pixelSize: 17
                             font.weight: Font.Bold
                         }
                         Text {
-                            text: NetState.connected ? "RELAY LOCKED" : "SEARCHING THE LOCAL SKY"
+                            text: NetState.connected ? "PASSWORD REQUIRED" : "LOADING FORECAST"
                             color: NetState.connected ? Theme.success : Theme.warning
                             font.family: Theme.fontText
                             font.pixelSize: 11
@@ -300,7 +300,7 @@ Item {
 
                     Text {
                         Layout.fillWidth: true
-                        text: NetState.connected ? NetState.label : "NO ACTIVE RELAY"
+                        text: NetState.connected ? NetState.label : "NOT CONNECTED"
                         color: Theme.moon
                         font.family: Theme.fontText
                         font.pixelSize: 15
@@ -310,7 +310,7 @@ Item {
                     }
                     Text {
                         Layout.fillWidth: true
-                        text: NetState.wifiNetworks.length + " SIGNALS IN LOCAL CONSTELLATION"
+                        text: NetState.wifiNetworks.length + " NOTIFICATIONS"
                         color: Theme.muted
                         font.family: Theme.fontText
                         font.pixelSize: 11
@@ -379,7 +379,7 @@ Item {
                                 }
                                 Text {
                                     visible: wifiRow.modelData.saved
-                                    text: "KNOWN RELAY"
+                                    text: "SAVED"
                                     color: Theme.violet
                                     font.family: Theme.fontText
                                     font.pixelSize: 10
@@ -438,9 +438,9 @@ Item {
                 Text {
                     anchors.centerIn: parent
                     visible: wifiList.count === 0
-                    text: NetState.loading ? "SCANNING THE LOCAL SKY…"
-                        : !NetState.wifiEnabled ? "WIFI RADIO IS OFFLINE"
-                        : "NO RELAYS DETECTED"
+                    text: NetState.loading ? "LOADING FORECAST…"
+                        : !NetState.wifiEnabled ? "WI-FI IS OFF"
+                        : "NO NETWORKS FOUND"
                     color: Theme.muted
                     font.family: Theme.fontText
                     font.pixelSize: 11
@@ -508,9 +508,9 @@ Item {
             visible: (root.activeTab === "bluetooth" && bluetoothList.count === 0)
                 || (root.activeTab === "ethernet" && ethernetList.count === 0)
             Layout.fillWidth: true; Layout.fillHeight: true
-            text: NetState.loading ? "SCANNING THE LINK ARRAY…"
-                : root.activeTab === "wifi" && !NetState.wifiEnabled ? "WIFI RADIO IS OFFLINE"
-                : root.activeTab === "bluetooth" && !DeviceState.bluetoothEnabled ? "BLUETOOTH ARRAY IS OFFLINE"
+            text: NetState.loading ? "SCANNING…"
+                : root.activeTab === "wifi" && !NetState.wifiEnabled ? "WI-FI IS OFF"
+                : root.activeTab === "bluetooth" && !DeviceState.bluetoothEnabled ? "BLUETOOTH IS OFF"
                 : "NO DEVICES DETECTED"
             horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
             color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 11; font.letterSpacing: 0.8

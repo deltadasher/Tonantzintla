@@ -7,8 +7,8 @@ Item {
 
     property color accentColor: Theme.accent
     property color secondaryColor: Theme.cyan
-    property string title: Spectrum.available ? "LIVE ROOM RESPONSE" : "AMBIENT SIGNAL FIELD"
-    property string detail: Spectrum.available ? "CAVA // 28 CHANNEL FFT" : "WAITING FOR AN ACTIVE MEDIA STREAM"
+    property string title: Spectrum.available ? "LIVE ROOM RESPONSE" : "NO AUDIO"
+    property string detail: Spectrum.available ? "CAVA // 28 CHANNEL FFT" : "WAITING FOR SOMETHING TO PLAY"
     property real phase: 0
 
     NumberAnimation on phase {
