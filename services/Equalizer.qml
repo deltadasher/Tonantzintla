@@ -11,11 +11,7 @@ QtObject {
     property bool available: false
     property bool busy: false
     property string error: ""
-    readonly property string helperPath: {
-        const value = Qt.resolvedUrl("../scripts/equalizer-state.py").toString();
-        return value.indexOf("file://") === 0
-            ? decodeURIComponent(value.substring(7)) : value;
-    }
+    readonly property string helperPath: Environment.script("equalizer-state.py")
 
     function consume(text) {
         try {

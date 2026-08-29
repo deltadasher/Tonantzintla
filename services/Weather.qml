@@ -8,17 +8,15 @@ import ".."
 QtObject {
     id: root
 
-    readonly property string helperPath: {
-        const value = Qt.resolvedUrl("../scripts/weather-state.py").toString();
-        return value.indexOf("file://") === 0
-            ? decodeURIComponent(value.substring(7)) : value;
-    }
+    readonly property string helperPath: Environment.script("weather-state.py")
     property bool ready: false
     property bool loading: false
     property bool available: false
     property string status: Settings.weatherEnabled ? "WAITING FOR FORECAST" : "WEATHER DISABLED"
     property string location: Settings.weatherLocation
     property string country: ""
+    property real latitude: NaN
+    property real longitude: NaN
     property string unitSymbol: Settings.temperatureUnit === "fahrenheit" ? "°F" : "°C"
     property string windUnit: Settings.temperatureUnit === "fahrenheit" ? "mph" : "km/h"
     property string timezone: ""
@@ -32,6 +30,8 @@ QtObject {
         status = data.status || (available ? "FORECAST SYNCHRONIZED" : "FORECAST UNAVAILABLE");
         location = data.location || Settings.weatherLocation;
         country = data.country || "";
+        latitude = isFinite(Number(data.latitude)) ? Number(data.latitude) : NaN;
+        longitude = isFinite(Number(data.longitude)) ? Number(data.longitude) : NaN;
         unitSymbol = data.unit_symbol || unitSymbol;
         windUnit = data.wind_unit || windUnit;
         timezone = data.timezone || "";

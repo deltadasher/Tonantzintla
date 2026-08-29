@@ -13,29 +13,59 @@ QtObject {
     property bool muted: false
     property real inputVolume: 0
     property bool inputMuted: false
-    property bool mixerAvailable: false
-    property var outputs: []
-    property var inputs: []
-    property var apps: []
-    property bool mixerRefreshPending: false
     readonly property var sinkNode: Pipewire.defaultAudioSink
     readonly property var sourceNode: Pipewire.defaultAudioSource
     readonly property bool mixerActive: ShellState.ephemerisVisible
         && (ShellState.ephemerisTab === "audio" || ShellState.ephemerisTab === "media")
-    readonly property var defaultOutput: {
-        const selected = outputs.find(function(node) { return node.isDefault; });
-        return selected || (outputs.length > 0 ? outputs[0] : null);
-    }
-    readonly property string defaultOutputName: defaultOutput && defaultOutput.name
-        ? defaultOutput.name : "Default output"
-    readonly property string defaultOutputDetail: defaultOutput && defaultOutput.description
-        ? defaultOutput.description : "PipeWire audio path"
+    readonly property bool mixerAvailable: Pipewire.ready
+
+    // The mixer reads PipeWire's node registry directly; volume and mute
+    // state stay live through the object tracker below, with no helper
+    // process or polling involved.
+    readonly property var outputs: Pipewire.nodes.values.filter(function(node) {
+        return node.isSink && !node.isStream && node.audio !== null;
+    })
+    readonly property var inputs: Pipewire.nodes.values.filter(function(node) {
+        return !node.isSink && !node.isStream && node.audio !== null;
+    })
+    readonly property var apps: Pipewire.nodes.values.filter(function(node) {
+        return node.isStream && node.audio !== null;
+    })
+
+    readonly property string defaultOutputName: sinkNode ? nodeTitle(sinkNode) : "Default output"
+    readonly property string defaultOutputDetail: sinkNode && sinkNode.description
+        ? sinkNode.description : "PipeWire audio path"
     readonly property int percent: Math.round(volume * 100)
     readonly property int inputPercent: Math.round(inputVolume * 100)
-    readonly property string helperPath: {
-        const value = Qt.resolvedUrl("../scripts/audio-state.py").toString();
-        return value.indexOf("file://") === 0
-            ? decodeURIComponent(value.substring(7)) : value;
+
+    function nodeTitle(node) {
+        if (!node)
+            return "Unknown node";
+        if (node.isStream && node.properties && node.properties["application.name"])
+            return String(node.properties["application.name"]);
+        return node.nickname || node.description || node.name || "Unknown node";
+    }
+
+    function nodeSubtitle(node) {
+        if (!node)
+            return "";
+        if (node.isStream && node.properties && node.properties["media.name"])
+            return String(node.properties["media.name"]);
+        return node.description !== nodeTitle(node) && node.description
+            ? node.description : node.name || "";
+    }
+
+    function nodePercent(node) {
+        return node && node.audio ? Math.round(node.audio.volume * 100) : 0;
+    }
+
+    function nodeMuted(node) {
+        return node && node.audio ? node.audio.muted : false;
+    }
+
+    function isDefaultNode(node) {
+        return node !== null
+            && (node === Pipewire.defaultAudioSink || node === Pipewire.defaultAudioSource);
     }
 
     function refreshLevels() {
@@ -51,22 +81,6 @@ QtObject {
 
     function refresh() {
         refreshLevels();
-        if (mixerActive)
-            refreshMixer();
-    }
-
-    function refreshMixer() {
-        if (mixerProcess.running) {
-            mixerRefreshPending = true;
-            return;
-        }
-        mixerProcess.running = true;
-    }
-
-    function scheduleRefresh() {
-        refreshLevels();
-        if (mixerActive)
-            mixerRefreshTimer.restart();
     }
 
     function runFallback(command) {
@@ -84,7 +98,7 @@ QtObject {
         else
             runFallback(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@",
                 Math.abs(delta) + "%" + (delta >= 0 ? "+" : "-")]);
-        scheduleRefresh();
+        refreshLevels();
     }
 
     function toggleMute() {
@@ -93,7 +107,7 @@ QtObject {
             sinkNode.audio.muted = !sinkNode.audio.muted;
         else
             runFallback(["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"]);
-        scheduleRefresh();
+        refreshLevels();
     }
 
     function toggleMicrophone() {
@@ -103,7 +117,7 @@ QtObject {
             sourceNode.audio.muted = !sourceNode.audio.muted;
         else
             runFallback(["wpctl", "set-mute", "@DEFAULT_AUDIO_SOURCE@", "toggle"]);
-        scheduleRefresh();
+        refreshLevels();
     }
 
     function setVolume(percent) {
@@ -113,7 +127,7 @@ QtObject {
             sinkNode.audio.volume = target / 100;
         else
             runFallback(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", target + "%"]);
-        scheduleRefresh();
+        refreshLevels();
     }
 
     function setMicrophoneVolume(percent) {
@@ -123,46 +137,48 @@ QtObject {
             sourceNode.audio.volume = target / 100;
         else
             runFallback(["wpctl", "set-volume", "@DEFAULT_AUDIO_SOURCE@", target + "%"]);
-        scheduleRefresh();
+        refreshLevels();
     }
 
-    function pactlOperation(kind, action) {
-        if (kind === "outputs")
-            return "set-sink-" + action;
-        if (kind === "inputs")
-            return "set-source-" + action;
-        return "set-sink-input-" + action;
-    }
-
-    function setNodeVolume(kind, id, percent) {
-        if (!id)
+    function setNodeVolume(node, percent) {
+        if (!node || !node.audio)
             return;
         const target = Math.max(0, Math.min(150, Math.round(percent)));
-        Quickshell.execDetached(["pactl", pactlOperation(kind, "volume"), String(id), target + "%"]);
-        Osd.show(kind === "inputs" ? "microphone" : "volume", target,
-            kind === "apps" ? "APPLICATION STREAM" : kind === "inputs" ? "INPUT GAIN" : "OUTPUT VOLUME", false);
-        scheduleRefresh();
+        node.audio.volume = target / 100;
+        Osd.show(!node.isStream && !node.isSink ? "microphone" : "volume", target,
+            node.isStream ? "APPLICATION STREAM"
+                : node.isSink ? "OUTPUT VOLUME" : "INPUT GAIN", false);
+        refreshLevels();
     }
 
-    function toggleNodeMute(kind, id, currentlyMuted) {
-        if (!id)
+    function toggleNodeMute(node) {
+        if (!node || !node.audio)
             return;
-        Quickshell.execDetached(["pactl", pactlOperation(kind, "mute"), String(id), "toggle"]);
-        Osd.show(kind === "inputs" ? "microphone" : "volume", 0,
-            currentlyMuted ? "STREAM LIVE" : "STREAM MUTED", !currentlyMuted);
-        scheduleRefresh();
+        const nowMuted = !node.audio.muted;
+        node.audio.muted = nowMuted;
+        Osd.show(!node.isStream && !node.isSink ? "microphone" : "volume", 0,
+            nowMuted ? "STREAM MUTED" : "STREAM LIVE", nowMuted);
+        refreshLevels();
     }
 
-    function setDefaultNode(kind, nodeName) {
-        if (!nodeName || kind === "apps")
+    function setDefaultNode(node) {
+        if (!node || node.isStream)
             return;
-        Quickshell.execDetached(["pactl",
-            kind === "inputs" ? "set-default-source" : "set-default-sink", nodeName]);
-        scheduleRefresh();
+        if (node.isSink)
+            Pipewire.preferredDefaultAudioSink = node;
+        else
+            Pipewire.preferredDefaultAudioSource = node;
     }
 
     property PwObjectTracker audioTracker: PwObjectTracker {
         objects: [root.sinkNode, root.sourceNode]
+    }
+
+    // Bind the full node set only while a mixer surface is on screen, so the
+    // shell is not holding every stream's state when nothing displays it.
+    property PwObjectTracker mixerTracker: PwObjectTracker {
+        objects: root.mixerActive
+            ? root.outputs.concat(root.inputs, root.apps) : []
     }
 
     property Connections pipewireConnections: Connections {
@@ -184,45 +200,7 @@ QtObject {
         function onMutedChanged() { root.refreshLevels(); }
     }
 
-    property Process mixerProcess: Process {
-        command: ["python3", root.helperPath]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    const data = JSON.parse(text);
-                    root.mixerAvailable = data.available === true;
-                    root.outputs = data.outputs || [];
-                    root.inputs = data.inputs || [];
-                    root.apps = data.apps || [];
-                } catch (error) {
-                    root.mixerAvailable = false;
-                    console.warn("[Astralith/Audio] Mixer decode failed:", error);
-                }
-            }
-        }
-        onRunningChanged: {
-            if (!running && root.mixerRefreshPending) {
-                root.mixerRefreshPending = false;
-                root.mixerRefreshTimer.restart();
-            }
-        }
-    }
-
     property Process actionProcess: Process {}
-
-    property Timer mixerRefreshTimer: Timer {
-        interval: 260
-        onTriggered: root.refreshMixer()
-    }
-
-    property Timer mixerPollTimer: Timer {
-        interval: 5000
-        running: root.mixerActive
-        repeat: true
-        onTriggered: root.refreshMixer()
-    }
-
-    onMixerActiveChanged: if (mixerActive) refreshMixer()
 
     Component.onCompleted: refreshLevels()
 }

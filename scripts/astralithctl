@@ -48,6 +48,37 @@ require_argument() {
     fi
 }
 
+active_astralith_instance() {
+    qs list --all 2>/dev/null | awk '
+        /^Instance [^:]+:$/ {
+            instance = $2
+            sub(/:$/, "", instance)
+        }
+        /^[[:space:]]+Config path: .*\/astralith\/shell\.qml$/ {
+            selected = instance
+        }
+        END {
+            if (selected != "")
+                print selected
+        }
+    '
+}
+
+call_ipc() {
+    if qs -p "$project_root" list 2>/dev/null | grep -q '^Instance '; then
+        exec qs -p "$project_root" ipc call "$@"
+    fi
+
+    local instance
+    instance="$(active_astralith_instance)"
+    if [[ -n "$instance" ]]; then
+        exec qs ipc -i "$instance" call "$@"
+    fi
+
+    printf 'Astralith is not running. Start it with: astralithctl start\n' >&2
+    exit 1
+}
+
 case "$command_name" in
     run)
         exec qs -p "$project_root"
@@ -71,10 +102,10 @@ case "$command_name" in
         ;;
     open|toggle)
         require_argument "$command_name" "${2:-}"
-        exec qs -p "$project_root" ipc call ephemeris "$command_name" "$2"
+        call_ipc ephemeris "$command_name" "$2"
         ;;
     close)
-        exec qs -p "$project_root" ipc call ephemeris close
+        call_ipc ephemeris close
         ;;
     quick)
         tab="${2:-timer}"
@@ -82,20 +113,20 @@ case "$command_name" in
             printf 'Unknown quick-action surface: %s\n' "$tab" >&2
             exit 2
         fi
-        exec qs -p "$project_root" ipc call quickactions toggle "$tab"
+        call_ipc quickactions toggle "$tab"
         ;;
     lock)
         exec qs -d -n -p "$project_root/umbra-lock.qml"
         ;;
     preview-lock)
-        exec qs -p "$project_root" ipc call umbra preview
+        call_ipc umbra preview
         ;;
     greeter)
         action="${2:-help}"
         exec "$script_dir/umbra-greeter-portable" "$action" "${3:-auto}"
         ;;
     reveal-lock)
-        exec qs -p "$project_root" ipc call umbra reveal
+        call_ipc umbra reveal
         ;;
     capture)
         require_argument "$command_name" "${2:-}"

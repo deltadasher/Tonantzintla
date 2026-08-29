@@ -11,6 +11,29 @@ Item {
 
     property real sectionReveal: 1
 
+    // Uniform toggle sections are driven by data rows: {key, label, detail}
+    // plus an optional enabledKey gating the row on another setting.
+    component ToggleGrid: GridLayout {
+        id: toggleGrid
+        property var rows: []
+        columns: 2
+        columnSpacing: 10
+        rowSpacing: 10
+
+        Repeater {
+            model: toggleGrid.rows
+            SettingToggle {
+                required property var modelData
+                Layout.fillWidth: true
+                enabled: !modelData.enabledKey || Settings[modelData.enabledKey] === true
+                label: modelData.label
+                detail: modelData.detail
+                checked: Settings[modelData.key] === true
+                onToggled: Settings[modelData.key] = !Settings[modelData.key]
+            }
+        }
+    }
+
     Connections {
         target: ShellState
         function onSettingsSectionChanged() {
@@ -331,33 +354,13 @@ Item {
                 onSelected: function(value) { Settings.atmosphereStyle = value; }
             }
 
-            GridLayout {
+            ToggleGrid {
                 Layout.fillWidth: true
-                columns: 2
-                columnSpacing: 10
-                rowSpacing: 10
-
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Motion systems"
-                    detail: "Enable transitions and interface choreography"
-                    checked: Settings.motion
-                    onToggled: Settings.motion = !Settings.motion
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Stellar field"
-                    detail: "Animate stars behind Ephemeris"
-                    checked: Settings.animateStars
-                    onToggled: Settings.animateStars = !Settings.animateStars
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Compact density"
-                    detail: "Reduce the vertical aperture footprint"
-                    checked: Settings.compact
-                    onToggled: Settings.compact = !Settings.compact
-                }
+                rows: [
+                    { "key": "motion", "label": "Motion systems", "detail": "Enable transitions and interface choreography" },
+                    { "key": "animateStars", "label": "Stellar field", "detail": "Animate stars behind Ephemeris" },
+                    { "key": "compact", "label": "Compact density", "detail": "Reduce the vertical aperture footprint" }
+                ]
             }
             Item { Layout.preferredHeight: 8 }
         }
@@ -461,131 +464,27 @@ Item {
                 }
             }
 
-            GridLayout {
+            ToggleGrid {
                 Layout.fillWidth: true
-                columns: 2
-                columnSpacing: 10
-                rowSpacing: 10
-
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Launcher control"
-                    detail: "Show the catalog control at far left"
-                    checked: Settings.showLauncherButton
-                    onToggled: Settings.showLauncherButton = !Settings.showLauncherButton
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Settings control"
-                    detail: "Show direct configuration access"
-                    checked: Settings.showSettingsButton
-                    onToggled: Settings.showSettingsButton = !Settings.showSettingsButton
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Workspace array"
-                    detail: "Show Niri workspaces for this output"
-                    checked: Settings.showWorkspaces
-                    onToggled: Settings.showWorkspaces = !Settings.showWorkspaces
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Focused signal"
-                    detail: "Show the active app and window title"
-                    checked: Settings.showFocusedWindow
-                    onToggled: Settings.showFocusedWindow = !Settings.showFocusedWindow
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Media capsule"
-                    detail: "MPRIS artwork, title, and playback control"
-                    checked: Settings.showMedia
-                    onToggled: Settings.showMedia = !Settings.showMedia
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "System tray"
-                    detail: "Expose StatusNotifier applications"
-                    checked: Settings.showTray
-                    onToggled: Settings.showTray = !Settings.showTray
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Playback progress"
-                    detail: "Show the live MPRIS timeline"
-                    checked: Settings.showMediaProgress
-                    onToggled: Settings.showMediaProgress = !Settings.showMediaProgress
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Playback time"
-                    detail: "Show elapsed and total media time"
-                    checked: Settings.showMediaTime
-                    onToggled: Settings.showMediaTime = !Settings.showMediaTime
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "System telemetry"
-                    detail: "CPU and memory readings"
-                    checked: Settings.showSystemStats
-                    onToggled: Settings.showSystemStats = !Settings.showSystemStats
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Audio telemetry"
-                    detail: "Volume with click and scroll controls"
-                    checked: Settings.showAudio
-                    onToggled: Settings.showAudio = !Settings.showAudio
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Network label"
-                    detail: "Show active connection name"
-                    checked: Settings.showNetworkLabel
-                    onToggled: Settings.showNetworkLabel = !Settings.showNetworkLabel
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Bluetooth channel"
-                    detail: "Adapter state and connected-device count"
-                    checked: Settings.showBluetooth
-                    onToggled: Settings.showBluetooth = !Settings.showBluetooth
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Brightness channel"
-                    detail: "Backlight value with wheel control"
-                    checked: Settings.showBrightness
-                    onToggled: Settings.showBrightness = !Settings.showBrightness
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Battery channel"
-                    detail: "UPower charge state and low-power warning"
-                    checked: Settings.showBattery
-                    onToggled: Settings.showBattery = !Settings.showBattery
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Microphone channel"
-                    detail: "Input level and instant mute control"
-                    checked: Settings.showMicrophone
-                    onToggled: Settings.showMicrophone = !Settings.showMicrophone
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Mission seconds"
-                    detail: "Use second-level clock precision"
-                    checked: Settings.showSeconds
-                    onToggled: Settings.showSeconds = !Settings.showSeconds
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Date channel"
-                    detail: "Show the calendar under mission time"
-                    checked: Settings.showDate
-                    onToggled: Settings.showDate = !Settings.showDate
-                }
+                rows: [
+                    { "key": "showLauncherButton", "label": "Launcher control", "detail": "Show the catalog control at far left" },
+                    { "key": "showSettingsButton", "label": "Settings control", "detail": "Show direct configuration access" },
+                    { "key": "showWorkspaces", "label": "Workspace array", "detail": "Show Niri workspaces for this output" },
+                    { "key": "showFocusedWindow", "label": "Focused signal", "detail": "Show the active app and window title" },
+                    { "key": "showMedia", "label": "Media capsule", "detail": "MPRIS artwork, title, and playback control" },
+                    { "key": "showTray", "label": "System tray", "detail": "Expose StatusNotifier applications" },
+                    { "key": "showMediaProgress", "label": "Playback progress", "detail": "Show the live MPRIS timeline" },
+                    { "key": "showMediaTime", "label": "Playback time", "detail": "Show elapsed and total media time" },
+                    { "key": "showSystemStats", "label": "System telemetry", "detail": "CPU and memory readings" },
+                    { "key": "showAudio", "label": "Audio telemetry", "detail": "Volume with click and scroll controls" },
+                    { "key": "showNetworkLabel", "label": "Network label", "detail": "Show active connection name" },
+                    { "key": "showBluetooth", "label": "Bluetooth channel", "detail": "Adapter state and connected-device count" },
+                    { "key": "showBrightness", "label": "Brightness channel", "detail": "Backlight value with wheel control" },
+                    { "key": "showBattery", "label": "Battery channel", "detail": "UPower charge state and low-power warning" },
+                    { "key": "showMicrophone", "label": "Microphone channel", "detail": "Input level and instant mute control" },
+                    { "key": "showSeconds", "label": "Mission seconds", "detail": "Use second-level clock precision" },
+                    { "key": "showDate", "label": "Date channel", "detail": "Show the calendar under mission time" }
+                ]
             }
             Item { Layout.preferredHeight: 8 }
         }
@@ -631,26 +530,12 @@ Item {
                 onSelected: function(value) { Settings.wallpaperColumns = value; }
             }
 
-            GridLayout {
+            ToggleGrid {
                 Layout.fillWidth: true
-                columns: 2
-                columnSpacing: 10
-                rowSpacing: 10
-
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Navigation legend"
-                    detail: "Show keyboard hints in the catalog header"
-                    checked: Settings.showLauncherHints
-                    onToggled: Settings.showLauncherHints = !Settings.showLauncherHints
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Application metadata"
-                    detail: "Show descriptions below application names"
-                    checked: Settings.showAppDescriptions
-                    onToggled: Settings.showAppDescriptions = !Settings.showAppDescriptions
-                }
+                rows: [
+                    { "key": "showLauncherHints", "label": "Navigation legend", "detail": "Show keyboard hints in the catalog header" },
+                    { "key": "showAppDescriptions", "label": "Application metadata", "detail": "Show descriptions below application names" }
+                ]
             }
 
             Rectangle {
@@ -730,48 +615,15 @@ Item {
                 }
             }
 
-            GridLayout {
+            ToggleGrid {
                 Layout.fillWidth: true
-                columns: 2
-                columnSpacing: 10
-                rowSpacing: 10
-
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Fluid orbital motion"
-                    detail: "Animate the star field, satellites, and authentication energy"
-                    checked: Settings.umbraMotion
-                    onToggled: Settings.umbraMotion = !Settings.umbraMotion
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Active wallpaper"
-                    detail: "Use the current image wall behind the session veil"
-                    checked: Settings.umbraUseWallpaper
-                    onToggled: Settings.umbraUseWallpaper = !Settings.umbraUseWallpaper
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    enabled: Settings.umbraUseWallpaper
-                    label: "Diffuse optics"
-                    detail: "Blur and desaturate the wallpaper under secure telemetry"
-                    checked: Settings.umbraBlurWallpaper
-                    onToggled: Settings.umbraBlurWallpaper = !Settings.umbraBlurWallpaper
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Resonance controls"
-                    detail: "Show safe MPRIS artwork and playback controls"
-                    checked: Settings.umbraShowMedia
-                    onToggled: Settings.umbraShowMedia = !Settings.umbraShowMedia
-                }
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Weather telemetry"
-                    detail: "Show the cached temperature beside mission time"
-                    checked: Settings.umbraShowWeather
-                    onToggled: Settings.umbraShowWeather = !Settings.umbraShowWeather
-                }
+                rows: [
+                    { "key": "umbraMotion", "label": "Fluid orbital motion", "detail": "Animate the star field, satellites, and authentication energy" },
+                    { "key": "umbraUseWallpaper", "label": "Active wallpaper", "detail": "Use the current image wall behind the session veil" },
+                    { "key": "umbraBlurWallpaper", "enabledKey": "umbraUseWallpaper", "label": "Diffuse optics", "detail": "Blur and desaturate the wallpaper under secure telemetry" },
+                    { "key": "umbraShowMedia", "label": "Resonance controls", "detail": "Show safe MPRIS artwork and playback controls" },
+                    { "key": "umbraShowWeather", "label": "Weather telemetry", "detail": "Show the cached temperature beside mission time" }
+                ]
             }
 
             SettingTextField {

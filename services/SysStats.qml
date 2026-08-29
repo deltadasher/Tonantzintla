@@ -8,11 +8,7 @@ import ".."
 QtObject {
     id: root
 
-    readonly property string helperPath: {
-        const value = Qt.resolvedUrl("../scripts/system-telemetry.py").toString();
-        return value.indexOf("file://") === 0
-            ? decodeURIComponent(value.substring(7)) : value;
-    }
+    readonly property string helperPath: Environment.script("system-telemetry.py")
     property int cpuPercent: 0
     property int memoryPercent: 0
     property real memoryUsedGb: 0

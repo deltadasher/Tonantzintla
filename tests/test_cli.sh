@@ -34,12 +34,26 @@ XDG_CONFIG_HOME="$test_root/config" \
 [[ "$(readlink -f -- "$test_root/config/quickshell/astralith")" == "$project_root" ]]
 [[ "$(readlink -f -- "$test_root/home/.local/bin/astralithctl")" == "$project_root/scripts/astralithctl" ]]
 
-if grep -Eq 'spawn(-at-startup)? "astralithctl"' "$project_root/niri/config.kdl"; then
-    printf 'Niri config relies on session PATH for astralithctl.\n' >&2
-    exit 1
+grep -Fq 'spawn-at-startup "sh" "-lc" "exec \"$HOME/.local/bin/astralithctl\" session-start"' "$project_root/niri/config.kdl"
+grep -Fq 'Mod+D             { spawn "sh" "-lc" "exec \"$HOME/.local/bin/astralithctl\" toggle apps"; }' "$project_root/niri/config.kdl"
+
+fake_bin="$test_root/bin"
+mkdir -p "$fake_bin"
+cat >"$fake_bin/qs" <<'EOF'
+#!/usr/bin/env bash
+if [[ "${1:-}" == "-p" && "${3:-}" == "list" ]]; then
+    exit 0
 fi
-grep -Fq 'spawn-at-startup "~/.local/bin/astralithctl" "session-start"' "$project_root/niri/config.kdl"
-grep -Fq 'Mod+D             { spawn "~/.local/bin/astralithctl" "toggle" "apps"; }' "$project_root/niri/config.kdl"
+if [[ "${1:-}" == "list" && "${2:-}" == "--all" ]]; then
+    printf 'Instance dev-instance:\n  Config path: /tmp/dev/astralith/shell.qml\n'
+    exit 0
+fi
+printf '%s\n' "$*" >"$QS_CAPTURE"
+EOF
+chmod +x "$fake_bin/qs"
+QS_CAPTURE="$test_root/ipc-call" PATH="$fake_bin:$PATH" \
+    "$project_root/scripts/astralithctl" toggle apps
+[[ "$(<"$test_root/ipc-call")" == "ipc -i dev-instance call ephemeris toggle apps" ]]
 
 HOME="$test_root/home" \
 XDG_CONFIG_HOME="$test_root/config" \

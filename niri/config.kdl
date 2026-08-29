@@ -138,10 +138,10 @@ environment {
 }
 
 // ── Autostart ─────────────────────────────────────────────────────────
-// Astralith is the nEri shell. Use the installed path explicitly because
-// display-manager sessions do not always include ~/.local/bin in PATH.
+// Astralith is the Niri shell. Resolve the installed controller through HOME;
+// display-manager sessions do not always import ~/.local/bin into PATH.
 spawn-at-startup "dbus-update-activation-environment" "--systemd" "WAYLAND_DISPLAY" "XDG_CURRENT_DESKTOP"
-    spawn-at-startup "~/.local/bin/astralithctl" "session-start"
+spawn-at-startup "sh" "-lc" "exec \"$HOME/.local/bin/astralithctl\" session-start"
 // Clipboard capture will be enabled when Transit owns clipboard history.
 // spawn-at-startup "wl-paste" "--watch" "cliphist" "store"
 spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
@@ -186,19 +186,19 @@ binds {
     // Astralith desktop keys. Hyprland remains reference-only.
     Alt+F4            { close-window; }
     Mod+Return        { spawn "terminology"; }
-    Mod+D             { spawn "~/.local/bin/astralithctl" "toggle" "apps"; }
+    Mod+D             { spawn "sh" "-lc" "exec \"$HOME/.local/bin/astralithctl\" toggle apps"; }
     Mod+E             { spawn "nautilus"; }
     Mod+B             { spawn "firefox"; }
     Mod+Shift+Escape  { spawn "terminology" "-e" "btop"; }
-    Mod+Shift+N       { spawn "~/.local/bin/astralithctl" "toggle" "settings"; }
-    Mod+Shift+Q       { spawn "~/.local/bin/astralithctl" "quick" "timer"; }
+    Mod+Shift+N       { spawn "sh" "-lc" "exec \"$HOME/.local/bin/astralithctl\" toggle settings"; }
+    Mod+Shift+Q       { spawn "sh" "-lc" "exec \"$HOME/.local/bin/astralithctl\" quick timer"; }
     // Native Niri crop UI: select a region, then copy it to the clipboard.
     // Optics Bay keeps the separate Slurp/Grim capture workflows.
     Mod+Shift+S repeat=false { screenshot; }
-    Super+Alt+L       { spawn "~/.local/bin/astralithctl" "lock"; }
-    Mod+Shift+W       { spawn "~/.local/bin/astralithctl" "toggle" "walls"; }
-    Mod+Shift+C       { spawn "~/.local/bin/astralithctl" "toggle" "clipboard"; }
-    Mod+Shift+A       { spawn "~/.local/bin/astralithctl" "toggle" "notifications"; }
+    Super+Alt+L       { spawn "sh" "-lc" "exec \"$HOME/.local/bin/astralithctl\" lock"; }
+    Mod+Shift+W       { spawn "sh" "-lc" "exec \"$HOME/.local/bin/astralithctl\" toggle walls"; }
+    Mod+Shift+C       { spawn "sh" "-lc" "exec \"$HOME/.local/bin/astralithctl\" toggle clipboard"; }
+    Mod+Shift+A       { spawn "sh" "-lc" "exec \"$HOME/.local/bin/astralithctl\" toggle notifications"; }
 
     // Alt-tab: jump straight back to the last window you were on (MRU), no mouse
     Mod+Tab           repeat=false { focus-window-previous; }

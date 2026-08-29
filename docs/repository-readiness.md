@@ -14,17 +14,14 @@
   image downloads are rejected.
 
 The private `deltadasher/Astralith` repository is the current collaboration and
-machine-synchronization remote. The known provenance blockers are resolved;
-keep it private until Astralith's own license and initial support policy are
-chosen.
+machine-synchronization remote. The known provenance blockers are resolved and
+Astralith is licensed under GPL-3.0-or-later. Choose the initial support policy
+before presenting a 1.0 release.
 
 ## Before making the repository public
 
-1. Select Astralith's own license and add it at the repository root.
-2. Choose the first supported distribution and verify exact package names.
-3. Capture clean screenshots for Aperture, Ephemeris, Parallax, Resonance,
+1. Choose the first supported distribution and verify exact package names.
+2. Capture clean screenshots for Aperture, Ephemeris, Parallax, Resonance,
    Focus Orbit, and Observatory Settings.
-4. Add continuous integration only after choosing a runner image that packages
+3. Add continuous integration only after choosing a runner image that packages
    a compatible Quickshell/qmllint version.
-
-Do not publish a source release until item 1 is complete.

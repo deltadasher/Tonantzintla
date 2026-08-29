@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import "../shared" as Shared
+import "../../../../design/concepts" as Concepts
 import "../../../.."
 import "../../../../services"
 
@@ -191,15 +192,11 @@ Item {
                     anchors.margins: 20
                     spacing: 14
                     Text { text: "ASTRALITH"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 29; font.weight: Font.Black; font.letterSpacing: 2; Layout.alignment: Qt.AlignHCenter }
-                    Image {
+                    Concepts.WabiSabiBlackHole {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 156
-                        source: Qt.resolvedUrl("../../../../assets/illustrations/umbra-black-hole.png")
-                        fillMode: Image.PreserveAspectFit
-                        sourceSize.width: 512
-                        sourceSize.height: 342
-                        smooth: true
-                        mipmap: true
+                        diskColor: Theme.accent
+                        horizonColor: Theme.void_
                     }
                     Text {
                         Layout.fillWidth: true

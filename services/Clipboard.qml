@@ -13,10 +13,7 @@ QtObject {
     property var entries: []
     readonly property bool historyActive: ShellState.ephemerisVisible
         && ShellState.ephemerisTab === "clipboard"
-    readonly property string helperPath: {
-        const value = Qt.resolvedUrl("../scripts/clipboard-index.py").toString();
-        return value.indexOf("file://") === 0 ? decodeURIComponent(value.substring(7)) : value;
-    }
+    readonly property string helperPath: Environment.script("clipboard-index.py")
     readonly property string cachePath: {
         const xdg = Quickshell.env("XDG_CACHE_HOME") || "";
         const home = Quickshell.env("HOME") || "/tmp";

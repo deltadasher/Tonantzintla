@@ -3,7 +3,7 @@ name = "astralith-installer"
 version = "0.1.0"
 edition = "2024"
 description = "Transactional TUI installer for Astralith"
-license = "UNLICENSED"
+license = "GPL-3.0-or-later"
 publish = false
 
 [dependencies]

@@ -22,11 +22,7 @@ QtObject {
     property int eventSerial: 0
 
     readonly property string userName: Quickshell.env("USER") || "traveler"
-    readonly property string controlPath: {
-        const value = Qt.resolvedUrl("../scripts/astralithctl").toString();
-        return value.indexOf("file://") === 0
-            ? decodeURIComponent(value.substring(7)) : value;
-    }
+    readonly property string controlPath: Environment.script("astralithctl")
     readonly property string stateCode: previewActive ? "SIMULATION"
         : !active ? "STANDBY"
         : !secure ? "SEALING"

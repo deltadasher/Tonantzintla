@@ -1,6 +1,6 @@
 # Astralith
 
-![Astralith orbital cartography](assets/wallpapers/orbital-cartography.png)
+![Astralith Wabi-Sabi Black Hole](assets/illustrations/wabi-sabi-black-hole.svg)
 
 I wanted my computer to look good, and i didn't like how Serpantinum, Caelestia, DMS,
 etc. looked. So i made my own desktop shell because i was incredibly bored and had a
@@ -92,3 +92,10 @@ would unlock.
 | `Super+Alt+L` | Umbra lock |
 
 Terminology is currently the only "Enlightenment" thing that comes with this system. If you don't want it, delete it. It's just what I use since its feature-rich and stays sub 50mb with my configuration.
+
+## License
+
+Astralith is free software licensed under the
+[GNU General Public License, version 3 or later](LICENSE).
+
+Copyright © 2026 deltadasher.

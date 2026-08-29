@@ -27,11 +27,7 @@ QtObject {
         : connectedDevice && connectedDevice.name ? connectedDevice.name : "OFFLINE"
     readonly property string kind: connectedDevice
         ? (connectedDevice.type === DeviceType.Wifi ? "WIFI" : "LINK") : "NET"
-    readonly property string helperPath: {
-        const value = Qt.resolvedUrl("../scripts/network-state.py").toString();
-        return value.indexOf("file://") === 0
-            ? decodeURIComponent(value.substring(7)) : value;
-    }
+    readonly property string helperPath: Environment.script("network-state.py")
 
     property bool managerAvailable: false
     property bool loading: false

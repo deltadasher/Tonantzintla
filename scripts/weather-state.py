@@ -14,7 +14,8 @@ from pathlib import Path
 
 
 CACHE_PATH = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "astralith" / "weather.json"
-USER_AGENT = "Astralith/0.1 (Quickshell weather widget)"
+CACHE_SCHEMA = 2
+USER_AGENT = "Astralith/0.9 (Quickshell weather widget)"
 
 
 def request_json(url: str) -> dict:
@@ -46,6 +47,8 @@ def condition(code: int, is_day: bool = True) -> tuple[str, str]:
 def load_cache(location: str, unit: str, max_age: int = 600) -> dict | None:
     try:
         data = json.loads(CACHE_PATH.read_text())
+        if data.get("schema") != CACHE_SCHEMA:
+            return None
         if data.get("query") != location or data.get("unit") != unit:
             return None
         if time.time() - float(data.get("fetched_at", 0)) > max_age:
@@ -111,6 +114,8 @@ def build_forecast(location: str, unit: str) -> dict:
         })
 
     day_times = daily.get("time") or []
+    sunrise_times = daily.get("sunrise") or []
+    sunset_times = daily.get("sunset") or []
     daily_rows = []
     for index, date_text in enumerate(day_times[:5]):
         code = int((daily.get("weather_code") or [-1] * len(day_times))[index])
@@ -125,6 +130,8 @@ def build_forecast(location: str, unit: str) -> dict:
             "code": code,
             "condition": row_label,
             "icon": row_icon,
+            "sunrise": str(sunrise_times[index])[11:16] if index < len(sunrise_times) else "--:--",
+            "sunset": str(sunset_times[index])[11:16] if index < len(sunset_times) else "--:--",
         })
 
     display_location = place.get("name", location)
@@ -134,6 +141,7 @@ def build_forecast(location: str, unit: str) -> dict:
         display_location += ", " + admin
 
     return {
+        "schema": CACHE_SCHEMA,
         "ok": True,
         "status": "FORECAST SYNCHRONIZED",
         "query": location,
@@ -142,6 +150,8 @@ def build_forecast(location: str, unit: str) -> dict:
         "wind_unit": current_units.get("wind_speed_10m", "mph" if unit == "fahrenheit" else "km/h"),
         "location": display_location,
         "country": country,
+        "latitude": float(place["latitude"]),
+        "longitude": float(place["longitude"]),
         "timezone": forecast.get("timezone_abbreviation", ""),
         "updated": now_text[11:16],
         "fetched_at": int(time.time()),

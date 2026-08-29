@@ -50,6 +50,12 @@ QtObject {
         return value.indexOf("file://") === 0 ? decodeURIComponent(value.substring(7)) : value;
     }
 
+    readonly property string scriptsRoot: pathFromUrl(Qt.resolvedUrl("../scripts"))
+
+    function script(name) {
+        return scriptsRoot + "/" + name;
+    }
+
     readonly property string bundledRoot: pathFromUrl(Qt.resolvedUrl("../assets/wallpapers"))
     readonly property var bundledWallpapers: [
         pathFromUrl(Qt.resolvedUrl("../assets/wallpapers/astral-observatory.png")),
@@ -59,10 +65,10 @@ QtObject {
         pathFromUrl(Qt.resolvedUrl("../assets/wallpapers/violet-eclipse.png")),
         pathFromUrl(Qt.resolvedUrl("../assets/wallpapers/orbital-cartography.png"))
     ]
-    readonly property string snippingTool: pathFromUrl(Qt.resolvedUrl("../scripts/snipping-tool"))
-    readonly property string libraryHelper: pathFromUrl(Qt.resolvedUrl("../scripts/wallpaper-library.py"))
-    readonly property string onlineHelper: pathFromUrl(Qt.resolvedUrl("../scripts/wallpaper-online.py"))
-    readonly property string applyHelper: pathFromUrl(Qt.resolvedUrl("../scripts/wallpaper-apply"))
+    readonly property string snippingTool: script("snipping-tool")
+    readonly property string libraryHelper: script("wallpaper-library.py")
+    readonly property string onlineHelper: script("wallpaper-online.py")
+    readonly property string applyHelper: script("wallpaper-apply")
     readonly property bool canCaptureRegion: hasGrim && hasSlurp && hasWlCopy
     readonly property bool canCaptureScreen: hasGrim
     readonly property bool canEditCapture: hasGrim && hasSlurp && hasWlCopy && hasSatty

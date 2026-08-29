@@ -221,8 +221,11 @@ Item {
             delegate: Rectangle {
                 id: nodeCard
                 required property var modelData
+                readonly property bool isDefault: Audio.isDefaultNode(modelData)
+                readonly property int volumePercent: Audio.nodePercent(modelData)
+                readonly property bool muted: Audio.nodeMuted(modelData)
                 width: nodeList.width; height: 116; radius: Theme.radiusMedium
-                color: modelData.isDefault
+                color: isDefault
                     ? Qt.rgba(root.activeColor.r, root.activeColor.g, root.activeColor.b, 0.20)
                     : nodePointer.containsMouse ? Theme.controlHover : Theme.controlRest
                 border.width: 0
@@ -240,19 +243,18 @@ Item {
                             Layout.fillWidth: true
                             ColumnLayout {
                                 Layout.fillWidth: true; spacing: 0
-                                Text { Layout.fillWidth: true; text: nodeCard.modelData.name; color: Theme.moon; font.family: Theme.fontText; font.pixelSize: 11; font.weight: Font.DemiBold; elide: Text.ElideRight }
-                                Text { Layout.fillWidth: true; text: nodeCard.modelData.description; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; elide: Text.ElideRight }
+                                Text { Layout.fillWidth: true; text: Audio.nodeTitle(nodeCard.modelData); color: Theme.moon; font.family: Theme.fontText; font.pixelSize: 11; font.weight: Font.DemiBold; elide: Text.ElideRight }
+                                Text { Layout.fillWidth: true; text: Audio.nodeSubtitle(nodeCard.modelData); color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; elide: Text.ElideRight }
                             }
-                            Text { text: nodeCard.modelData.mute ? "MUTED" : nodeCard.modelData.volume + "%"; color: nodeCard.modelData.mute ? Theme.warning : Theme.moon; font.family: Theme.fontMono; font.pixelSize: 11; font.weight: Font.Bold }
+                            Text { text: nodeCard.muted ? "MUTED" : nodeCard.volumePercent + "%"; color: nodeCard.muted ? Theme.warning : Theme.moon; font.family: Theme.fontMono; font.pixelSize: 11; font.weight: Font.Bold }
                         }
                         Shared.AudioSlider {
                             Layout.fillWidth: true
-                            value: nodeCard.modelData.volume
-                            muted: nodeCard.modelData.mute
+                            value: nodeCard.volumePercent
+                            muted: nodeCard.muted
                             accentColor: root.activeColor
                             onValueRequested: function(nextValue) {
-                                Audio.setNodeVolume(root.activeTab,
-                                    nodeCard.modelData.id, nextValue);
+                                Audio.setNodeVolume(nodeCard.modelData, nextValue);
                             }
                         }
                     }
@@ -261,17 +263,17 @@ Item {
                         Rectangle {
                             visible: root.activeTab !== "apps"
                             Layout.preferredWidth: 72; Layout.preferredHeight: 28; radius: 9
-                            color: nodeCard.modelData.isDefault ? Theme.accentVeil : defaultPointer.containsMouse ? Theme.elevated : Theme.mantle
-                            border.width: 0; border.color: nodeCard.modelData.isDefault ? Theme.accentLine : Theme.line
-                            Text { anchors.centerIn: parent; text: nodeCard.modelData.isDefault ? "DEFAULT" : "MAKE DEFAULT"; color: nodeCard.modelData.isDefault ? Theme.accent : Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Bold }
-                            MouseArea { id: defaultPointer; anchors.fill: parent; enabled: !nodeCard.modelData.isDefault; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Audio.setDefaultNode(root.activeTab, nodeCard.modelData.nodeName) }
+                            color: nodeCard.isDefault ? Theme.accentVeil : defaultPointer.containsMouse ? Theme.elevated : Theme.mantle
+                            border.width: 0; border.color: nodeCard.isDefault ? Theme.accentLine : Theme.line
+                            Text { anchors.centerIn: parent; text: nodeCard.isDefault ? "DEFAULT" : "MAKE DEFAULT"; color: nodeCard.isDefault ? Theme.accent : Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Bold }
+                            MouseArea { id: defaultPointer; anchors.fill: parent; enabled: !nodeCard.isDefault; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Audio.setDefaultNode(nodeCard.modelData) }
                         }
                         Rectangle {
                             Layout.preferredWidth: 72; Layout.preferredHeight: 28; radius: 9
                             color: nodeMutePointer.containsMouse ? Theme.elevated : Theme.mantle
-                            border.width: 0; border.color: nodeCard.modelData.mute ? Theme.warning : Theme.line
-                            Text { anchors.centerIn: parent; text: nodeCard.modelData.mute ? "UNMUTE" : "MUTE"; color: nodeCard.modelData.mute ? Theme.warning : Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Bold }
-                            MouseArea { id: nodeMutePointer; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Audio.toggleNodeMute(root.activeTab, nodeCard.modelData.id, nodeCard.modelData.mute) }
+                            border.width: 0; border.color: nodeCard.muted ? Theme.warning : Theme.line
+                            Text { anchors.centerIn: parent; text: nodeCard.muted ? "UNMUTE" : "MUTE"; color: nodeCard.muted ? Theme.warning : Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Bold }
+                            MouseArea { id: nodeMutePointer; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Audio.toggleNodeMute(nodeCard.modelData) }
                         }
                     }
                 }

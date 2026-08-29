@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "services"
 
 QtObject {
     id: root
@@ -16,11 +17,7 @@ QtObject {
         ? (busy ? "SAMPLING NEBULA" : ready ? "WALLPAPER SPECTRUM ONLINE"
             : error.length ? "SPECTRUM ERROR" : "PALETTE UNAVAILABLE")
         : "LAVENDER CONSTANT"
-    readonly property string helperPath: {
-        const value = Qt.resolvedUrl("scripts/palette-state.py").toString();
-        return value.indexOf("file://") === 0
-            ? decodeURIComponent(value.substring(7)) : value;
-    }
+    readonly property string helperPath: Environment.script("palette-state.py")
 
     property color void_: "#080910"
     property color mantle: "#10121d"

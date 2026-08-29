@@ -34,11 +34,7 @@ QtObject {
         }
         return active;
     }
-    readonly property string helperPath: {
-        const value = Qt.resolvedUrl("../scripts/lyrics-state.py").toString();
-        return value.indexOf("file://") === 0
-            ? decodeURIComponent(value.substring(7)) : value;
-    }
+    readonly property string helperPath: Environment.script("lyrics-state.py")
 
     function plainLines(text) {
         return String(text || "").split(/\r?\n/).filter(function(line) {

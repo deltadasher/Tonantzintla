@@ -38,10 +38,10 @@ behavioral compatibility are not bundled upstream expression.
   checkout or running configuration.
 - The six bundled space wallpapers are project-generated artwork documented in
   `wallpaper-flight-pack-01.md`.
-- The static Flight Manual black-hole illustration is project-generated artwork.
-- The compact controls under `assets/icons/` are unmodified GNOME
-  AdwaitaLegacy icons. Their source, per-file mapping, attribution, and selected
-  CC BY-SA 3.0 license are recorded in `THIRD_PARTY.md`.
+- The Wabi-Sabi Black Hole used by the README and Flight Manual is an original
+  project-owned vector derived from Astralith's dormant identity study.
+- Astralith 0.9 bundles no third-party icon pack; the former AdwaitaLegacy PNG
+  controls and their unused registry metadata were removed before release.
 - Online wallpaper downloads are user data and are never committed by the
   helper. Individual Commons results retain their own licenses.
 
@@ -53,8 +53,7 @@ Caelestia remains a named visual reference, not a runtime dependency.
 
 ## Remaining release decisions
 
-- Select Astralith's own license before inviting reuse or contributions. Making
-  source visible without a license does not grant downstream reuse rights.
+- Astralith's project-owned work is licensed under GPL-3.0-or-later.
 - Decide whether the repository ships Niri configuration or treats it as an
   optional example.
 - Choose supported distributions and verify exact dependency package names.

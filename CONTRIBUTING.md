@@ -31,8 +31,7 @@ chore: checkpoint working shell
 
 ## Publication and provenance
 
-The repository intentionally has no license yet. Do not make it public, publish
-a release, or accept outside contributions until Astralith's own license has
-been selected. The known upstream provenance blockers are resolved and recorded
-in `docs/provenance-audit.md`; third-party material remains governed by
-`THIRD_PARTY.md`.
+Astralith is licensed under GPL-3.0-or-later. The known upstream provenance
+blockers are resolved and recorded in `docs/provenance-audit.md`. New
+third-party material must arrive with explicit source, copyright, and license
+records.

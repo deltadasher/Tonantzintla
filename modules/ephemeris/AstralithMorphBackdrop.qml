@@ -61,6 +61,7 @@ Canvas {
     onPaint: {
         const ctx = getContext("2d");
         ctx.reset();
+        ctx.clearRect(0, 0, width, height);
         if (root.tab === "walls")
             return;
 
@@ -72,37 +73,9 @@ Canvas {
         const radius = mix(root.sourceHeight / 2, 26, eased);
         const fill = rgba(Theme.mantle, 0.985);
 
-        // The neck is deliberately short-lived: it makes the surface feel as
-        // though it escaped Aperture without leaving a permanent ornament.
-        const neck = Math.sin(Math.min(1, root.reveal / 0.82) * Math.PI);
-        if (neck > 0.02) {
-            const sourceCx = root.sourceX + root.sourceWidth / 2;
-            const sourceCy = root.sourceY + root.sourceHeight / 2;
-            const targetCx = x + Math.min(w * 0.24, 180);
-            const targetCy = y + Math.min(h * 0.18, 96);
-            const spread = mix(root.sourceHeight * 0.22, 42, eased) * neck;
-            ctx.fillStyle = fill;
-            ctx.beginPath();
-            ctx.moveTo(sourceCx - spread, sourceCy);
-            ctx.bezierCurveTo(sourceCx, sourceCy + spread * 2,
-                targetCx - spread * 2.4, targetCy, targetCx, targetCy + spread);
-            ctx.bezierCurveTo(targetCx + spread * 1.5, targetCy,
-                sourceCx, sourceCy - spread * 2, sourceCx - spread, sourceCy);
-            ctx.fill();
-        }
-
         ctx.fillStyle = fill;
         roundedRect(ctx, x, y, w, h, radius);
         ctx.fill();
-
-        const pulse = Math.max(0, 1 - Math.abs(root.reveal - 0.58) * 2.3);
-        if (pulse > 0) {
-            ctx.fillStyle = rgba(root.tone, pulse * 0.055);
-            ctx.beginPath();
-            ctx.arc(x + w * 0.14, y + h * 0.16,
-                Math.max(28, Math.min(w, h) * 0.18), 0, Math.PI * 2);
-            ctx.fill();
-        }
     }
 
     Connections {
