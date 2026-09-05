@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+project_root="$(cd -- "$script_dir/.." && pwd)"
+python_cache="${TMPDIR:-/tmp}/tonantzintla-check-pycache"
+failures=0
+silent_qmllint=0
+silent_qml_files=()
+qml_import_args=(-I .)
+
+cd -- "$project_root"
+
+partial=0
+if [[ "${1:-}" == "--partial" ]]; then
+    partial=1
+    shift
+fi
+if (($#)); then
+    printf 'Usage: ./tools/check [--partial]\n\n' >&2
+    printf '  --partial  Run every check whose tool is present and report the\n' >&2
+    printf '             rest as skipped instead of failing.\n' >&2
+    exit 2
+fi
+
+# Report every missing tool at once. Discovering them one run at a time is the
+# difference between provisioning a machine in one pass and in four.
+declare -A tool_hint=(
+    [python3]="python"
+    [qmllint]="qt6-declarative (Arch keeps it in /usr/lib/qt6/bin)"
+    [cargo]="rust"
+)
+missing_tools=()
+for tool in python3 qmllint cargo; do
+    command -v "$tool" >/dev/null 2>&1 || missing_tools+=("$tool")
+done
+
+if ((${#missing_tools[@]})); then
+    printf 'Missing check tools:\n' >&2
+    for tool in "${missing_tools[@]}"; do
+        printf '  %-9s install: %s\n' "$tool" "${tool_hint[$tool]}" >&2
+    done
+    if (( ! partial )); then
+        printf '\nInstall them with blackhole install, or run\n' >&2
+        printf './tools/check --partial to run what this machine can.\n' >&2
+        exit 2
+    fi
+    printf '\nRunning in partial mode; the checks above are skipped.\n\n' >&2
+fi
+
+has_tool() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# python3 gates the test suite itself, so there is nothing to run without it.
+if ! has_tool python3; then
+    printf 'python3 is required for any check to run.\n' >&2
+    exit 2
+fi
+
+PYTHONPYCACHEPREFIX="$python_cache" python3 -m compileall -q src/libexec
+PYTHONPYCACHEPREFIX="$python_cache" python3 -m unittest discover -s tests -q
+bash tests/test_cli.sh
+bash -n bin/blackhole tools/check \
+    src/libexec/tonantzintla-profile src/libexec/snipping-tool src/libexec/umbra-greeter \
+    src/libexec/umbra-greeter-portable src/libexec/wallpaper-apply tests/test_cli.sh
+sh -n src/libexec/tonantzintla-notify
+if has_tool cargo; then
+    cargo fmt --manifest-path install/Cargo.toml -- --check
+    cargo test --locked --manifest-path install/Cargo.toml
+else
+    printf 'SKIP cargo is unavailable; installer crate not built or tested.\n'
+fi
+
+if command -v niri >/dev/null 2>&1; then
+    niri validate -c compositors/niri/config.kdl
+else
+    printf 'WARN niri is unavailable; config validation skipped.\n'
+fi
+
+if has_tool qmllint; then
+    while IFS= read -r -d '' qml_file; do
+        lint_output=""
+        lint_status=0
+        lint_output="$(qmllint "${qml_import_args[@]}" "$qml_file" 2>&1)" || lint_status=$?
+        if (( lint_status == 0 )); then
+            continue
+        fi
+        if (( lint_status == 255 )) && [[ -z "$lint_output" ]]; then
+            silent_qmllint=$((silent_qmllint + 1))
+            silent_qml_files+=("$qml_file")
+            continue
+        fi
+        printf 'QML FAIL %s (status %s)\n%s\n' "$qml_file" "$lint_status" "$lint_output" >&2
+        failures=$((failures + 1))
+    done < <(find . -type f -name '*.qml' -print0)
+else
+    printf 'SKIP qmllint is unavailable; no QML file was validated.\n'
+fi
+
+if (( silent_qmllint > 0 )); then
+    printf 'WARN qmllint exited silently on %s components; validate these with the live Quickshell parser:\n' "$silent_qmllint"
+    printf '  %s\n' "${silent_qml_files[@]}"
+fi
+
+if (( failures > 0 )); then
+    printf 'Tonantzintla checks failed: %s QML component(s).\n' "$failures" >&2
+    exit 1
+fi
+
+if ((${#missing_tools[@]})); then
+    # Name what was actually skipped. "Some checks did not run" invites the
+    # reader to assume the important ones did.
+    printf 'Tonantzintla partial checks passed, but this run did NOT:\n'
+    for tool in "${missing_tools[@]}"; do
+        case "$tool" in
+            qmllint) printf '  - validate any QML file\n' ;;
+            cargo) printf '  - build or test the installer crate\n' ;;
+            *) printf '  - run the %s checks\n' "$tool" ;;
+        esac
+    done
+    printf 'Run ./tools/check on a fully provisioned machine before release.\n'
+else
+    printf 'Tonantzintla checks passed.\n'
+fi

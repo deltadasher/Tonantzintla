@@ -1,0 +1,23 @@
+# Install as /etc/tuigreet/tonantzintla-umbra.toml and reference it from greetd.
+[display]
+greeting = "TONANTZINTLA // UMBRA"
+align_greeting = "center"
+show_time = true
+issue = false
+
+[layout]
+width = 60
+window_padding = 2
+container_padding = 1
+
+[theme]
+border = "bright-magenta"
+text = "white"
+time = "bright-cyan"
+container = "black"
+title = "bright-magenta"
+greet = "bright-cyan"
+prompt = "bright-magenta"
+input = "white"
+action = "bright-cyan"
+button = "bright-magenta"

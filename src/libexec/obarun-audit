@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+
+set -uo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+project_root="$(cd -- "$script_dir/../.." && pwd)"
+os_release="${TONANTZINTLA_OS_RELEASE:-/etc/os-release}"
+proc_root="${TONANTZINTLA_PROC_ROOT:-/proc}"
+probe_timeout="${TONANTZINTLA_AUDIT_TIMEOUT:-5}"
+
+usage() {
+    cat <<'EOF'
+Usage: blackhole obarun-audit
+
+Print a bounded, read-only Obarun and 66 compatibility report. The command
+does not use sudo, install packages, edit 66 trees, or change service state.
+EOF
+}
+
+if (($#)); then
+    case "$1" in
+        -h|--help) usage; exit 0 ;;
+        *) usage >&2; exit 2 ;;
+    esac
+fi
+
+section() { printf '\n[%s]\n' "$1"; }
+field() { printf '%-24s %s\n' "$1:" "${2:-unknown}"; }
+command_path() { command -v "$1" 2>/dev/null || true; }
+
+version_line() {
+    local command_name="$1"
+    local output=""
+    case "$command_name" in
+        66) output="$(66 version 2>&1 | sed -n '/./{p;q;}')" ;;
+        qs) output="$(qs --version 2>&1 | sed -n '/./{p;q;}')" ;;
+        *) output="$("$command_name" --version 2>&1 | sed -n '/./{p;q;}')" ;;
+    esac
+    printf '%s' "${output:-version unavailable}"
+}
+
+probe() {
+    local label="$1"
+    shift
+    local output=""
+    local status=0
+    printf '\n-- %s\n$' "$label"
+    printf ' %q' "$@"
+    printf '\n'
+    if command -v timeout >/dev/null 2>&1; then
+        output="$(timeout "$probe_timeout" "$@" 2>&1)" || status=$?
+    else
+        output="$("$@" 2>&1)" || status=$?
+    fi
+    printf 'exit: %s\n' "$status"
+    if [[ -n "$output" ]]; then
+        printf '%s\n' "$output" | head -n 120
+    else
+        printf '(no output)\n'
+    fi
+}
+
+printf 'Tonantzintla Obarun release audit\n'
+field "source" "$project_root"
+field "version" "$(<"$project_root/VERSION")"
+field "revision" "$(git -C "$project_root" rev-parse --short HEAD 2>/dev/null || printf installed-runtime)"
+field "generated UTC" "$(date -u '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || printf unknown)"
+field "mutation policy" "read-only; no sudo; no service changes"
+
+section "distribution"
+if [[ -r "$os_release" ]]; then
+    # shellcheck disable=SC1090
+    . "$os_release"
+    field "ID" "${ID:-unknown}"
+    field "ID_LIKE" "${ID_LIKE:-none}"
+    field "PRETTY_NAME" "${PRETTY_NAME:-${NAME:-unknown}}"
+else
+    field "os-release" "unreadable: $os_release"
+fi
+field "kernel" "$(uname -srmo 2>/dev/null || uname -a 2>/dev/null || printf unknown)"
+field "architecture" "$(uname -m 2>/dev/null || printf unknown)"
+
+section "PID 1 and session"
+pid1_comm="$(tr -d '\n' <"$proc_root/1/comm" 2>/dev/null || true)"
+pid1_exe="$(readlink -f -- "$proc_root/1/exe" 2>/dev/null || true)"
+field "PID 1 command" "${pid1_comm:-unavailable}"
+field "PID 1 executable" "${pid1_exe:-unavailable}"
+field "XDG_SESSION_TYPE" "${XDG_SESSION_TYPE:-unset}"
+field "XDG_CURRENT_DESKTOP" "${XDG_CURRENT_DESKTOP:-unset}"
+field "XDG_RUNTIME_DIR" "${XDG_RUNTIME_DIR:-unset}"
+field "DBUS_SESSION_BUS" "$(if [[ -n "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then printf present; else printf absent; fi)"
+runtime_bus="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/bus"
+field "runtime bus socket" "$(if [[ -S "$runtime_bus" ]]; then printf present; else printf absent; fi)"
+
+section "command inventory"
+commands=(66 dbus-launch dbus-update-activation-environment niri qs pacman systemctl loginctl iw wpctl pactl amixer)
+for command_name in "${commands[@]}"; do
+    path="$(command_path "$command_name")"
+    if [[ -n "$path" ]]; then
+        printf '%-35s %s\n' "$command_name" "$path"
+        case "$command_name" in
+            66|niri|qs|pacman) printf '  version: %s\n' "$(version_line "$command_name")" ;;
+        esac
+    else
+        printf '%-35s missing\n' "$command_name"
+    fi
+done
+
+section "66 read-only state"
+if command -v 66 >/dev/null 2>&1; then
+    probe "66 trees visible to this user" 66 tree status
+    probe "66 services visible to this user" 66 status
+else
+    printf '66 is not available in PATH. No 66 state was queried.\n'
+fi
+
+section "Tonantzintla dry run"
+if [[ "${TONANTZINTLA_AUDIT_SKIP_INSTALLER:-0}" == "1" ]]; then
+    printf 'Skipped by TONANTZINTLA_AUDIT_SKIP_INSTALLER=1.\n'
+else
+    probe "core installer plan" "$project_root/bin/blackhole" plan --profile core --niri keep
+fi
+
+section "network fallback"
+probe "kernel/network summary" python3 "$project_root/src/libexec/network-state.py" --summary
+
+section "remaining init-specific references"
+search_roots=("$project_root/bin" "$project_root/src/libexec" "$project_root/install/src" "$project_root/compositors/niri")
+if command -v rg >/dev/null 2>&1; then
+    rg -n '\b(systemctl|loginctl|s6-svscan|s6-svc|s6-rc)\b' "${search_roots[@]}" \
+        --glob '!obarun-audit' 2>/dev/null | head -n 160 || true
+else
+    grep -RInE '\b(systemctl|loginctl|s6-svscan|s6-svc|s6-rc)\b' "${search_roots[@]}" \
+        2>/dev/null | grep -v '/obarun-audit:' | head -n 160 || true
+fi
+
+section "handoff"
+printf '%s\n' \
+    'Audit complete. This command made no system changes.' \
+    'Verify audio by listening after a clean login; software cannot prove speaker output.'

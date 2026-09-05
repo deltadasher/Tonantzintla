@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+log() {
+    printf 'Tonantzintla audio: %s\n' "$*"
+}
+
+if ! command -v pactl >/dev/null 2>&1; then
+    log "pactl is unavailable; leaving the current audio route unchanged."
+    exit 1
+fi
+
+# Some SOF laptops retain a muted hardware speaker switch even while PipeWire
+# reports a healthy, unmuted sink. Unmute every ALSA card which exposes one.
+if command -v amixer >/dev/null 2>&1; then
+    while IFS= read -r card; do
+        [[ -n "$card" ]] || continue
+        amixer -q -c "$card" sset Speaker on >/dev/null 2>&1 || true
+    done < <(awk -F'[][]' '/^ [0-9]+ \[/{gsub(/ /, "", $1); print $1}' /proc/asound/cards 2>/dev/null)
+fi
+
+speaker_sink() {
+    pactl list short sinks 2>/dev/null \
+        | awk 'BEGIN { IGNORECASE=1 } /speaker|headphone/ { print $2; exit }'
+}
+
+sink="$(speaker_sink)"
+
+if [[ -z "$sink" ]]; then
+    # Pro Audio profiles can expose a generic output which stays silent on
+    # SOF/ALC laptops. Prefer an available profile whose name explicitly owns
+    # a Speaker route, cycling through off so WirePlumber rebuilds its nodes.
+    while IFS=$'\t' read -r card profile; do
+        [[ -n "$card" && -n "$profile" ]] || continue
+        pactl set-card-profile "$card" off >/dev/null 2>&1 || continue
+        pactl set-card-profile "$card" "$profile" >/dev/null 2>&1 || continue
+        sink="$(speaker_sink)"
+        [[ -n "$sink" ]] && break
+    done < <(pactl list cards 2>/dev/null | awk '
+        /^Card #[0-9]+/ { card=""; profiles=0 }
+        /^[[:space:]]*Name:/ && card == "" {
+            line=$0; sub(/^[[:space:]]*Name:[[:space:]]*/, "", line); card=line
+        }
+        /^[[:space:]]*Profiles:/ { profiles=1; next }
+        /^[[:space:]]*Active Profile:/ { profiles=0 }
+        profiles && /Speaker/ && /available: yes/ {
+            line=$0; sub(/^[[:space:]]*/, "", line); sub(/: .*/, "", line)
+            print card "\t" line; next
+        }
+    ')
+fi
+
+if [[ -z "$sink" ]]; then
+    sink="$(pactl get-default-sink 2>/dev/null || true)"
+fi
+
+if [[ -z "$sink" ]]; then
+    log "no output sink is available."
+    exit 1
+fi
+
+pactl set-default-sink "$sink"
+pactl set-sink-mute "$sink" 0
+log "using $sink"

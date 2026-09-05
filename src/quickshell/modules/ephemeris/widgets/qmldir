@@ -1,0 +1,29 @@
+LauncherWidget 1.0 catalog/LauncherWidget.qml
+ToolsWidget 1.0 catalog/ToolsWidget.qml
+GuideWidget 1.0 catalog/GuideWidget.qml
+
+WallpaperWidget 1.0 desktop/WallpaperWidget.qml
+WorkspaceWidget 1.0 desktop/WorkspaceWidget.qml
+CaptureWidget 1.0 desktop/CaptureWidget.qml
+
+MediaWidget 1.0 media/MediaWidget.qml
+
+CalendarWidget 1.0 productivity/CalendarWidget.qml
+CalendarModeControls 1.0 productivity/CalendarModeControls.qml
+WeatherRibbon 1.0 shared/WeatherRibbon.qml
+WifiRadar 1.0 shared/WifiRadar.qml
+ClipboardWidget 1.0 productivity/ClipboardWidget.qml
+NotificationsWidget 1.0 productivity/NotificationsWidget.qml
+FocusWidget 1.0 productivity/FocusWidget.qml
+
+AudioWidget 1.0 system/AudioWidget.qml
+AudioSlider 1.0 shared/AudioSlider.qml
+BatteryTimeline 1.0 shared/BatteryTimeline.qml
+BatteryWidget 1.0 system/BatteryWidget.qml
+NetworkWidget 1.0 system/NetworkWidget.qml
+SettingsWidget 1.0 system/SettingsWidget.qml
+SystemWidget 1.0 system/SystemWidget.qml
+MediaWaveform 1.0 shared/MediaWaveform.qml
+OrbitSeek 1.0 shared/OrbitSeek.qml
+ResonanceAmbience 1.0 shared/ResonanceAmbience.qml
+EventHorizon 1.0 shared/EventHorizon.qml

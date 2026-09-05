@@ -1,0 +1,179 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+theme="tonantzintla-umbra"
+sddm_helper="$root/src/libexec/umbra-greeter"
+action="${1:-help}"
+target="${2:-auto}"
+
+usage() {
+    cat <<'EOF'
+Usage: umbra-greeter-portable {status|install|activate|deactivate|preview} [auto|sddm|lightdm|greetd|ly|gdm]
+
+SDDM and LightDM receive graphical Umbra themes. greetd/tuigreet and Ly receive
+terminal-native Umbra adapters. GDM is detected but never patched because it
+has no stable custom greeter-theme API.
+EOF
+}
+
+service_is_active() {
+    command -v systemctl >/dev/null 2>&1 \
+        && systemctl is-active --quiet "$1.service" 2>/dev/null
+}
+
+detect_target() {
+    if service_is_active sddm || command -v sddm-greeter >/dev/null 2>&1; then
+        printf 'sddm\n'
+    elif service_is_active lightdm || command -v lightdm >/dev/null 2>&1; then
+        printf 'lightdm\n'
+    elif service_is_active greetd || command -v greetd >/dev/null 2>&1; then
+        printf 'greetd\n'
+    elif service_is_active ly || command -v ly >/dev/null 2>&1; then
+        printf 'ly\n'
+    elif service_is_active gdm || command -v gdm >/dev/null 2>&1; then
+        printf 'gdm\n'
+    else
+        printf 'unknown\n'
+    fi
+}
+
+resolve_target() {
+    if [[ "$target" == "auto" ]]; then
+        target="$(detect_target)"
+    fi
+}
+
+require_supported_target() {
+    resolve_target
+    case "$target" in
+        sddm|lightdm|greetd|ly) ;;
+        gdm)
+            printf 'GDM has no supported custom greeter-theme API.\n' >&2
+            exit 3
+            ;;
+        *)
+            printf 'No supported display manager detected; specify a target.\n' >&2
+            exit 3
+            ;;
+    esac
+}
+
+install_lightdm() {
+    local source="$root/src/quickshell/modules/umbra/greeter/lightdm"
+    local destination="/usr/share/web-greeter/themes/$theme"
+    sudo install -d -- "$destination"
+    sudo install -m 0644 -- "$source"/* "$destination/"
+}
+
+install_target() {
+    require_supported_target
+    case "$target" in
+        sddm)
+            "$sddm_helper" install
+            ;;
+        lightdm)
+            install_lightdm
+            ;;
+        greetd)
+            sudo install -Dm 0644 \
+                "$root/src/quickshell/modules/umbra/greeter/tuigreet/$theme.toml" \
+                "/etc/tuigreet/$theme.toml"
+            ;;
+        ly)
+            sudo install -Dm 0644 \
+                "$root/src/quickshell/modules/umbra/greeter/ly/$theme.conf" \
+                "/etc/ly/conf.d/30-$theme.conf"
+            ;;
+    esac
+}
+
+activate_target() {
+    require_supported_target
+    case "$target" in
+        sddm)
+            exec "$sddm_helper" activate
+            ;;
+        lightdm)
+            command -v web-greeter >/dev/null 2>&1 || {
+                printf 'Install web-greeter first.\n' >&2
+                exit 3
+            }
+            install_lightdm
+            sudo install -Dm 0644 /dev/stdin \
+                /etc/lightdm/lightdm.conf.d/30-tonantzintla-umbra.conf <<'EOF'
+[Seat:*]
+greeter-session=web-greeter
+EOF
+            printf '%s\n' \
+                'Set theme: tonantzintla-umbra in /etc/lightdm/web-greeter.yml (or web-greeter.toml).'
+            ;;
+        greetd)
+            install_target
+            printf '%s\n' \
+                'Installed /etc/tuigreet/tonantzintla-umbra.toml.' \
+                'Add --config /etc/tuigreet/tonantzintla-umbra.toml to your existing tuigreet command; Tonantzintla will not guess the session command.'
+            ;;
+        ly)
+            install_target
+            printf '%s\n' \
+                "Installed Ly fragment; include it from Ly's active config to avoid overwriting /etc/ly/config.ini."
+            ;;
+    esac
+}
+
+status_target() {
+    resolve_target
+    printf 'detected=%s\n' "$target"
+    case "$target" in
+        sddm) [[ -f "/usr/share/sddm/themes/$theme/Main.qml" ]] ;;
+        lightdm) [[ -f "/usr/share/web-greeter/themes/$theme/index.html" ]] ;;
+        greetd) [[ -f "/etc/tuigreet/$theme.toml" ]] ;;
+        ly) [[ -f "/etc/ly/conf.d/30-$theme.conf" ]] ;;
+        gdm)
+            printf 'installed=unsupported\n'
+            return
+            ;;
+        *)
+            printf 'installed=unknown\n'
+            return
+            ;;
+    esac && printf 'installed=yes\n' || printf 'installed=no\n'
+}
+
+case "$action" in
+    status)
+        status_target
+        ;;
+    install)
+        install_target
+        printf 'Installed Umbra adapter for %s.\n' "$target"
+        ;;
+    activate)
+        activate_target
+        ;;
+    deactivate)
+        require_supported_target
+        case "$target" in
+            sddm) exec "$sddm_helper" deactivate ;;
+            lightdm) sudo rm -f -- /etc/lightdm/lightdm.conf.d/30-tonantzintla-umbra.conf ;;
+            *) printf 'No activation override was written for %s.\n' "$target" ;;
+        esac
+        ;;
+    preview)
+        resolve_target
+        if [[ "$target" != "sddm" ]]; then
+            printf 'Only SDDM supports a graphical test-mode preview.\n' >&2
+            exit 3
+        fi
+        exec "$sddm_helper" preview
+        ;;
+    help|-h|--help)
+        usage
+        ;;
+    *)
+        usage >&2
+        exit 2
+        ;;
+esac

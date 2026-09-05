@@ -22,7 +22,7 @@ recordings/
 settings.json
 *.part
 *.pid
-*.astralith-backup-*
+*.tonantzintla-backup-*
 
 # Local environment files
 .env

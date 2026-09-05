@@ -1,6 +1,6 @@
-# Contributing to Astralith
+# Contributing to Tonantzintla
 
-Astralith is currently a private personal project, but changes should still be
+Tonantzintla is currently a private personal project, but changes should still be
 treated like changes to a desktop environment rather than loose dotfile edits.
 
 ## Workflow
@@ -9,7 +9,7 @@ treated like changes to a desktop environment rather than loose dotfile edits.
 2. Create a focused branch for risky work.
 3. Keep service, component, and surface changes in separate commits when
    practical.
-4. Run `./scripts/check`.
+4. Run `./tools/check`.
 5. Confirm the live log ends in `Configuration Loaded` without a new warning.
 6. Manually test open, close, keyboard focus, and the affected backend.
 7. Commit only after the working state is reproducible.
@@ -31,7 +31,5 @@ chore: checkpoint working shell
 
 ## Publication and provenance
 
-Astralith is licensed under GPL-3.0-or-later. The known upstream provenance
-blockers are resolved and recorded in `docs/provenance-audit.md`. New
-third-party material must arrive with explicit source, copyright, and license
-records.
+Tonantzintla is licensed under GPL-3.0-or-later. New third-party material must
+arrive with explicit source, copyright, and license records.

@@ -1,0 +1,321 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+script_path="$(readlink -f -- "${BASH_SOURCE[0]}")"
+script_dir="$(cd -- "$(dirname -- "$script_path")" && pwd)"
+project_root="$(cd -- "$script_dir/.." && pwd)"
+# Internal executables the shell and this CLI spawn. Never user commands.
+libexec="$project_root/src/libexec"
+shell_root="$project_root/src/quickshell"
+installer="$project_root/bin/tonantzintla-installer"
+command_name="${1:-help}"
+
+usage() {
+    cat <<'EOF'
+Usage: blackhole COMMAND [ARGUMENTS]
+
+Lifecycle:
+  run                     Run Tonantzintla in the foreground
+  start                   Start one detached Tonantzintla instance
+  session-start           Start Tonantzintla with the Umbra session ingress
+  session-environment     Import the Niri environment into D-Bus services
+  audio-recover           Repair a silent or incorrectly routed speaker sink
+  stop                    Stop Tonantzintla
+  restart                 Stop and start Tonantzintla
+  status                  Show matching Quickshell instances
+  daemon ACTION           Session supervisor: status or logs
+
+Surfaces:
+  open TAB                Open an Ephemeris surface
+  toggle TAB              Toggle an Ephemeris surface
+  close                   Close Ephemeris
+  quick [timer|telemetry] Toggle the quick-action rail
+  lock                    Engage the secure Umbra session veil
+  preview-lock            Preview Umbra without locking the session
+  greeter ACTION [TARGET] Manage Umbra adapters for SDDM, LightDM, greetd, Ly, or GDM
+  capture ACTION          Run region-copy, region-save, full-copy, or full-save
+  notify SUMMARY [BODY]   Show an Tonantzintla-local notification
+  terminal                Open the configured terminal, or a system default
+  browser                 Open the configured browser, or the system default
+  files                   Open the configured file manager, or the home folder
+
+Machine:
+  install                 Install Tonantzintla transactionally
+  update                  Pull the source and update Tonantzintla
+  uninstall               Remove Tonantzintla's links and runtime
+  plan                    Show what an install would change, without changing it
+  doctor                  Report required and optional machine integrations
+
+Inspection:
+  profile                 Show Tonantzintla process, CPU, and resident-memory usage
+  obarun-audit            Print a bounded, read-only Obarun/66 report
+  version                 Print the Tonantzintla version
+  path                    Print the active Tonantzintla source path
+EOF
+}
+
+# The installer is the only thing that changes the machine. Prefer the built
+# binary; fall back to cargo from a source checkout so a contributor without a
+# release artifact still has one command surface.
+run_installer() {
+    local action="$1"; shift
+    local subcommand
+    case "$action" in
+        install) subcommand="apply" ;;
+        plan) subcommand="dry-run" ;;
+        doctor) subcommand="report" ;;
+        *) subcommand="$action" ;;
+    esac
+
+    if [[ -x "$installer" ]]; then
+        exec "$installer" --source "$project_root" "$subcommand" "$@"
+    fi
+
+    local manifest="$project_root/install/Cargo.toml"
+    if [[ -f "$manifest" ]] && command -v cargo >/dev/null 2>&1; then
+        exec cargo run --quiet --release --locked --manifest-path "$manifest" -- \
+            --source "$project_root" "$subcommand" "$@"
+    fi
+
+    printf 'The Tonantzintla installer is not built and Cargo is unavailable.\n' >&2
+    printf 'On Arch Linux, install Rust with: sudo pacman -S rust\n' >&2
+    exit 1
+}
+
+show_profile() {
+    exec "$libexec/tonantzintla-profile"
+}
+
+require_argument() {
+    if [[ -z "${2:-}" ]]; then
+        printf '%s requires an argument.\n' "$1" >&2
+        usage >&2
+        exit 2
+    fi
+}
+
+settings_file="${XDG_CONFIG_HOME:-${HOME:?}/.config}/tonantzintla/settings.json"
+
+setting_value() {
+    local key="$1"
+    python3 - "$settings_file" "$key" <<'PY'
+import json
+import sys
+
+try:
+    with open(sys.argv[1], encoding="utf-8") as handle:
+        value = json.load(handle).get(sys.argv[2], "")
+    if isinstance(value, str):
+        print(value.strip())
+except (OSError, ValueError, TypeError):
+    pass
+PY
+}
+
+run_setting() {
+    local key="$1"
+    local configured
+    configured="$(setting_value "$key")"
+    if [[ -n "$configured" ]]; then
+        exec sh -lc "$configured"
+    fi
+    return 1
+}
+
+launch_terminal() {
+    run_setting terminal || true
+    if command -v xdg-terminal-exec >/dev/null 2>&1; then
+        exec xdg-terminal-exec
+    fi
+    if [[ -n "${TERMINAL:-}" ]]; then
+        exec sh -lc "$TERMINAL"
+    fi
+    local candidate
+    for candidate in foot kitty alacritty wezterm konsole gnome-terminal \
+        xfce4-terminal terminology xterm; do
+        if command -v "$candidate" >/dev/null 2>&1; then
+            exec "$candidate"
+        fi
+    done
+    printf 'No terminal is configured or discoverable. Set one in Tonantzintla Settings.\n' >&2
+    exit 1
+}
+
+active_tonantzintla_instance() {
+    qs list --all 2>/dev/null | awk '
+        /^Instance [^:]+:$/ {
+            instance = $2
+            sub(/:$/, "", instance)
+        }
+        /^[[:space:]]+Config path: .*\/tonantzintla\/(src\/quickshell\/)?shell\.qml$/ {
+            selected = instance
+        }
+        END {
+            if (selected != "")
+                print selected
+        }
+    '
+}
+
+call_ipc() {
+    if qs -p "$shell_root" list 2>/dev/null | grep -q '^Instance '; then
+        exec qs -p "$shell_root" ipc call "$@"
+    fi
+
+    local instance
+    instance="$(active_tonantzintla_instance)"
+    if [[ -n "$instance" ]]; then
+        exec qs ipc -i "$instance" call "$@"
+    fi
+
+    printf 'Tonantzintla is not running. Start it with: %s/.local/bin/blackhole start\n' "$HOME" >&2
+    exit 1
+}
+
+retire_legacy_session() {
+    local old="${XDG_DATA_HOME:-$HOME/.local/share}/astralith"
+    if [[ -f "$old/.astralith-install/source" ]]; then
+        if [[ -f "$old/src/libexec/session-daemon.py" ]]; then
+            python3 "$old/src/libexec/session-daemon.py" stop || return
+        fi
+        if [[ -f "$old/src/quickshell/shell.qml" ]]; then
+            qs -p "$old/src/quickshell" kill >/dev/null 2>&1 || true
+        elif [[ -f "$old/shell.qml" ]]; then
+            qs -p "$old" kill >/dev/null 2>&1 || true
+        fi
+    fi
+}
+
+case "$command_name" in
+    run)
+        exec qs -p "$shell_root"
+        ;;
+    start)
+        retire_legacy_session
+        exec python3 "$libexec/session-daemon.py" start
+        ;;
+    session-start)
+        retire_legacy_session
+        export TONANTZINTLA_SESSION_INGRESS=1
+        if [[ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/bus" ]]; then
+            export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/bus"
+        fi
+        "$0" session-environment >/dev/null 2>&1 || true
+        exec python3 "$libexec/session-daemon.py" start
+        ;;
+    session-environment)
+        environment_names=(WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE
+            XDG_RUNTIME_DIR DBUS_SESSION_BUS_ADDRESS DISPLAY)
+        if command -v systemctl >/dev/null 2>&1 \
+            && systemctl --user show-environment >/dev/null 2>&1; then
+            exec dbus-update-activation-environment --systemd "${environment_names[@]}"
+        fi
+        exec dbus-update-activation-environment "${environment_names[@]}"
+        ;;
+    audio-recover)
+        exec "$libexec/audio-recover"
+        ;;
+    stop)
+        python3 "$libexec/session-daemon.py" stop
+        qs -p "$shell_root" kill
+        ;;
+    restart)
+        retire_legacy_session
+        python3 "$libexec/session-daemon.py" stop
+        qs -p "$shell_root" kill >/dev/null 2>&1 || true
+        exec python3 "$libexec/session-daemon.py" start
+        ;;
+    daemon)
+        case "${2:-status}" in
+            status|logs) exec python3 "$libexec/session-daemon.py" "${2:-status}" ;;
+            *) printf 'Usage: blackhole daemon [status|logs]\n' >&2; exit 2 ;;
+        esac
+        ;;
+    status)
+        exec qs -p "$shell_root" list
+        ;;
+    open|toggle)
+        require_argument "$command_name" "${2:-}"
+        call_ipc ephemeris "$command_name" "$2"
+        ;;
+    close)
+        call_ipc ephemeris close
+        ;;
+    quick)
+        tab="${2:-timer}"
+        if [[ "$tab" != "timer" && "$tab" != "telemetry" ]]; then
+            printf 'Unknown quick-action: %s\n' "$tab" >&2
+            exit 2
+        fi
+        call_ipc quickactions toggle "$tab"
+        ;;
+    lock)
+        exec qs -d -n -p "$shell_root/umbra-lock.qml"
+        ;;
+    preview-lock)
+        call_ipc umbra preview
+        ;;
+    greeter)
+        action="${2:-help}"
+        exec "$libexec/umbra-greeter-portable" "$action" "${3:-auto}"
+        ;;
+    reveal-lock)
+        call_ipc umbra reveal
+        ;;
+    capture)
+        require_argument "$command_name" "${2:-}"
+        case "$2" in
+            region-copy|region-save|full-copy|full-save)
+                exec "$libexec/snipping-tool" "--$2"
+                ;;
+            *)
+                printf 'Unknown capture action: %s\n' "$2" >&2
+                exit 2
+                ;;
+        esac
+        ;;
+    notify)
+        require_argument "$command_name" "${2:-}"
+        exec "$libexec/tonantzintla-notify" "$2" "${3:-}"
+        ;;
+    terminal)
+        launch_terminal
+        ;;
+    browser)
+        run_setting browser || exec xdg-open "about:blank"
+        ;;
+    files)
+        run_setting fileManager || exec xdg-open "$HOME"
+        ;;
+    install|update|uninstall|doctor|plan)
+        run_installer "$@"
+        ;;
+    profile)
+        show_profile
+        ;;
+    obarun-audit)
+        exec "$libexec/obarun-audit" "${@:2}"
+        ;;
+    version)
+        cat "$project_root/VERSION"
+        if [[ -f "$project_root/.tonantzintla-install/revision" ]]; then
+            printf 'Installed commit: %s\n' "$(<"$project_root/.tonantzintla-install/revision")"
+            printf 'Installed at: %s\n' "$project_root"
+            python3 "$libexec/build-status.py"
+        elif [[ -d "$project_root/.git" ]]; then
+            git -C "$project_root" log -1 --format='Checkout commit: %h'
+        fi
+        ;;
+    path)
+        printf '%s\n' "$project_root"
+        ;;
+    help|-h|--help)
+        usage
+        ;;
+    *)
+        printf 'Unknown Tonantzintla command: %s\n' "$command_name" >&2
+        usage >&2
+        exit 2
+        ;;
+esac

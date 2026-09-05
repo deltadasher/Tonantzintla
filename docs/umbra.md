@@ -1,6 +1,6 @@
 # Umbra session veil
 
-Umbra is Astralith's Niri-native lock screen. It runs as a dedicated Quickshell
+Umbra is Tonantzintla's Niri-native lock screen. It runs as a dedicated Quickshell
 instance, uses the Wayland session-lock protocol to cover every output, and uses
 PAM to authenticate the current user. The password remains in memory only for
 the active prompt and is cleared after every result.
@@ -11,7 +11,7 @@ Preview the complete visual surface without locking the compositor or invoking
 PAM:
 
 ```sh
-astralithctl preview-lock
+blackhole preview-lock
 ```
 
 Press `Escape` to leave the preview. The same preview is available under
@@ -22,10 +22,10 @@ Observatory Settings -> Lock.
 After the preview looks correct, lock with either:
 
 ```sh
-astralithctl lock
+blackhole lock
 ```
 
-or `Super+Alt+L` when using Astralith's example Niri configuration. Enter
+or `Super+Alt+L` when using Tonantzintla's example Niri configuration. Enter
 submits the password; `Ctrl+U` clears it.
 
 The default PAM service is `login`, resolved from `/etc/pam.d/login`. It can be
@@ -62,25 +62,28 @@ instance, and start a known-good locker before returning to the graphical sessio
 
 ## Umbra before the session
 
-Astralith also ships a distinct Qt 6 SDDM theme under
-`modules/umbra/greeter/`. It shares Umbra's event-horizon language, but not its
-runtime or authentication state: SDDM remains responsible for users, sessions,
-login, and power actions.
+Tonantzintla also ships greeter adapters under `src/quickshell/modules/umbra/greeter/`: a Qt 6
+SDDM theme, a LightDM web-greeter theme, and terminal-native configuration for
+greetd/tuigreet and Ly. They share Umbra's visual language, but not its runtime
+or authentication state: the display manager remains responsible for users,
+sessions, login, and power actions. GDM is detected but intentionally left
+untouched because it has no stable custom greeter-theme API.
 
 Authentication uses a visual handoff instead of waiting for SDDM's success
 signal. Submitting begins the event-horizon capture first; SDDM receives the
 login request once the screen is nearly consumed. A rejected password recoils
-the field. A successful Niri session starts Astralith through `session-start`,
+the field. A successful Niri session starts Tonantzintla through `session-start`,
 which holds an opaque Umbra veil and opens a circular aperture onto the desktop.
 
-Preview it safely without changing the active display manager theme:
+Preview SDDM safely without changing the active display-manager theme:
 
 ```sh
-astralithctl greeter preview
+blackhole greeter preview
 ```
 
-After inspecting the theme, install it without selecting it using
-`astralithctl greeter install`, or install and select it with
-`astralithctl greeter activate`. `astralithctl greeter deactivate` removes only
-Astralith's selection override, allowing the previous SDDM theme configuration
-to take precedence again.
+After inspecting the theme, install the detected adapter without selecting it
+using `blackhole greeter install`, or install and select it where supported
+with `blackhole greeter activate`. Pass `sddm`, `lightdm`, `greetd`, or `ly`
+after the action to override detection. `blackhole greeter deactivate`
+removes only Tonantzintla's selection override; it does not replace the display
+manager or alter authentication.

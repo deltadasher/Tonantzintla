@@ -1,21 +1,21 @@
 # Architecture
 
-Astralith is one Quickshell application with a small number of deliberately
+Tonantzintla is one Quickshell application with a small number of deliberately
 separated layers. Keep those boundaries intact: most past regressions came from
 mixing layer-shell window ownership, UI presentation, and service lifetime.
 
 ## Runtime flow
 
 ```text
-shell.qml
+src/quickshell/shell.qml
 ├── core singletons: Settings, Theme, ShellState, AdaptivePalette
-├── services/: long-lived system and compositor state
-├── modules/aperture/: always-visible bar
-├── modules/ephemeris/: on-demand expanding instruments
-├── modules/osd/: short-lived feedback surfaces
-├── modules/quickactions/: on-demand edge deck
-├── modules/transit/: notifications and clipboard presentation
-└── modules/umbra/: preview and isolated secure lock instance
+├── src/quickshell/services/: long-lived system and compositor state
+├── src/quickshell/modules/aperture/: always-visible bar
+├── src/quickshell/modules/ephemeris/: on-demand expanding instruments
+├── src/quickshell/modules/osd/: short-lived feedback surfaces
+├── src/quickshell/modules/quickactions/: on-demand edge deck
+├── src/quickshell/modules/transit/: notifications and clipboard presentation
+└── src/quickshell/modules/umbra/: preview and isolated secure lock instance
 ```
 
 `shell.qml` is composition only. It should not accumulate feature behavior.
@@ -28,13 +28,13 @@ shell.qml
 - `ShellState.qml` owns transient surface visibility and routing.
 - `AdaptivePalette.qml` owns the wallpaper-derived palette cache.
 
-These files remain at the repository root because every QML layer imports them.
-Moving them creates broad import churn for little organizational benefit.
+These files live at the Quickshell source root because every QML layer imports
+them. Repository-level packaging and compositor files stay outside the runtime.
 
 ## Services
 
 Services translate external state into stable QML properties. They may invoke a
-helper from `scripts/`, but should not own presentation. Examples include Niri,
+helper from `src/libexec/`, but should not own presentation. Examples include compositor,
 MPRIS, PipeWire, NetworkManager, weather, clipboard, focus history, and system
 telemetry.
 
@@ -50,11 +50,22 @@ Rules:
 4. Machine-specific paths must come from environment variables or resolved
    project URLs.
 
+## Platform boundary
+
+UI code consumes `services/Compositor.qml`; it must not speak a compositor IPC
+protocol directly. The 1.0 implementation uses Niri's socket. Later releases can
+add backends under `compositors/` while keeping modules, components, and most
+services unchanged.
+
+`compositors/` contains only adapters that are actually supported. Do not add
+placeholder Hyprland, Sway, labwc, X11, or other trees before they can be run and
+maintained.
+
 ## Components
 
-`components/` contains reusable visual primitives. A component should be
+`src/quickshell/components/` contains reusable visual primitives. A component should be
 independent of one complete surface and preferably consume service state through
-properties. Complete screens and instrument layouts belong in `modules/`.
+properties. Complete screens and instrument layouts belong in `src/quickshell/modules/`.
 
 ## Modules
 
@@ -85,14 +96,14 @@ remain behind a feature switch until it is proven.
 
 ## Adding a widget
 
-1. Choose a category under `modules/ephemeris/widgets/`.
+1. Choose a category under `src/quickshell/modules/ephemeris/widgets/`.
 2. Add the component to that directory.
-3. Register its path in `modules/ephemeris/widgets/qmldir`.
+3. Register its path in `src/quickshell/modules/ephemeris/widgets/qmldir`.
 4. Add its dimensions, placement, title, code, and icon to
    `EphemerisRegistry.js`.
 5. Add the component routing in `EphemerisSurface.qml`.
 6. Add the entry point in Aperture, Field Tools, or another appropriate module.
-7. Run `./scripts/check` and test both open and close transitions in the live
+7. Run `./tools/check` and test both open and close transitions in the live
    shell.
 
 ## Safe change sequence

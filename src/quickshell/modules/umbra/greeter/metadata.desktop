@@ -1,0 +1,11 @@
+[SddmGreeterTheme]
+Name=Tonantzintla Umbra
+Description=An orbital SDDM greeter for Tonantzintla
+Author=deltadasher
+Copyright=2026 deltadasher
+License=GPL-3.0-or-later
+Type=sddm-theme
+Version=1.0.0
+MainScript=Main.qml
+ConfigFile=theme.conf
+QtVersion=6

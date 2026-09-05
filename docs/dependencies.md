@@ -1,9 +1,9 @@
 # Dependencies
 
-Astralith is modular: missing optional tools disable their related controls
+Tonantzintla is modular: missing optional tools disable their related controls
 rather than preventing the shell from starting.
 
-Run `./scripts/doctor` (or `astralithctl doctor` after installation) to inspect
+Run `blackhole doctor` to inspect
 the current machine without installing or changing anything.
 
 ## Core
@@ -13,6 +13,7 @@ the current machine without installing or changing anything.
 - A compositor implementing `ext-session-lock-v1` and a working PAM `login`
   profile for Umbra
 - Bash and Python 3
+- `swayidle` for automatic Umbra locking and display sleep
 - PipeWire tools (`wpctl`) and PulseAudio compatibility utilities (`pactl`)
 
 The default typography uses JetBrains Mono and Iosevka Nerd Font. Other faces
@@ -35,12 +36,12 @@ can be selected in Observatory Settings, which reports Fontconfig fallbacks.
 | Equalizer presets | EasyEffects |
 | Brightness | `brightnessctl` |
 | Power profiles | `powerprofilesctl` |
-| Session lock | Quickshell PAM module and `/etc/pam.d/login` |
+| Session lock | Quickshell PAM module, `/etc/pam.d/login`, and `swayidle` |
 
 Weather and synchronized lyric lookup use ordinary HTTPS requests and retain
 local caches when their services are temporarily unavailable.
 
 ## Default applications
 
-Terminology, Firefox, and Nautilus are defaults rather than hard dependencies.
+Tonantzintla uses the system terminal, browser, and file manager by default. You can override each command in Settings when needed.
 They can be changed under Observatory Settings -> System.
