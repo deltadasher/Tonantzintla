@@ -142,9 +142,10 @@ environment {
 // display-manager sessions do not always import ~/.local/bin into PATH.
 spawn-at-startup "sh" "-lc" "exec \"$HOME/.local/bin/blackhole\" session-environment"
 spawn-at-startup "sh" "-lc" "exec \"$HOME/.local/bin/blackhole\" session-start"
-// Lock after five idle minutes, turn displays off five minutes later, and
-// always secure the session before suspend. Any input wakes the displays.
-spawn-at-startup "swayidle" "-w" "timeout" "300" "$HOME/.local/bin/blackhole lock" "timeout" "600" "niri msg action power-off-monitors" "resume" "niri msg action power-on-monitors" "before-sleep" "$HOME/.local/bin/blackhole lock"
+// Idle locking is owned by the shell (Settings → Lock screen), including when
+// installing with --niri keep. This optional watcher handles display power and
+// requests a lock before sleep; suspend readiness needs separate verification.
+spawn-at-startup "swayidle" "-w" "timeout" "600" "niri msg action power-off-monitors" "resume" "niri msg action power-on-monitors" "before-sleep" "$HOME/.local/bin/blackhole lock"
 // Clipboard capture will be enabled when Transit owns clipboard history.
 // spawn-at-startup "wl-paste" "--watch" "cliphist" "store"
 spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
@@ -194,7 +195,7 @@ binds {
     Mod+B             { spawn "sh" "-lc" "exec \"$HOME/.local/bin/blackhole\" browser"; }
     Mod+Shift+Escape  { spawn "sh" "-lc" "exec \"$HOME/.local/bin/blackhole\" toggle system"; }
     Mod+Shift+N       { spawn "sh" "-lc" "exec \"$HOME/.local/bin/blackhole\" toggle settings"; }
-    Mod+Shift+Q       { spawn "sh" "-lc" "exec \"$HOME/.local/bin/blackhole\" quick timer"; }
+    Mod+Shift+Q       { spawn "sh" "-lc" "exec \"$HOME/.local/bin/blackhole\" quick telemetry"; }
     // Native Niri crop UI: select a region, then copy it to the clipboard.
     // Optics Bay keeps the separate Slurp/Grim capture workflows.
     Mod+Shift+S repeat=false { screenshot; }

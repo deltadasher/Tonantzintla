@@ -19,7 +19,6 @@ var catalog = [
     {id: "focus", title: "Focus orbit", code: "FCS", width: 900, height: 650, source: "widgets/productivity/FocusWidget.qml"},
     {id: "system", title: "Observatory telemetry", code: "SYS", width: 1060, height: 660, source: "widgets/system/SystemWidget.qml"},
     {id: "guide", title: "Tonantzintla flight manual", code: "GDE", width: 720, height: 900, placement: "left", source: "widgets/catalog/GuideWidget.qml"},
-    {id: "timer", title: "Chronos array", code: "TMR", width: 680, height: 610, source: "../quickactions/TimerAction.qml"},
     {id: "quickstats", title: "Local constellation", code: "TEL", width: 680, height: 620, source: "../quickactions/TelemetryAction.qml"}
 ];
 

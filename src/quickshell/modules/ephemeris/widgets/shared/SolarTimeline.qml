@@ -33,6 +33,13 @@ Item {
         return -0.6 * Math.sin((f > set ? f - set : 1 - set + f) / nightLength * Math.PI);
     }
 
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: -10
+        radius: Theme.radiusMedium
+        color: Theme.controlRest
+    }
+
     Text {
         anchors.left: parent.left; anchors.right: zoneLabel.left; anchors.rightMargin: 12
         text: root.available ? root.location.toUpperCase() : "DAY / NIGHT"

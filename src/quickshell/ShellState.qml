@@ -8,7 +8,7 @@ QtObject {
     property string ephemerisTab: "apps"
     property string settingsSection: "appearance"
     property bool quickActionsVisible: false
-    property string quickActionTab: "timer"
+    property string quickActionTab: "telemetry"
     property int umbraRevealSerial: 0
     // Session-only: leaving focus restores the user's original preferences.
     property bool deepFocus: false
@@ -46,16 +46,11 @@ QtObject {
     }
 
     function openQuickActions(tab) {
-        quickActionTab = tab || quickActionTab;
-        quickActionsVisible = true;
+        openEphemeris("system");
     }
 
     function toggleQuickActions(tab) {
-        const target = tab || quickActionTab;
-        if (quickActionsVisible && quickActionTab === target)
-            quickActionsVisible = false;
-        else
-            openQuickActions(target);
+        toggleEphemeris("system");
     }
 
     function hideQuickActions() {

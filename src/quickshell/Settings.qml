@@ -32,6 +32,8 @@ QtObject {
     property alias quickActionsEnabled: settingsAdapter.quickActionsEnabled
     property alias quickActionsEdge: settingsAdapter.quickActionsEdge
     property alias umbraMotion: settingsAdapter.umbraMotion
+    property alias idleLockEnabled: settingsAdapter.idleLockEnabled
+    property alias idleLockMinutes: settingsAdapter.idleLockMinutes
     property alias umbraUseWallpaper: settingsAdapter.umbraUseWallpaper
     property alias umbraBlurWallpaper: settingsAdapter.umbraBlurWallpaper
     property alias umbraShowMedia: settingsAdapter.umbraShowMedia
@@ -205,6 +207,8 @@ QtObject {
             property bool quickActionsEnabled: true
             property string quickActionsEdge: "right"
             property bool umbraMotion: true
+            property bool idleLockEnabled: true
+            property int idleLockMinutes: 5
             property bool umbraUseWallpaper: true
             property bool umbraBlurWallpaper: true
             property bool umbraShowMedia: true

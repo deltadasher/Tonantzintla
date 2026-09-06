@@ -45,7 +45,8 @@ QtObject {
             ? "VIDEO" : "AUDIO";
     }
     readonly property string statusText: playing ? "PLAYING" : "PAUSED"
-    readonly property string timeText: formatTime(position) + " / " + formatTime(length)
+    readonly property string durationText: length > 0 ? formatTime(length) : "No duration"
+    readonly property string timeText: formatTime(position) + " / " + durationText
     readonly property string embeddedLyrics: available && player.metadata
         ? String(player.metadata["xesam:asText"] || player.metadata["xesam:lyrics"] || "") : ""
     readonly property bool shuffleSupported: available && player.shuffleSupported

@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Effects
+import Quickshell.Widgets
 import "../shared" as Shared
 import "../../../.."
 import "../../../../components"
@@ -8,8 +9,10 @@ import "../../../../services"
 
 pragma ComponentBehavior: Bound
 
-Item {
+ClippingRectangle {
     id: root
+    radius: 26
+    color: Theme.mantle
 
     property int currentTab: 0
     // The last spectrum the corona showed. Retained while paused so the halo
@@ -192,6 +195,7 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
+        anchors.margins: 20
         spacing: 12
         RowLayout {
             Layout.fillWidth: true
@@ -221,10 +225,9 @@ Item {
                         required property int index
                         readonly property bool active: root.currentTab === index
                         Layout.preferredWidth: tabButton.index === 0 ? 116 : 94; Layout.preferredHeight: 38
-                        radius: 0
-                        color: tabPointer.containsMouse
-                            ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.06)
-                            : "transparent"
+                        radius: 9
+                        color: active ? Theme.controlActive : tabPointer.containsMouse
+                            ? Theme.controlHover : Theme.controlRest
                         border.width: 0
                         Text {
                             anchors.centerIn: parent
@@ -446,7 +449,7 @@ Item {
                 RowLayout { Layout.fillWidth: true
                     Text { text: Media.formatTime(seekWave.interacting ? seekWave.previewProgress * Media.length : Media.position); color: seekWave.interacting ? Theme.accent : Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Bold }
                     Item { Layout.fillWidth: true }
-                    Text { text: Media.formatTime(Media.length); color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Bold }
+                    Text { text: Media.durationText; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Bold }
                 }
                 RowLayout {
                     Layout.alignment: Qt.AlignHCenter; spacing: 12

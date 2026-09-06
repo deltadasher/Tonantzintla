@@ -61,14 +61,6 @@ Item {
             }
             ToolCard {
                 Layout.fillWidth: true
-                code: "TIMER"
-                title: "Timers"
-                detail: "Countdown, stopwatch, and focus timer"
-                status: Timekeeper.anyRunning ? Timekeeper.activeDisplay : "READY"
-                onActivated: ShellState.openQuickActions("timer")
-            }
-            ToolCard {
-                Layout.fillWidth: true
                 code: "FOCUS"
                 title: "Focus timer"
                 detail: "Persistent focus and break cycles, seven-day totals, and streaks"

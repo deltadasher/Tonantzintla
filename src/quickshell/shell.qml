@@ -14,9 +14,10 @@ import "services"
 
 ShellRoot {
     id: root
+    // Instantiate the idle watcher even when the settings panel is closed.
+    readonly property string idleLockStatus: IdleLock.status
 
     property bool ephemerisResident: ShellState.ephemerisVisible
-    property bool quickActionsResident: ShellState.quickActionsVisible
     property bool umbraPreviewResident: Umbra.previewActive
     property bool umbraRevealResident: false
     readonly property bool sessionIngress: Quickshell.env("TONANTZINTLA_SESSION_INGRESS") === "1"
@@ -42,15 +43,6 @@ ShellRoot {
                 root.ephemerisResident = true;
             } else {
                 ephemerisUnload.restart();
-            }
-        }
-
-        function onQuickActionsVisibleChanged() {
-            if (ShellState.quickActionsVisible) {
-                quickActionsUnload.stop();
-                root.quickActionsResident = true;
-            } else {
-                quickActionsUnload.restart();
             }
         }
 
@@ -84,12 +76,6 @@ ShellRoot {
             root.umbraRevealResident = true;
             Qt.callLater(ShellState.startUmbraReveal);
         }
-    }
-
-    Timer {
-        id: quickActionsUnload
-        interval: Settings.motion ? 210 : 1
-        onTriggered: root.quickActionsResident = false
     }
 
     Timer {
@@ -181,11 +167,6 @@ ShellRoot {
     Variants {
         model: Osd.visible ? root.focusedScreens : []
         OsdPopup {}
-    }
-
-    Variants {
-        model: root.quickActionsResident ? root.focusedScreens : []
-        QuickActionsRail {}
     }
 
     Variants {

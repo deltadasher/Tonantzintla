@@ -30,7 +30,7 @@ Surfaces:
   open TAB                Open an Ephemeris surface
   toggle TAB              Toggle an Ephemeris surface
   close                   Close Ephemeris
-  quick [timer|telemetry] Toggle the quick-action rail
+  quick [telemetry]       Toggle the System page (legacy shortcut)
   lock                    Engage the secure Umbra session veil
   preview-lock            Preview Umbra without locking the session
   greeter ACTION [TARGET] Manage Umbra adapters for SDDM, LightDM, greetd, Ly, or GDM
@@ -253,8 +253,10 @@ case "$command_name" in
         call_ipc ephemeris close
         ;;
     quick)
-        tab="${2:-timer}"
-        if [[ "$tab" != "timer" && "$tab" != "telemetry" ]]; then
+        tab="${2:-telemetry}"
+        # Keep existing user keybindings working after Chronos removal.
+        [[ "$tab" == "timer" ]] && tab="telemetry"
+        if [[ "$tab" != "telemetry" ]]; then
             printf 'Unknown quick-action: %s\n' "$tab" >&2
             exit 2
         fi

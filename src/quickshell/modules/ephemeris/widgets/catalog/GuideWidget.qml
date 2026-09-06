@@ -25,7 +25,7 @@ Item {
         { "keys": "META + K / J", "name": "Move focus" },
         { "keys": "META + D", "name": "Catalog" },
         { "keys": "META + SHIFT + N", "name": "Settings" },
-        { "keys": "META + SHIFT + Q", "name": "Quick timer" },
+        { "keys": "META + SHIFT + Q", "name": "Quick telemetry" },
         { "keys": "META + SHIFT + S", "name": "Clipboard snip" },
         { "keys": "META + SHIFT + ESC", "name": "System monitor" },
         { "keys": "SUPER + ALT + L", "name": "Lock with Umbra" },
@@ -49,7 +49,7 @@ Item {
         { "name": "Parallax", "state": "LIVE", "tone": Theme.success, "group": "suites", "detail": "Wallpaper browser and animated walls" },
         { "name": "Umbra", "state": "LIVE", "tone": Theme.success, "group": "suites", "detail": "Multi-output lock with PAM" },
         { "name": "Type", "state": "READY", "tone": Theme.accent, "group": "tools", "detail": "JetBrains Mono with Iosevka icons" },
-        { "name": "Chronos", "state": "READY", "tone": Theme.accent, "group": "tools", "detail": "Timers and system stats" },
+        { "name": "Telemetry", "state": "READY", "tone": Theme.accent, "group": "tools", "detail": "System stats" },
         { "name": "Optics", "state": "READY", "tone": Theme.accent, "group": "tools", "detail": "Region capture, Satty, recording" }
     ]
 
@@ -127,12 +127,14 @@ Item {
             focus: true
             Repeater {
                 model: root.tabs
-                Item {
+                Rectangle {
                     id: tabButton
                     required property var modelData
                     required property int index
                     readonly property bool active: root.currentTab === index
                     width: tabLabel.implicitWidth + 22; height: 32
+                    radius: 9
+                    color: active ? Theme.controlActive : Theme.controlRest
                     Text {
                         id: tabLabel; anchors.centerIn: parent; text: tabButton.modelData.label
                         color: tabButton.active ? Theme.moon : Theme.muted
@@ -328,7 +330,7 @@ Item {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         radius: 10
-                        color: lit ? Theme.controlActive : controlPointer.containsMouse ? Theme.controlHover : "transparent"
+                        color: lit ? Theme.controlActive : controlPointer.containsMouse ? Theme.controlHover : Theme.controlRest
 
                         RowLayout {
                             anchors.fill: parent

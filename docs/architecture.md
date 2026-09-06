@@ -1,5 +1,7 @@
 # Architecture
 
+Agents should first read [the design and research guide](agent-design-guide.md).
+
 Tonantzintla is one Quickshell application with a small number of deliberately
 separated layers. Keep those boundaries intact: most past regressions came from
 mixing layer-shell window ownership, UI presentation, and service lifetime.
@@ -13,7 +15,7 @@ src/quickshell/shell.qml
 ├── src/quickshell/modules/aperture/: always-visible bar
 ├── src/quickshell/modules/ephemeris/: on-demand expanding instruments
 ├── src/quickshell/modules/osd/: short-lived feedback surfaces
-├── src/quickshell/modules/quickactions/: on-demand edge deck
+├── legacy quick-action commands: routed to the System instrument
 ├── src/quickshell/modules/transit/: notifications and clipboard presentation
 └── src/quickshell/modules/umbra/: preview and isolated secure lock instance
 ```
@@ -75,7 +77,28 @@ Modules own Wayland surfaces or complete instrument families:
 - **Ephemeris** owns the full-screen transparent layer-shell host and animates
   an internal deck. Do not animate the layer-shell window geometry itself.
 - **OSD** owns volume, microphone, and brightness feedback.
-- **Quick Actions** owns Chronos and compact telemetry.
+- **System** owns telemetry; legacy quick-action commands open this page instead of a separate rail. Cursor settings discover installed Xcursor themes and validate Niri configuration edits before saving a backup and applying them.
+
+Settings → Niri settings → Cursor lists installed Xcursor themes (including Bibata
+Modern variants), reads the current Niri theme and size, and applies explicit
+selections. The helper preserves other cursor options and the rest of the config,
+validates a staged file with `niri validate`, and creates a timestamped
+`config.kdl.before-cursor-*` backup beside the configuration before replacement.
+Included configs and disabled KDL nodes are reported as unsupported instead of
+being rewritten unsafely. Theme installation is separate; Refresh discovers new
+themes. Existing applications may need reopening. No compositor restart is forced.
+Cursor behavior also offers hide-while-typing and an idle-hide delay. These options
+are staged with the theme and applied together using the same validated transaction.
+
+Automatic idle locking is owned by `IdleLock` in the main shell, not by an
+installer-only Niri autostart entry. It starts an owned swayidle process after
+settings load, defaults to five minutes, and invokes the installed `blackhole lock`
+command. Lock screen settings expose enable, timeout and process/error status.
+Changing settings restarts the owned watcher; disabling stops it. Existing external
+idle daemons are not killed. swayidle's compositor idle inhibitors still apply.
+This fixes installs using `--niri keep` whose existing configuration has no idle
+hook. It does not establish suspend-before-lock readiness. The real PAM/session-lock
+and idle-inhibition behavior must still be tested on the host Wayland session.
 - **Transit** owns notification and clipboard presentation.
 - **Umbra** owns the preview plus a separate secure Quickshell lock process.
 

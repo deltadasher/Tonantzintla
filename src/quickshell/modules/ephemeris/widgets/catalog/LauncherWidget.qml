@@ -6,6 +6,7 @@ import Quickshell
 import Quickshell.Widgets
 import "../../../.."
 import "../../../../services"
+import "../../../../components"
 import "../../EphemerisRegistry.js" as Registry
 import "LauncherModel.js" as Model
 
@@ -19,6 +20,7 @@ Item {
     readonly property var applications: Model.applications(DesktopEntries.applications.values)
     readonly property var entries: applications.concat(Model.surfaceCommands(Registry.widgets()), settingsCommands, sessionCommands)
     readonly property var results: Model.filter(entries, query, category, LaunchHistory.favorites)
+        .slice(0, Math.max(1, Settings.launcherMaxResults))
     readonly property var selected: results.find(function(entry) { return entry.id === selection; }) || null
     readonly property var settingsCommands: [
         { id: "settings:appearance", kind: "settings", target: "appearance", name: "Appearance settings", detail: "Palette, typography and atmosphere", keywords: "theme colors colour font motion density" },
@@ -117,46 +119,59 @@ Item {
             Layout.fillWidth: true
             spacing: 12
 
-            Canvas {
-                id: singularity
-                Layout.preferredWidth: 44
-                Layout.preferredHeight: 44
-                property color ink: Theme.accent
-                onInkChanged: requestPaint()
-                onPaint: {
-                    const ctx = getContext("2d");
-                    ctx.reset();
-                    ctx.lineCap = "round";
-                    ctx.strokeStyle = ink;
-                    ctx.lineWidth = 2.4;
-                    ctx.beginPath();
-                    ctx.arc(23, 21, 13, -2.7, 0.35);
-                    ctx.stroke();
-                    ctx.lineWidth = 1.1;
-                    ctx.beginPath();
-                    ctx.arc(22, 22, 17, 0.65, 2.65);
-                    ctx.stroke();
-                    ctx.fillStyle = Theme.void_;
-                    ctx.beginPath();
-                    ctx.arc(22, 22, 10, 0, Math.PI * 2);
-                    ctx.fill();
-                }
+            WabiSabiBlackHole {
+                Layout.preferredWidth: 64
+                Layout.preferredHeight: 52
+                diskColor: Theme.accent
+                horizonColor: Theme.void_
             }
 
             Text {
-                Layout.fillWidth: true
                 text: "BLACKHOLE"
                 color: Theme.moon
-                font.family: Theme.fontDisplay
-                font.pixelSize: 23
-                font.weight: Font.Black
-                font.letterSpacing: 1
+                font.family: Theme.fontText
+                font.pixelSize: 17
+                font.weight: Font.DemiBold
+                font.letterSpacing: 2
             }
-            Text {
-                text: "ESC  CLOSE"
-                color: Theme.muted
-                font.family: Theme.fontMono
-                font.pixelSize: 9
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.leftMargin: 8
+                Layout.rightMargin: 8
+                Layout.preferredHeight: 1
+                color: Theme.accentLine
+                opacity: 0.3
+            }
+
+            Rectangle {
+                id: closeButton
+                Layout.preferredWidth: 42
+                Layout.preferredHeight: 32
+                radius: 9
+                color: closePointer.containsMouse || activeFocus ? Theme.controlHover : Theme.controlRest
+                border.width: 1
+                border.color: activeFocus ? Theme.accent : Theme.line
+                activeFocusOnTab: true
+                Accessible.role: Accessible.Button
+                Accessible.name: "Close launcher"
+                Accessible.onPressAction: ShellState.closeEphemeris()
+                Keys.onReturnPressed: ShellState.closeEphemeris()
+                Keys.onSpacePressed: ShellState.closeEphemeris()
+                Text {
+                    anchors.centerIn: parent
+                    text: "esc"
+                    color: closePointer.containsMouse || closeButton.activeFocus ? Theme.moon : Theme.muted
+                    font.family: Theme.fontMono
+                    font.pixelSize: 10
+                }
+                MouseArea {
+                    id: closePointer
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: ShellState.closeEphemeris()
+                }
             }
         }
 
@@ -224,7 +239,7 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 30
                     radius: Theme.radiusSmall
-                    color: active ? Theme.accentVeil : categoryPointer.containsMouse ? Theme.controlHover : "transparent"
+                    color: active ? Theme.controlActive : categoryPointer.containsMouse ? Theme.controlHover : Theme.controlRest
                     Accessible.role: Accessible.Button
                     Accessible.name: "Show " + modelData.name.toLowerCase()
                     Accessible.onPressAction: root.selectCategory(modelData.id)
@@ -267,8 +282,7 @@ Item {
                 width: resultList.width
                 height: 66
                 radius: Theme.radiusMedium
-                color: selected ? Theme.controlActive : pointer.containsMouse ? Theme.controlHover : "transparent"
-                opacity: available ? 1 : 0.48
+                color: selected ? Theme.controlActive : pointer.containsMouse ? Theme.controlHover : Theme.controlRest
                 Accessible.role: Accessible.ListItem
                 Accessible.name: modelData.name + ". " + modelData.detail
                 Accessible.selected: selected

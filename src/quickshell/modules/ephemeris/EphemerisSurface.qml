@@ -54,14 +54,25 @@ PanelWindow {
         opacity: transition.revealProgress
         MouseArea { anchors.fill: parent; onClicked: root.close() }
 
+        Loader {
+            anchors.fill: parent
+            active: transition.mounted && !root.immersiveWidget
+                && transition.activeTab !== "media"
+            source: active ? "TonantzintlaMorphBackdrop.qml" : ""
+
+            property var layout: root.widgetLayout
+            property real reveal: Settings.motion ? transition.contentProgress : 1
+            property color tone: root.moduleTone
+            property string tab: transition.activeTab
+        }
+
         Rectangle {
             id: deck
             x: root.widgetLayout.x; y: root.widgetLayout.y
             width: root.widgetLayout.width; height: root.widgetLayout.height
-            // Keep the host visually transparent. The Resonance instrument
-            // owns its rounded cards; a filled host turns the ambience into a
-            // large square behind them.
-            radius: 0
+            // The morph layer expands into the solid instrument backing.
+            // Parallax stays open; Resonance owns its rounded, clipped backing.
+            radius: 26
             color: "transparent"
             clip: true
             // Layout changes happen only after the old contents have left.

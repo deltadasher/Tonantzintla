@@ -47,9 +47,15 @@ Item {
             luminous: false
 
             BarButton {
-                glyph: "?"
+                glyph: ""
                 accessibleLabel: "Open Tonantzintla manual"
                 onActivated: ShellState.toggleEphemeris("guide")
+                WabiSabiBlackHole {
+                    anchors.centerIn: parent
+                    width: 28; height: 20
+                    diskColor: Theme.accent
+                    horizonColor: Theme.void_
+                }
             }
 
             BarButton {
@@ -200,16 +206,6 @@ Item {
             }
 
             StatusPill {
-                visible: Timekeeper.anyRunning
-                code: Timekeeper.activeCode
-                value: Timekeeper.activeDisplay
-                active: true
-                accentColor: Theme.violet
-                accessibleLabel: "Chronos array " + value
-                onActivated: ShellState.openQuickActions("timer")
-            }
-
-            StatusPill {
                 visible: Settings.showMicrophone && window.width >= 1180
                 code: Audio.inputMuted ? "MIC×" : "MIC"
                 value: Audio.inputPercent + "%"
@@ -266,13 +262,6 @@ Item {
 
             NotificationIndicator {
                 onActivated: ShellState.toggleEphemeris("notifications")
-            }
-
-            BarButton {
-                visible: Settings.quickActionsEnabled
-                glyph: "◈"
-                accessibleLabel: "Open quick actions rail"
-                onActivated: ShellState.toggleQuickActions(ShellState.quickActionTab)
             }
 
             BarButton {

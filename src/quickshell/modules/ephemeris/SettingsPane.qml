@@ -114,6 +114,7 @@ Item {
                             { "key": "launcher", "label": "Panels" },
                             { "key": "umbra", "label": "Lock screen" },
                             { "key": "system", "label": "System" },
+                            { "key": "niri", "label": "Niri settings" },
                             { "key": "extensions", "label": "Extensions" }
                         ]
 
@@ -189,10 +190,16 @@ Item {
                         : ShellState.settingsSection === "launcher" ? launcherPage
                         : ShellState.settingsSection === "umbra" ? umbraPage
                         : ShellState.settingsSection === "extensions" ? extensionsPage
+                        : ShellState.settingsSection === "niri" ? niriPage
                         : systemPage
                 }
             }
         }
+    }
+
+    Component {
+        id: niriPage
+        CursorSettings { width: pageLoader.width }
     }
 
     Component {
@@ -450,37 +457,6 @@ Item {
                 onSelected: function(value) { Settings.applyBarPreset(value); }
             }
 
-            GridLayout {
-                Layout.fillWidth: true
-                columns: 2
-                columnSpacing: 10
-                rowSpacing: 10
-
-                SettingToggle {
-                    Layout.fillWidth: true
-                    label: "Quick actions"
-                    detail: "Timers and system stats on demand"
-                    checked: Settings.quickActionsEnabled
-                    onToggled: {
-                        Settings.quickActionsEnabled = !Settings.quickActionsEnabled;
-                        if (!Settings.quickActionsEnabled)
-                            ShellState.hideQuickActions();
-                    }
-                }
-                SettingChoice {
-                    Layout.fillWidth: true
-                    enabled: Settings.quickActionsEnabled
-                    label: "Quick actions side"
-                    detail: "Which screen edge quick actions sit on"
-                    value: Settings.quickActionsEdge
-                    choices: [
-                        { "label": "LEFT", "value": "left" },
-                        { "label": "RIGHT", "value": "right" }
-                    ]
-                    onSelected: function(value) { Settings.quickActionsEdge = value; }
-                }
-            }
-
             ToggleGrid {
                 Layout.fillWidth: true
                 rows: [
@@ -534,19 +510,6 @@ Item {
                 onSelected: function(value) { Settings.launcherMaxResults = value; }
             }
 
-            SettingChoice {
-                Layout.fillWidth: true
-                label: "Wallpaper columns"
-                detail: "How many wallpaper columns to show"
-                value: Settings.wallpaperColumns
-                choices: [
-                    { "label": "2", "value": 2 },
-                    { "label": "3", "value": 3 },
-                    { "label": "4", "value": 4 }
-                ]
-                onSelected: function(value) { Settings.wallpaperColumns = value; }
-            }
-
             ToggleGrid {
                 Layout.fillWidth: true
                 rows: [
@@ -591,6 +554,30 @@ Item {
         ColumnLayout {
             width: pageLoader.width
             spacing: 10
+
+            SettingToggle {
+                Layout.fillWidth: true
+                label: "Lock when inactive"
+                detail: "Uses Umbra's real session lock; idle-inhibiting apps can delay it"
+                checked: Settings.idleLockEnabled
+                onToggled: Settings.idleLockEnabled = !Settings.idleLockEnabled
+            }
+            SettingChoice {
+                Layout.fillWidth: true
+                label: "Idle timeout"
+                enabled: Settings.idleLockEnabled
+                value: Settings.idleLockMinutes
+                choices: [{label: "1m", value: 1}, {label: "5m", value: 5}, {label: "10m", value: 10}, {label: "15m", value: 15}, {label: "30m", value: 30}]
+                onSelected: function(value) { Settings.idleLockMinutes = value; }
+            }
+            Text {
+                Layout.fillWidth: true
+                text: IdleLock.status
+                color: IdleLock.error.length ? Theme.danger : Theme.muted
+                font.family: Theme.fontText
+                font.pixelSize: 11
+                wrapMode: Text.Wrap
+            }
 
             RowLayout {
                 Layout.fillWidth: true
