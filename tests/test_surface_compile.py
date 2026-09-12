@@ -15,10 +15,18 @@ class SurfaceCompileTests(unittest.TestCase):
         qml = project / "src/quickshell"
         sources = sorted((qml / "modules/ephemeris/widgets").glob("**/*Widget.qml"))
         sources += [qml / "modules/aperture/ApertureContents.qml",
+                    qml / "modules/aperture/ApertureFluidBackplane.qml",
                     qml / "modules/ephemeris/SettingsPane.qml",
                     qml / "modules/ephemeris/CursorSettings.qml",
+                    qml / "modules/ephemeris/OutputSettings.qml",
+                    qml / "components/InstrumentBridge.qml",
+                    qml / "components/EdgeFluidSurface.qml",
+                    qml / "components/FocusScrim.qml",
                     qml / "modules/ephemeris/TonantzintlaMorphBackdrop.qml",
                     qml / "modules/ephemeris/LiveBarPreview.qml"]
+        sources += sorted((qml / "modules/aperture/islands").glob("*.qml"))
+        sources += [qml / "modules/ephemeris/IslandArrangementEditor.qml"]
+        sources += [qml / "modules/osd/OsdBody.qml"]
         with tempfile.TemporaryDirectory(prefix="tonantzintla-compile-") as directory:
             env = dict(os.environ, XDG_RUNTIME_DIR=directory,
                        QT_QPA_PLATFORM="offscreen", QT_QUICK_BACKEND="software",

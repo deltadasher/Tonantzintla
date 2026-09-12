@@ -12,6 +12,17 @@ SPEC.loader.exec_module(cursor)
 
 
 class CursorSettingsTests(unittest.TestCase):
+    def test_stale_ui_revision_cannot_overwrite_config(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'config.kdl'
+            original = 'cursor {}\n'
+            path.write_text(original)
+            with patch.object(cursor, 'config_path', return_value=path), patch.object(cursor, 'themes', return_value=['Ice']):
+                with self.assertRaisesRegex(ValueError, 'changed since'):
+                    cursor.apply('Ice', 24, revision='stale')
+            self.assertEqual(path.read_text(), original)
+            self.assertEqual(len(list(Path(directory).iterdir())), 1)
+
     @unittest.skipUnless(shutil.which('niri'), 'Niri not installed')
     def test_real_niri_validation(self):
         source = 'cursor {\n    hide-when-typing\n    xcursor-theme "Old"\n}\nwindow-rule {\n    match app-id=r#"^(example)$"#\n}\n'

@@ -15,10 +15,13 @@ Item {
     property string trackKey: ""
     property var envelope: []
     signal seekRequested(real progress)
+    onEnabledControlChanged: if (!enabledControl) interacting = false
 
     implicitHeight: 54
 
     onTrackKeyChanged: {
+        interacting = false;
+        previewProgress = progress;
         envelope = new Array(72).fill(0);
         wave.requestPaint();
     }
@@ -105,9 +108,11 @@ Item {
         onPressed: function(mouse) { root.interacting = true; root.updateFromX(mouse.x); }
         onPositionChanged: function(mouse) { if (pressed) root.updateFromX(mouse.x); }
         onReleased: function(mouse) {
+            if (!root.interacting) return;
             root.updateFromX(mouse.x);
             root.seekRequested(root.previewProgress);
             root.interacting = false;
         }
+        onCanceled: root.interacting = false
     }
 }

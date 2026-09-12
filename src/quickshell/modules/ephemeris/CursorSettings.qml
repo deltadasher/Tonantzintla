@@ -14,6 +14,8 @@ ColumnLayout {
     property bool hideTyping: false
     property int hideAfter: 0
     property bool showDetails: false
+    property bool loaded: false
+    property bool failed: false
     readonly property bool dirty: selectedTheme !== root.state.theme || selectedSize !== root.state.size
         || hideTyping !== root.state.hideTyping || hideAfter !== root.state.hideAfter
     spacing: 14
@@ -28,31 +30,36 @@ ColumnLayout {
         radius: Theme.radiusSmall
         color: chosen ? Theme.accent : pointer.containsMouse || activeFocus ? Theme.controlHover : Theme.controlRest
         opacity: enabled ? 1 : 0.45
-        activeFocusOnTab: true
+        activeFocusOnTab: enabled
         Accessible.role: Accessible.Button
         Accessible.name: text
         Accessible.onPressAction: if (enabled) clicked()
-        Keys.onSpacePressed: clicked()
-        Keys.onReturnPressed: clicked()
+        Keys.onSpacePressed: if (enabled) clicked()
+        Keys.onReturnPressed: if (enabled) clicked()
         Text {
             id: caption
             anchors.centerIn: parent
             text: button.text
-            color: button.chosen ? Theme.void_ : Theme.moon
+            color: button.chosen ? Theme.void_ : pointer.containsMouse || button.activeFocus ? Theme.moon : Theme.muted
             font.family: Theme.fontMono
             font.pixelSize: 11
+            font.weight: button.chosen ? Font.Bold : Font.Normal
         }
         MouseArea {
             id: pointer
             anchors.fill: parent
+            enabled: button.enabled
             hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
+            cursorShape: button.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
             onClicked: { button.forceActiveFocus(); button.clicked(); }
         }
+        Behavior on color { ColorAnimation { duration: Theme.motionFast } }
     }
     Component.onCompleted: refresh()
     function refresh() {
         if (worker.running) return;
+        failed = false;
+        message = "Reading configuration…";
         worker.command = ["python3", Environment.script("cursor-settings.py")];
         worker.running = true;
     }
@@ -62,27 +69,21 @@ ColumnLayout {
             onStreamFinished: {
                 try {
                     const result = JSON.parse(text);
-                    if (result.error) { root.message = result.error; return; }
+                    if (result.error) { root.failed = true; root.message = result.error; return; }
                     root.state = result;
+                    root.loaded = true;
+                    root.failed = false;
                     root.selectedTheme = result.theme;
                     root.selectedSize = result.size;
                     root.hideTyping = result.hideTyping;
                     root.hideAfter = result.hideAfter;
                     root.message = result.message || "Choose an installed theme. Apply validates and backs up your Niri config.";
-                } catch (error) { root.message = "Could not read cursor settings: " + error; }
+                } catch (error) { root.failed = true; root.message = "Could not read cursor settings: " + error; }
             }
         }
-        stderr: StdioCollector { onStreamFinished: if (text.trim()) root.message = text.trim() }
+        stderr: StdioCollector { onStreamFinished: if (text.trim()) { root.failed = true; root.message = text.trim(); } }
     }
-    Text { text: "CURSOR"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 22; font.bold: true }
-    Text {
-        Layout.fillWidth: true
-        text: "Installed themes · changes apply to your Niri configuration"
-        wrapMode: Text.Wrap
-        color: Theme.muted
-        font.family: Theme.fontText
-        font.pixelSize: 12
-    }
+
     Flow {
         Layout.fillWidth: true
         spacing: 8
@@ -109,7 +110,9 @@ ColumnLayout {
             chosen: true
             enabled: !worker.running && root.state.editable && root.dirty && root.state.themes.indexOf(root.selectedTheme) >= 0
             onClicked: {
-                worker.command = ["python3", Environment.script("cursor-settings.py"), "apply", root.selectedTheme, String(root.selectedSize), JSON.stringify({hideTyping: root.hideTyping, hideAfter: root.hideAfter})];
+                root.failed = false;
+                root.message = "Validating pending changes…";
+                worker.command = ["python3", Environment.script("cursor-settings.py"), "apply", root.selectedTheme, String(root.selectedSize), JSON.stringify({hideTyping: root.hideTyping, hideAfter: root.hideAfter}), root.state.revision];
                 worker.running = true;
             }
         }
@@ -118,7 +121,6 @@ ColumnLayout {
     SettingToggle {
         Layout.fillWidth: true
         label: "Hide cursor while typing"
-        detail: "May interfere with mouse-look in some games"
         checked: root.hideTyping
         enabled: !worker.running && root.state.editable
         onToggled: root.hideTyping = !root.hideTyping
@@ -131,9 +133,29 @@ ColumnLayout {
         choices: [{label: "NEVER", value: 0}, {label: "2s", value: 2000}, {label: "5s", value: 5000}, {label: "10s", value: 10000}]
         onSelected: function(value) { root.hideAfter = value; }
     }
-    Text { text: root.dirty ? "Unsaved changes · press Apply" : "Matches saved configuration"; color: root.dirty ? Theme.accent : Theme.muted; font.family: Theme.fontText; font.pixelSize: 12 }
-    Text { Layout.fillWidth: true; wrapMode: Text.Wrap; text: root.message.split("Backup:")[0].trim(); color: Theme.muted; font.family: Theme.fontText; font.pixelSize: 11 }
-    ChoiceButton { text: root.showDetails ? "Hide details" : "Details"; onClicked: root.showDetails = !root.showDetails }
-    Text { Layout.fillWidth: true; visible: root.showDetails; wrapMode: Text.WrapAnywhere; text: root.state.path + "\n" + root.message; color: Theme.muted; font.family: Theme.fontText; font.pixelSize: 11 }
-    Text { Layout.fillWidth: true; wrapMode: Text.Wrap; text: "Install additional Xcursor themes separately, then Refresh. Apply keeps a backup before changing your configuration."; color: Theme.muted; font.family: Theme.fontText; font.pixelSize: 11 }
+    RowLayout {
+        Layout.fillWidth: true
+        Text {
+            Layout.fillWidth: true
+        text: worker.running ? "Checking…" : root.failed ? "Failed · changes were not confirmed"
+            : !root.loaded ? "Not loaded" : !root.state.editable ? "Unsupported configuration"
+            : root.dirty ? "Unsaved changes · press Apply" : "Matches saved configuration · live appearance not verified"
+            color: root.failed ? Theme.warning : root.dirty ? Theme.accent : Theme.muted
+            font.family: Theme.fontText
+            font.pixelSize: 11
+        }
+        ChoiceButton {
+            text: root.showDetails ? "Hide details" : "Details"
+            onClicked: root.showDetails = !root.showDetails
+        }
+    }
+    Text {
+        Layout.fillWidth: true
+        visible: root.showDetails
+        wrapMode: Text.WrapAnywhere
+        text: root.state.path + "\n" + root.message
+        color: Theme.muted
+        font.family: Theme.fontText
+        font.pixelSize: 11
+    }
 }

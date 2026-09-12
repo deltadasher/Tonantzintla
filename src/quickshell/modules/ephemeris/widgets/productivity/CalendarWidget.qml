@@ -74,6 +74,15 @@ Item {
             && smoothEpoch / 1000 < day.solar.end;
     }) || null
     readonly property bool localDaylight: userInDaylight(liveClock)
+    readonly property real daylightProgress: {
+        if (!todayWeather || !todayWeather.solar || !todayWeather.solar.sunrise || !todayWeather.solar.sunset)
+            return 0.5;
+        const start = todayWeather.solar.sunrise.epoch;
+        const end = todayWeather.solar.sunset.epoch;
+        const now = smoothEpoch / 1000;
+        if (end <= start) return 0.5;
+        return Math.max(0, Math.min(1, (now - start) / (end - start)));
+    }
     readonly property var nextSolarEvent: {
         const now = smoothEpoch / 1000;
         const events = [];
@@ -612,11 +621,13 @@ Item {
                     const ctx = getContext("2d");
                     ctx.reset();
                     ctx.clearRect(0, 0, width, height);
-                    if (!root.earthMode)
+                    if (!root.earthMode || width <= 0 || height <= 0)
                         return;
                     const cx = width / 2;
                     const cy = height / 2;
                     const radius = Math.min(width, height) / 2 - 3;
+                    if (radius <= 0)
+                        return;
                     const latitude0 = (isFinite(Weather.latitude) ? Weather.latitude : 0) * Math.PI / 180;
                     const longitude0 = (isFinite(Weather.longitude) ? Weather.longitude : 0) * Math.PI / 180;
 
@@ -806,11 +817,10 @@ Item {
                         ctx.fillStyle = Theme.moon;
                         ctx.beginPath(); ctx.arc(stop, height / 2, 3, 0, Math.PI * 2); ctx.fill();
                     }
-                    Connections {
-                        target: root
-                        function onDaylightProgressChanged() { daylightLine.requestPaint(); }
-                        function onEarthModeChanged() { daylightLine.requestPaint(); }
-                    }
+                    readonly property real progress: root.daylightProgress
+                    readonly property bool earth: root.earthMode
+                    onProgressChanged: requestPaint()
+                    onEarthChanged: requestPaint()
                     Component.onCompleted: requestPaint()
                 }
                 Text {
@@ -1014,6 +1024,8 @@ Item {
                 const ctx = getContext("2d");
                 ctx.reset();
                 ctx.clearRect(0, 0, width, height);
+                if (width <= 0 || height <= 0)
+                    return;
                 // One lane outside the zodiac ring at 0.462. The markers
                 // breathe a fraction of a pixel outward so the rim stays alive
                 // without the blades wandering off their reading.
@@ -1143,7 +1155,9 @@ Item {
                 onPaint: {
                     const ctx = getContext("2d"); ctx.reset();
                     ctx.clearRect(0, 0, width, height);
+                    if (width <= 0 || height <= 0) return;
                     const radius = width / 2;
+                    if (radius <= 0) return;
                     ctx.save();
                     ctx.beginPath(); ctx.arc(radius, radius, radius, 0, Math.PI * 2); ctx.clip();
                     ctx.fillStyle = Theme.moon; ctx.beginPath(); ctx.arc(radius, radius, radius, 0, Math.PI * 2); ctx.fill();

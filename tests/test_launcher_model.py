@@ -67,6 +67,79 @@ const entries = applications(installed).concat(actions);
         result = self.evaluate("(() => { const commands = [{id: 'pause', name: 'Pause', kind: 'media', enabled: false}, {id: 'audio', name: 'Audio', kind: 'surface', enabled: true}]; return [filter(commands, '', 'actions', []).length, selectedId(commands, '')]; })()")
         self.assertEqual(result, [2, "audio"])
 
+    def test_math_evaluation(self):
+        result = self.evaluate("evaluateMath('42 * 2')")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["result"], "84")
+        self.assertEqual(result["kind"], "calc")
+
+        complex_calc = self.evaluate("evaluateMath('(10 + 5) * 2 ^ 3')")
+        self.assertIsNotNone(complex_calc)
+        self.assertEqual(complex_calc["result"], "120")
+
+    def test_astronomical_facts(self):
+        result = self.evaluate("astronomicalFact('speed of light')")
+        self.assertIsNotNone(result)
+        self.assertIn("299,792,458", result["result"])
+        self.assertEqual(result["kind"], "astro")
+
+        parsec = self.evaluate("astronomicalFact('parsec')")
+        self.assertIsNotNone(parsec)
+        self.assertIn("3.0857", parsec["result"])
+        self.assertIn("3.26", parsec["detail"])
+
+    def test_terminal_command(self):
+        result = self.evaluate("terminalCommand('! btop')")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["cmd"], "btop")
+        self.assertEqual(result["kind"], "terminal_cmd")
+
+        dollar_result = self.evaluate("terminalCommand('$ uname -a')")
+        self.assertIsNotNone(dollar_result)
+        self.assertEqual(dollar_result["cmd"], "uname -a")
+
+    def test_special_entries_filter_precedence(self):
+        result = self.evaluate("filter(entries, 'speed of light', 'all', []).map(e => e.kind)")
+        self.assertIn("astro", result)
+        self.assertEqual(result[0], "astro")
+
+        calc_result = self.evaluate("filter(entries, '15 * 4', 'all', []).map(e => e.kind)")
+        self.assertIn("calc", calc_result)
+        self.assertEqual(calc_result[0], "calc")
+
+    def test_calculator_disabled_flag(self):
+        calc_on = self.evaluate("filter(entries, '15 * 4', 'all', [], true).map(e => e.kind)")
+        self.assertIn("calc", calc_on)
+        calc_off = self.evaluate("filter(entries, '15 * 4', 'all', [], false).map(e => e.kind)")
+        self.assertNotIn("calc", calc_off)
+
+    def test_scattered_letters_do_not_match_descriptions(self):
+        self.assertFalse(self.evaluate("matches({name: 'Settings', detail: 'Safe tools edit audio mixer'}, 'steam')"))
+        self.assertFalse(self.evaluate("matches({name: 'Configuration', detail: 'File integration renderer editor for online extensions'}, 'firefox')"))
+
+    def test_exact_name_beats_prefix_and_metadata_noise(self):
+        result = self.evaluate("filter([{id:'helper', name:'Steam Tools', kind:'app'}, {id:'noise', name:'Settings', kind:'app', detail:'Steam configuration'}, {id:'steam', name:'Steam', kind:'app'}], 'steam', 'all', []).map(e => e.id)")
+        self.assertEqual(result, ['steam', 'helper'])
+
+    def test_name_search_is_case_and_whitespace_insensitive(self):
+        result = self.evaluate("filter([{id:'code', name:'Visual Studio Code', kind:'app'}, {id:'studio', name:'Studio', kind:'app'}], '  CODE   visual ', 'all', []).map(e => e.id)")
+        self.assertEqual(result, ['code'])
+
+    def test_metadata_remains_useful_when_no_name_matches(self):
+        result = self.evaluate("filter(entries, 'web browser', 'apps', []).map(e => e.id)")
+        self.assertEqual(result, ['app:firefox.desktop'])
+
+    def test_short_queries_do_not_search_description_or_inject_constants(self):
+        result = self.evaluate("filter([{id:'config', kind:'app', name:'Config'}, {id:'noise', kind:'app', name:'Tools', detail:'Configuration'}], 'c', 'all', []).map(e => e.id)")
+        self.assertEqual(result, ['config'])
+
+    def test_category_filter_applies_before_name_priority(self):
+        result = self.evaluate("filter([{id:'app', appId:'app', kind:'app', name:'Browser'}, {id:'action', kind:'surface', name:'Open browser', keywords:'browser'}], '> browser', 'apps', []).map(e => e.id)")
+        self.assertEqual(result, ['action'])
+
+    def test_unrelated_query_returns_nothing(self):
+        self.assertEqual(self.evaluate("filter(entries, 'zyxnotanapp', 'all', [])"), [])
+
 
 if __name__ == "__main__":
     unittest.main()

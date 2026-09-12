@@ -71,6 +71,15 @@ properties. Complete screens and instrument layouts belong in `src/quickshell/mo
 
 ## Modules
 
+Aperture's arrangement editor keeps selection by island ID, with separate saved
+horizontal and vertical layouts. `components/BarLayout.js` sanitizes persisted
+layouts and transfers islands without duplication. Placement and ordering apply
+immediately; Undo restores the preceding layout only while no outside edit has
+superseded it. Meta+Alt+click an island opens Settings → Bar directly.
+`BarButton.qml` animates its icon contents when its target panel opens, leaving
+the button's hit area stationary. The Bar icon-motion toggle, global motion
+switch, and instant motion profile all disable these opening animations.
+
 Modules own Wayland surfaces or complete instrument families:
 
 - **Aperture** owns the always-visible top bar.
@@ -119,6 +128,14 @@ remain behind a feature switch until it is proven.
 
 ## Adding a widget
 
+Launcher search is local and name-first: exact names, leading prefixes, word
+prefixes, then contiguous name substrings. Metadata/aliases are a fallback only
+when no names match; scattered-letter matches are deliberately excluded. Empty
+searches and equally ranked results retain stable discovery order. A changed query
+or category selects the best available result, while background model refreshes
+preserve the selected identity. Short astronomy abbreviations do not inject facts
+into ordinary app searches; full fact queries and calculator expressions remain.
+
 1. Choose a category under `src/quickshell/modules/ephemeris/widgets/`.
 2. Add the component to that directory.
 3. Register its path in `src/quickshell/modules/ephemeris/widgets/qmldir`.
@@ -140,6 +157,20 @@ not an installer for untrusted third-party extensions.
 tab. Content leaves before a source swap, the new component must finish loading
 before entrance, and rapid requests coalesce. Closing cancels outstanding
 entrances. Loader failures show an actionable state without taking down the bar.
+
+`InstrumentGeometry.qml` and `InstrumentBridge.qml` are isolated prototypes in
+src/quickshell/preview-instruments.qml; neither currently has a live host consumer.
+The intended contract is shared bounds for backing and rounded masking with
+fixed-size content. Integrate and validate that contract before restoring the
+experimental settings toggle. It is not a general SDF metaball renderer.
+Compact widgets may expose `preferredSurfaceHeight`; the live host clamps it to
+the registry's screen bounds. See gemini-roadmap-1.1.md for the integration gate.
+
+`output-preview.py` owns session-only Niri scaling previews. Its independent
+watchdog has a runtime-directory lock and per-preview confirmation token. It
+queries actual output scale before confirming or restoring it. No Niri config
+files are edited; persistent mode/scale changes need a separate proven recovery
+design. `OutputSettings.qml` reads display state only while its page exists.
 
 `ApertureContents.qml` is shared by the real bar and its read-only settings
 miniature. The preview must not create a second `PanelWindow` or fake telemetry.

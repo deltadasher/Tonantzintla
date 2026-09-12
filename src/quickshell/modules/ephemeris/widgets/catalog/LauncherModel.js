@@ -35,7 +35,7 @@ function surfaceCommands(widgets) {
         media: "resonance music lyrics equalizer pitch pitcher", audio: "volume microphone output mixer pipewire routing",
         network: "wifi wi-fi bluetooth ethernet", battery: "battery power energy", system: "cpu memory temperature system monitor",
         guide: "manual help keyboard bindings shortcuts", capture: "screenshot recording optics", notifications: "alerts history",
-        focus: "focus concentration", workspaces: "windows workspace overview", clipboard: "copy paste history", tools: "tools utilities" };
+        focus: "focus concentration", workspaces: "windows workspace overview", clipboard: "copy paste history" };
     return widgets.filter(function(widget) { return widget.id !== "apps"; }).map(function(widget) {
         return { id: "surface:" + widget.id, kind: "surface", target: widget.id,
             name: widget.title, detail: "Open " + (widget.title || widget.id),
@@ -43,37 +43,147 @@ function surfaceCommands(widgets) {
     });
 }
 
-function matches(entry, needle) {
-    const haystack = [entry.name, entry.detail, entry.keywords || ""].join(" ").toLowerCase();
-    // Search words need not follow the order used in the description.
-    return needle.split(/\s+/).every(function(word) {
-        if (haystack.indexOf(word) >= 0)
-            return true;
-        let cursor = 0;
-        for (let index = 0; index < word.length; index++) {
-            cursor = haystack.indexOf(word.charAt(index), cursor);
-            if (cursor < 0)
-                return false;
-            cursor++;
-        }
-        return true;
+function searchText(value) {
+    return String(value || "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function wordPrefixes(text, query) {
+    const words = text.split(/[\s._\-/]+/);
+    return query.split(" ").every(function(part) {
+        return words.some(function(word) { return word.indexOf(part) === 0; });
     });
 }
 
-function filter(entries, query, category, favorites) {
-    let needle = String(query || "").trim().toLowerCase();
+function nameScore(entry, needle) {
+    const name = searchText(entry.name);
+    if (name === needle) return 0;
+    if (name.indexOf(needle) === 0) return 1;
+    if (wordPrefixes(name, needle)) return 2;
+    if (needle.length >= 3 && name.indexOf(needle) >= 0) return 3;
+    return -1;
+}
+
+function matches(entry, needle) {
+    needle = searchText(needle);
+    if (nameScore(entry, needle) >= 0) return true;
+    // Metadata is a fallback, not a bag of scattered matching letters.
+    return needle.length >= 3 && wordPrefixes(searchText(
+        [entry.detail, entry.keywords || ""].join(" ")), needle);
+}
+
+function astronomicalFact(needle) {
+    const facts = {
+        "c": { name: "Speed of Light (c)", value: "299,792,458 m/s", detail: "Universal physical constant in vacuum" },
+        "speed of light": { name: "Speed of Light (c)", value: "299,792,458 m/s", detail: "Universal physical constant in vacuum" },
+        "au": { name: "Astronomical Unit (1 AU)", value: "149,597,870,700 m", detail: "~149.6 million km · mean Earth-Sun distance" },
+        "astronomical unit": { name: "Astronomical Unit (1 AU)", value: "149,597,870,700 m", detail: "~149.6 million km · mean Earth-Sun distance" },
+        "ly": { name: "Light Year (1 ly)", value: "9.4607 × 10¹² km", detail: "Distance traversed by light in one Julian year" },
+        "light year": { name: "Light Year (1 ly)", value: "9.4607 × 10¹² km", detail: "Distance traversed by light in one Julian year" },
+        "parsec": { name: "Parsec (1 pc)", value: "3.0857 × 10¹³ km", detail: "~3.2616 light years · parallax of one arcsecond" },
+        "solar mass": { name: "Solar Mass (M☉)", value: "1.9884 × 10³⁰ kg", detail: "~333,000 Earth masses" },
+        "earth radius": { name: "Earth Radius (R⊕)", value: "6,371 km", detail: "Mean volumetric radius of Earth" },
+        "moon distance": { name: "Moon Distance", value: "384,400 km", detail: "Semi-major axis of the Moon's orbit" }
+    };
+    const key = needle.trim().toLowerCase();
+    if (facts[key]) {
+        const item = facts[key];
+        return {
+            id: "astro:" + key,
+            kind: "astro",
+            name: item.name + " = " + item.value,
+            detail: item.detail,
+            result: item.value,
+            enabled: true
+        };
+    }
+    return null;
+}
+
+function evaluateMath(needle) {
+    const trimmed = String(needle || "").trim();
+    if (!trimmed || trimmed.length > 50) return null;
+    if (!/^[0-9\.\s\+\-\*\/\%\(\)\^]+$/.test(trimmed))
+        return null;
+    if (!/[0-9]/.test(trimmed) || !/[\+\-\*\/\%\^]/.test(trimmed))
+        return null;
+    try {
+        const sanitized = trimmed.replace(/\^/g, "**");
+        const fn = new Function('"use strict"; return (' + sanitized + ')');
+        const val = fn();
+        if (typeof val === "number" && isFinite(val)) {
+            const formatted = Number.isInteger(val) ? String(val) : String(parseFloat(val.toFixed(6)));
+            return {
+                id: "calc:" + trimmed,
+                kind: "calc",
+                name: "= " + formatted,
+                detail: trimmed + " · press Enter to copy",
+                result: formatted,
+                enabled: true
+            };
+        }
+    } catch (err) {
+        return null;
+    }
+    return null;
+}
+
+function terminalCommand(query) {
+    const trimmed = String(query || "").trim();
+    if (trimmed.startsWith("!") || trimmed.startsWith("$ ")) {
+        const cmd = trimmed.replace(/^[!\$]\s*/, "").trim();
+        if (cmd.length > 0) {
+            return {
+                id: "cmd:" + cmd,
+                kind: "terminal_cmd",
+                name: "Run in terminal: " + cmd,
+                detail: "Execute in configured terminal emulator",
+                cmd: cmd,
+                enabled: true
+            };
+        }
+    }
+    return null;
+}
+
+function filter(entries, query, category, favorites, enableCalc) {
+    let needle = searchText(query);
     const commandsOnly = needle.charAt(0) === ">";
     if (commandsOnly)
         needle = needle.substring(1).trim();
     const saved = favorites || [];
-    return entries.filter(function(entry) {
+    const eligible = entries.filter(function(entry) {
         if (commandsOnly ? entry.kind === "app"
             : category === "apps" ? entry.kind !== "app"
             : category === "actions" ? entry.kind === "app"
             : category === "saved" ? entry.kind !== "app" || saved.indexOf(entry.appId) < 0 : false)
             return false;
-        return !needle || matches(entry, needle);
+        return true;
     });
+    // Keep the discovery order for empty searches and equal-strength matches.
+    // Once a name matches, unrelated metadata hits cannot crowd it out.
+    const named = needle ? eligible.map(function(entry, index) {
+        return {entry: entry, index: index, score: nameScore(entry, needle)};
+    }).filter(function(item) { return item.score >= 0; }) : [];
+    named.sort(function(a, b) { return a.score - b.score || a.index - b.index; });
+    const matched = !needle ? eligible : named.length
+        ? named.map(function(item) { return item.entry; })
+        : eligible.filter(function(entry) { return matches(entry, needle); });
+
+    if (!commandsOnly && category !== "saved" && needle) {
+        const special = [];
+        const cmd = terminalCommand(query);
+        if (cmd) special.push(cmd);
+        if (enableCalc !== false) {
+            const math = evaluateMath(needle);
+            if (math) special.push(math);
+            const astro = !named.length && needle.length > 2 ? astronomicalFact(needle) : null;
+            if (astro) special.push(astro);
+        }
+        if (special.length > 0)
+            return special.concat(matched);
+    }
+
+    return matched;
 }
 
 function selectedId(entries, currentId) {

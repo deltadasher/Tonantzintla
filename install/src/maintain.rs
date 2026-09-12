@@ -157,9 +157,12 @@ pub fn update(probe: &ProbeContext, assume_yes: bool) -> Result<()> {
 }
 
 fn shell_running(install_root: &Path) -> bool {
+    // The Quickshell project lives in src/quickshell, not at the runtime root.
+    // Probing the root finds no instance, so an update would report the shell
+    // idle and leave the running one on the previous revision.
     Command::new("qs")
         .arg("-p")
-        .arg(install_root)
+        .arg(install_root.join("src/quickshell"))
         .arg("list")
         .stdin(Stdio::null())
         .stdout(Stdio::piped())

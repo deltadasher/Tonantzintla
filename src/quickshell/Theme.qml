@@ -9,7 +9,10 @@ QtObject {
         "violet": "#a99cff",
         "cyan": "#72d9e7",
         "rose": "#ec8eae",
-        "amber": "#e9b872"
+        "amber": "#e9b872",
+        "emerald": "#77d6ae",
+        "solar": "#ff9e64",
+        "silver": "#d4d8e8"
     })
     readonly property color accent: adaptive ? AdaptivePalette.accent
         : accents[accentName] || accents.violet
@@ -58,13 +61,13 @@ QtObject {
             return rose;
         if (module === "network")
             return success;
-        if (module === "battery" || module === "tools" || module === "timer" || module === "guide")
+        if (module === "battery" || module === "guide")
             return warning;
         return accent;
     }
 
     function moduleSecondary(module) {
-        if (module === "focus" || module === "timer" || module === "calendar")
+        if (module === "focus" || module === "calendar")
             return cyan;
         if (module === "battery")
             return rose;
@@ -73,13 +76,18 @@ QtObject {
         return accent;
     }
 
-    readonly property int barHeight: 44
+    readonly property int barHeight: Settings.barHeightProfile === "compact" ? 36
+        : Settings.barHeightProfile === "tall" ? 52 : 44
     readonly property int radiusSmall: 8
     readonly property int radiusMedium: 13
     readonly property int radiusLarge: 20
-    readonly property int motionFast: 120
-    readonly property int motionNormal: 220
-    readonly property int motionSlow: 420
+    readonly property real motionScale: !Settings.motion ? 0
+        : Settings.motionSpeedProfile === "instant" ? 0
+        : Settings.motionSpeedProfile === "snappy" ? 0.55
+        : Settings.motionSpeedProfile === "cinematic" ? 1.6 : 1.0
+    readonly property int motionFast: Math.max(1, Math.round(120 * (motionScale || 0.001)))
+    readonly property int motionNormal: Math.max(1, Math.round(220 * (motionScale || 0.001)))
+    readonly property int motionSlow: Math.max(1, Math.round(420 * (motionScale || 0.001)))
     readonly property string fontText: Settings.fontText
     readonly property string fontDisplay: Settings.fontDisplay
     readonly property string fontMono: Settings.fontMono

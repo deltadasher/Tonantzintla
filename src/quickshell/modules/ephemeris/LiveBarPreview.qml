@@ -17,12 +17,13 @@ Rectangle {
         anchors.left: parent.left
         anchors.top: parent.top
         anchors.margins: 12
-        text: "YOUR BAR · LIVE"
+        text: "YOUR BAR · LIVE (" + Settings.barPosition.toUpperCase() + ")"
         color: Theme.muted
         font.family: Theme.fontMono
         font.pixelSize: 10
     }
     ApertureContents {
+        previewMode: true
         width: root.desktopWidth
         height: implicitHeight
         x: 12

@@ -30,8 +30,10 @@ Surfaces:
   open TAB                Open an Ephemeris surface
   toggle TAB              Toggle an Ephemeris surface
   close                   Close Ephemeris
+  bar-edit                Open the full-screen Bar Studio edit mode
   quick [telemetry]       Toggle the System page (legacy shortcut)
   lock                    Engage the secure Umbra session veil
+  lock-status             Query actual lock acquisition (read-only)
   preview-lock            Preview Umbra without locking the session
   greeter ACTION [TARGET] Manage Umbra adapters for SDDM, LightDM, greetd, Ly, or GDM
   capture ACTION          Run region-copy, region-save, full-copy, or full-save
@@ -42,10 +44,16 @@ Surfaces:
 
 Machine:
   install                 Install Tonantzintla transactionally
+  sync                    Pull git changes, apply update, and restart desktop
   update                  Pull the source and update Tonantzintla
   uninstall               Remove Tonantzintla's links and runtime
   plan                    Show what an install would change, without changing it
   doctor                  Report required and optional machine integrations
+
+Configuration:
+  config get [KEY]        Read all or a specific setting from settings.json
+  config set KEY VALUE    Update a configuration key (e.g., barPosition left, ephemerisStyle spotlight)
+  config preset NAME      Apply a desktop theme preset (serpantinum, caelestia, solaris, cyberpunk, minimalist)
 
 Inspection:
   profile                 Show Tonantzintla process, CPU, and resident-memory usage
@@ -69,18 +77,33 @@ run_installer() {
     esac
 
     if [[ -x "$installer" ]]; then
-        exec "$installer" --source "$project_root" "$subcommand" "$@"
+        "$installer" --source "$project_root" "$subcommand" "$@"
+        return $?
+    fi
+
+    local release_bin="$project_root/install/target/release/tonantzintla-installer"
+    if [[ -x "$release_bin" ]]; then
+        "$release_bin" --source "$project_root" "$subcommand" "$@"
+        return $?
+    fi
+
+    local debug_bin="$project_root/install/target/debug/tonantzintla-installer"
+    if [[ -x "$debug_bin" ]]; then
+        "$debug_bin" --source "$project_root" "$subcommand" "$@"
+        return $?
     fi
 
     local manifest="$project_root/install/Cargo.toml"
     if [[ -f "$manifest" ]] && command -v cargo >/dev/null 2>&1; then
-        exec cargo run --quiet --release --locked --manifest-path "$manifest" -- \
+        cargo run --quiet --release --locked --manifest-path "$manifest" -- \
             --source "$project_root" "$subcommand" "$@"
+        return $?
     fi
 
-    printf 'The Tonantzintla installer is not built and Cargo is unavailable.\n' >&2
+    printf 'Error: tonantzintla-installer binary not found and cargo is not installed.\n' >&2
+    printf 'Run from a source checkout with rust installed, or install a release binary.\n' >&2
     printf 'On Arch Linux, install Rust with: sudo pacman -S rust\n' >&2
-    exit 1
+    return 1
 }
 
 show_profile() {
@@ -95,7 +118,7 @@ require_argument() {
     fi
 }
 
-settings_file="${XDG_CONFIG_HOME:-${HOME:?}/.config}/tonantzintla/settings.json"
+settings_file="${TONANTZINTLA_SETTINGS:-${XDG_CONFIG_HOME:-${HOME:?}/.config}/tonantzintla/settings.json}"
 
 setting_value() {
     local key="$1"
@@ -123,19 +146,181 @@ run_setting() {
     return 1
 }
 
+manage_config() {
+    local action="${1:-get}"
+    shift || true
+
+    python3 - "$settings_file" "$action" "$@" <<'PY'
+import json
+import os
+import sys
+
+settings_path = sys.argv[1]
+action = sys.argv[2] if len(sys.argv) > 2 else "get"
+args = sys.argv[3:]
+
+data = {}
+if os.path.exists(settings_path):
+    try:
+        with open(settings_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception as e:
+        print(f"Warning: Failed to parse {settings_path}: {e}", file=sys.stderr)
+
+def save_data(d):
+    os.makedirs(os.path.dirname(settings_path), exist_ok=True)
+    with open(settings_path, "w", encoding="utf-8") as f:
+        json.dump(d, f, indent=2)
+
+if action == "get":
+    if args:
+        key = args[0]
+        if key in data:
+            val = data[key]
+            if isinstance(val, (dict, list)):
+                print(json.dumps(val, indent=2))
+            elif isinstance(val, bool):
+                print("true" if val else "false")
+            else:
+                print(val)
+        else:
+            print(f"Key '{key}' not set in {settings_path}", file=sys.stderr)
+            sys.exit(1)
+    else:
+        print(json.dumps(data, indent=2))
+
+elif action == "set":
+    if len(args) < 2:
+        print("Usage: blackhole config set <key> <value>", file=sys.stderr)
+        sys.exit(2)
+    key = args[0]
+    val_raw = args[1]
+    if val_raw.lower() == "true":
+        val = True
+    elif val_raw.lower() == "false":
+        val = False
+    elif val_raw.isdigit():
+        val = int(val_raw)
+    else:
+        try:
+            val = float(val_raw)
+        except ValueError:
+            try:
+                val = json.loads(val_raw)
+            except Exception:
+                val = val_raw
+    data[key] = val
+    save_data(data)
+    print(f"✓ Set {key} = {json.dumps(val)}")
+
+elif action == "preset":
+    if not args:
+        print("Usage: blackhole config preset <serpantinum|caelestia|solaris|cyberpunk|minimalist>", file=sys.stderr)
+        sys.exit(2)
+    preset_name = args[0].lower()
+    presets = {
+        "serpantinum": {
+            "accentName": "violet",
+            "barPosition": "top",
+            "barMode": "capsules",
+            "barHeightProfile": "nominal",
+            "ephemerisStyle": "deck",
+            "motionSpeedProfile": "fluid",
+            "typographyProfile": "serpantinum",
+            "fontText": "JetBrains Mono",
+            "fontDisplay": "JetBrains Mono",
+            "fontMono": "JetBrains Mono"
+        },
+        "caelestia": {
+            "accentName": "cyan",
+            "barPosition": "left",
+            "barMode": "capsules",
+            "barHeightProfile": "compact",
+            "ephemerisStyle": "spotlight",
+            "motionSpeedProfile": "snappy",
+            "typographyProfile": "readable",
+            "fontText": "Noto Sans",
+            "fontDisplay": "Noto Sans Display",
+            "fontMono": "Noto Sans Mono"
+        },
+        "solaris": {
+            "accentName": "amber",
+            "barPosition": "bottom",
+            "barMode": "docked",
+            "barHeightProfile": "nominal",
+            "ephemerisStyle": "spotlight",
+            "motionSpeedProfile": "fluid",
+            "clock12h": False
+        },
+        "cyberpunk": {
+            "accentName": "rose",
+            "barPosition": "right",
+            "barMode": "capsules",
+            "barHeightProfile": "compact",
+            "ephemerisStyle": "spotlight",
+            "motionSpeedProfile": "instant",
+            "typographyProfile": "serpantinum",
+            "fontText": "JetBrains Mono",
+            "fontDisplay": "JetBrains Mono",
+            "fontMono": "JetBrains Mono"
+        },
+        "minimalist": {
+            "accentName": "silver",
+            "barPosition": "top",
+            "barMode": "floating",
+            "barHeightProfile": "compact",
+            "ephemerisStyle": "spotlight",
+            "motionSpeedProfile": "snappy",
+            "showSystemStats": False,
+            "showNetworkLabel": False,
+            "showBluetooth": False,
+            "showBrightness": False,
+            "showBattery": True,
+            "showMicrophone": False,
+            "showTray": False,
+            "showDate": False
+        }
+    }
+    if preset_name not in presets:
+        print(f"Error: Unknown preset '{preset_name}'. Supported presets: {', '.join(sorted(presets.keys()))}", file=sys.stderr)
+        sys.exit(1)
+    
+    preset = presets[preset_name]
+    data.update(preset)
+    save_data(data)
+    print(f"✦ Wrote '{preset_name}' desktop preset to {settings_path}. (Run 'blackhole restart' to reload desktop)")
+else:
+    print(f"Unknown config action: {action}. Use: get, set, preset", file=sys.stderr)
+    sys.exit(2)
+PY
+}
+
 launch_terminal() {
-    run_setting terminal || true
+    local cmd=("$@")
+    local configured
+    configured="$(setting_value terminal)"
+    if [[ -n "$configured" ]]; then
+        if [[ ${#cmd[@]} -gt 0 ]]; then
+            exec sh -lc "$configured \"\$@\"" -- "${cmd[@]}"
+        else
+            exec sh -lc "$configured"
+        fi
+    fi
     if command -v xdg-terminal-exec >/dev/null 2>&1; then
-        exec xdg-terminal-exec
+        exec xdg-terminal-exec "${cmd[@]}"
     fi
     if [[ -n "${TERMINAL:-}" ]]; then
-        exec sh -lc "$TERMINAL"
+        if [[ ${#cmd[@]} -gt 0 ]]; then
+            exec sh -lc "$TERMINAL \"\$@\"" -- "${cmd[@]}"
+        else
+            exec sh -lc "$TERMINAL"
+        fi
     fi
     local candidate
     for candidate in foot kitty alacritty wezterm konsole gnome-terminal \
         xfce4-terminal terminology xterm; do
         if command -v "$candidate" >/dev/null 2>&1; then
-            exec "$candidate"
+            exec "$candidate" "${cmd[@]}"
         fi
     done
     printf 'No terminal is configured or discoverable. Set one in Tonantzintla Settings.\n' >&2
@@ -245,12 +430,30 @@ case "$command_name" in
     status)
         exec qs -p "$shell_root" list
         ;;
-    open|toggle)
+    open)
         require_argument "$command_name" "${2:-}"
-        call_ipc ephemeris "$command_name" "$2"
+        if [[ -n "${3:-}" ]]; then
+            call_ipc ephemeris openSection "$2" "$3"
+        else
+            call_ipc ephemeris open "$2"
+        fi
+        ;;
+    toggle)
+        require_argument "$command_name" "${2:-}"
+        call_ipc ephemeris toggle "$2"
         ;;
     close)
         call_ipc ephemeris close
+        ;;
+    bar-edit)
+        call_ipc aperture edit
+        ;;
+    island-settings)
+        target="${2:-clock}"
+        call_ipc aperture openIsland "$target"
+        ;;
+    close-island)
+        call_ipc aperture closeIsland
         ;;
     quick)
         tab="${2:-telemetry}"
@@ -264,6 +467,9 @@ case "$command_name" in
         ;;
     lock)
         exec qs -d -n -p "$shell_root/umbra-lock.qml"
+        ;;
+    lock-status)
+        exec qs -p "$shell_root/umbra-lock.qml" ipc call lockState status
         ;;
     preview-lock)
         call_ipc umbra preview
@@ -292,13 +498,44 @@ case "$command_name" in
         exec "$libexec/tonantzintla-notify" "$2" "${3:-}"
         ;;
     terminal)
-        launch_terminal
+        launch_terminal "${@:2}"
         ;;
     browser)
         run_setting browser || exec xdg-open "about:blank"
         ;;
     files)
         launch_files "${2:-$HOME}"
+        ;;
+    config)
+        manage_config "${@:2}"
+        ;;
+    sync)
+        printf '✦ Syncing Tonantzintla observatory...\n'
+        if [[ -e "$project_root/.git" ]]; then
+            source_status="$(git -C "$project_root" status --porcelain)"
+            if [[ -n "$source_status" ]]; then
+                printf 'Source has local changes. Commit them before syncing, or use blackhole install to install local work.\n' >&2
+                exit 1
+            fi
+            printf '→ Updating source repository from git...\n'
+            if git -C "$project_root" pull --ff-only; then
+                pull_status=0
+            else
+                pull_status=$?
+                printf 'Error: git pull failed. Sync halted to prevent overwriting local state.\n' >&2
+                exit "$pull_status"
+            fi
+        fi
+        printf '→ Applying runtime update...\n'
+        if (run_installer apply --profile recommended --niri keep --umbra lock --yes); then
+            install_status=0
+        else
+            install_status=$?
+            printf 'Error: Runtime installation failed. Desktop restart skipped.\n' >&2
+            exit "$install_status"
+        fi
+        printf '→ Restarting running desktop instance...\n'
+        exec "$project_root/bin/blackhole" restart
         ;;
     install|update|uninstall|doctor|plan)
         run_installer "$@"

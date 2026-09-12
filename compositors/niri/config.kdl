@@ -203,6 +203,10 @@ binds {
     Mod+Shift+W       { spawn "sh" "-lc" "exec \"$HOME/.local/bin/blackhole\" toggle walls"; }
     Mod+Shift+C       { spawn "sh" "-lc" "exec \"$HOME/.local/bin/blackhole\" toggle clipboard"; }
     Mod+Shift+A       { spawn "sh" "-lc" "exec \"$HOME/.local/bin/blackhole\" toggle notifications"; }
+    Mod+Alt+B         { spawn "sh" "-lc" "exec \"$HOME/.local/bin/blackhole\" bar-edit"; }
+    // Niri owns Mod+button-1 as its window-move gesture unless an explicit
+    // mouse bind overrides it. This is physical mouse button 1.
+    Mod+Alt+MouseLeft repeat=false hotkey-overlay-title=null { spawn "sh" "-lc" "exec \"$HOME/.local/bin/blackhole\" bar-edit"; }
 
     // Alt-tab: jump straight back to the last window you were on (MRU), no mouse
     Mod+Tab           repeat=false { focus-window-previous; }

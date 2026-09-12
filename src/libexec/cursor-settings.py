@@ -1,5 +1,6 @@
 """Installed Xcursor selection with validated, recoverable Niri config edits."""
 import json
+import hashlib
 import os
 from pathlib import Path
 import re
@@ -138,6 +139,7 @@ def inspect():
     result = dict(themes=themes(), path=str(path), theme='', size=24, hideTyping=False, hideAfter=0, editable=False)
     try:
         source = path.read_text()
+        result['revision'] = hashlib.sha256(source.encode()).hexdigest()
         span = cursor_span(source)
         block = source[span[0]:span[1]] if span else ''
         result['hideTyping'] = bool(re.search(r'(?m)^\s*hide-when-typing\b', mask_kdl(block)))
@@ -157,11 +159,13 @@ def inspect():
     return result
 
 
-def apply(theme, size, behavior=None):
+def apply(theme, size, behavior=None, revision=None):
     if theme not in themes() or not 16 <= size <= 96:
         raise ValueError('Choose an installed cursor theme and a size from 16 to 96.')
     path = config_path()
     source = path.read_text()
+    if revision is not None and hashlib.sha256(source.encode()).hexdigest() != revision:
+        raise ValueError('Configuration changed since it was opened. Refresh before applying; nothing was overwritten.')
     candidate = update(source, theme, size)
     if behavior is not None:
         if not isinstance(behavior, dict) or type(behavior.get('hideTyping')) is not bool or type(behavior.get('hideAfter')) is not int or not 0 <= behavior['hideAfter'] <= 60000:
@@ -193,7 +197,7 @@ def apply(theme, size, behavior=None):
         os.chmod(staged, path.stat().st_mode & 0o777)
         os.replace(staged, path)
         result = inspect()
-        result['message'] = 'Saved to Niri. Existing apps may need reopening. Backup: ' + str(backup)
+        result['message'] = 'Validated and saved. Niri reloads configuration automatically; existing apps may need reopening. Backup: ' + str(backup)
         return result
     finally:
         if staged and staged.exists():
@@ -202,7 +206,8 @@ def apply(theme, size, behavior=None):
 
 if __name__ == '__main__':
     try:
-        result = apply(sys.argv[2], int(sys.argv[3]), json.loads(sys.argv[4]) if len(sys.argv) == 5 else None) if len(sys.argv) in (4, 5) and sys.argv[1] == 'apply' else inspect()
+        result = apply(sys.argv[2], int(sys.argv[3]), json.loads(sys.argv[4]) if len(sys.argv) >= 5 else None,
+                       sys.argv[5] if len(sys.argv) == 6 else None) if len(sys.argv) in (4, 5, 6) and sys.argv[1] == 'apply' else inspect()
         print(json.dumps(result))
     except (OSError, ValueError, subprocess.SubprocessError) as error:
         print(json.dumps(dict(error=str(error))))

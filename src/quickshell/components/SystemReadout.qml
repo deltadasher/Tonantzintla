@@ -5,6 +5,7 @@ import "../services"
 
 Rectangle {
     id: root
+    property string outputName: ""
     implicitWidth: row.implicitWidth + 18
     implicitHeight: Settings.compact ? 34 : 38
     radius: 9
@@ -21,7 +22,9 @@ Rectangle {
         Repeater {
             model: Settings.showSystemStats ? [
                 { "code": "CPU", "value": SysStats.cpuPercent + "%" },
-                { "code": "MEM", "value": SysStats.memoryPercent + "%" }
+                { "code": "MEM", "value": SysStats.memoryPercent + "%" },
+                { "code": "GPU", "value": SysStats.gpuTemperature > 0 ? SysStats.gpuTemperature + "°" : "—" },
+                { "code": "DISK", "value": SysStats.diskPercent + "%" }
             ] : []
 
             Item {
@@ -52,7 +55,7 @@ Rectangle {
                         font.weight: Font.DemiBold
                     }
                 }
-                TapHandler { onTapped: ShellState.toggleEphemeris("system") }
+                TapHandler { onTapped: ShellState.toggleEphemeris("system", outputName) }
             }
         }
 
@@ -90,7 +93,7 @@ Rectangle {
                     font.weight: Font.DemiBold
                 }
             }
-            TapHandler { onTapped: ShellState.toggleEphemeris("audio") }
+            TapHandler { onTapped: ShellState.toggleEphemeris("audio", outputName) }
         }
     }
 

@@ -4,18 +4,27 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "components/BarLayout.js" as BarLayout
+import "components/BarPlacement.js" as BarPlacement
 
 QtObject {
     id: root
 
     property bool debug: Quickshell.env("TONANTZINTLA_DEBUG") === "1"
     property bool persistenceReady: false
+    property int layoutRevision: 0
 
     // Every persisted setting is declared exactly once, on the JsonAdapter
     // below. These aliases keep the public Settings.<name> surface stable;
     // writes flow into the adapter, which debounces a save to disk.
     property alias compact: settingsAdapter.compact
     property alias motion: settingsAdapter.motion
+    property alias barIconMotion: settingsAdapter.barIconMotion
+    property alias osdVolume: settingsAdapter.osdVolume
+    property alias osdMicrophone: settingsAdapter.osdMicrophone
+    property alias osdBrightness: settingsAdapter.osdBrightness
+    property alias osdDuration: settingsAdapter.osdDuration
+    property alias joinedSurfaces: settingsAdapter.joinedSurfaces
     property alias animateStars: settingsAdapter.animateStars
     property alias atmosphereStyle: settingsAdapter.atmosphereStyle
     property alias adaptivePalette: settingsAdapter.adaptivePalette
@@ -72,7 +81,188 @@ QtObject {
     property alias fileManager: settingsAdapter.fileManager
     property alias dateFormat: settingsAdapter.dateFormat
 
-    readonly property string clockFormat: showSeconds ? "HH:mm:ss" : "HH:mm"
+    property alias barPosition: settingsAdapter.barPosition
+    property alias barHeightProfile: settingsAdapter.barHeightProfile
+    property alias clock12h: settingsAdapter.clock12h
+    property alias showBatteryPercent: settingsAdapter.showBatteryPercent
+    property alias ephemerisStyle: settingsAdapter.ephemerisStyle
+    property alias motionSpeedProfile: settingsAdapter.motionSpeedProfile
+    property alias defaultLaunchTab: settingsAdapter.defaultLaunchTab
+    property alias showTabApps: settingsAdapter.showTabApps
+    property alias showTabMedia: settingsAdapter.showTabMedia
+    property alias showTabCalendar: settingsAdapter.showTabCalendar
+    property alias showTabWalls: settingsAdapter.showTabWalls
+    property alias showTabClipboard: settingsAdapter.showTabClipboard
+    property alias showTabCapture: settingsAdapter.showTabCapture
+    property alias notificationPosition: settingsAdapter.notificationPosition
+    property alias enableCalculator: settingsAdapter.enableCalculator
+    property alias barLayoutHorizontal: settingsAdapter.barLayoutHorizontal
+    property alias barLayoutVertical: settingsAdapter.barLayoutVertical
+    property alias barOutputOverrides: settingsAdapter.barOutputOverrides
+    property alias barIslandSpacing: settingsAdapter.barIslandSpacing
+    property alias barIslandPlacements: settingsAdapter.barIslandPlacements
+    property alias barThicknessPreset: settingsAdapter.barThicknessPreset
+
+    readonly property var defaultLayoutHorizontal: ({
+        "start": ["launcher", "workspaces", "media", "window_title"],
+        "center": ["clock"],
+        "end": ["system_stats", "status", "tray", "controls"]
+    })
+
+    readonly property var defaultLayoutVertical: ({
+        "start": ["launcher", "workspaces"],
+        "center": ["clock"],
+        "end": ["system_stats", "status", "tray", "controls"]
+    })
+
+    readonly property var activeLayoutHorizontal: {
+        return getBarLayout(false);
+    }
+
+    readonly property var activeLayoutVertical: {
+        return getBarLayout(true);
+    }
+
+    function getBarLayout(isVertical) {
+        const raw = isVertical ? barLayoutVertical : barLayoutHorizontal;
+        const fallback = isVertical ? defaultLayoutVertical : defaultLayoutHorizontal;
+        return BarLayout.normalize(raw, fallback);
+    }
+
+    function saveBarLayout(isVertical, layout) {
+        const jsonStr = JSON.stringify(BarLayout.normalize(layout,
+            isVertical ? defaultLayoutVertical : defaultLayoutHorizontal));
+        if (isVertical) {
+            barLayoutVertical = jsonStr;
+        } else {
+            barLayoutHorizontal = jsonStr;
+        }
+        layoutRevision++;
+    }
+
+    function resetBarLayout(isVertical) {
+        if (isVertical) {
+            barLayoutVertical = "";
+        } else {
+            barLayoutHorizontal = "";
+        }
+    }
+
+    function moveIsland(isVertical, zoneName, fromIndex, toIndex) {
+        const layout = getBarLayout(isVertical);
+        const zone = layout[zoneName];
+        if (!zone || fromIndex < 0 || fromIndex >= zone.length || toIndex < 0 || toIndex >= zone.length)
+            return;
+        const item = zone.splice(fromIndex, 1)[0];
+        zone.splice(toIndex, 0, item);
+        saveBarLayout(isVertical, layout);
+    }
+
+    function transferIsland(isVertical, fromZone, toZone, islandId, targetIndex) {
+        const layout = getBarLayout(isVertical);
+        saveBarLayout(isVertical, BarLayout.transfer(layout, fromZone, toZone, islandId, targetIndex));
+    }
+
+    function addIslandToZone(isVertical, zone, islandId, targetIndex) {
+        const layout = getBarLayout(isVertical);
+        saveBarLayout(isVertical, BarLayout.addIsland(layout, zone, islandId, targetIndex));
+    }
+
+    function removeIslandFromLayout(isVertical, islandId) {
+        const layout = getBarLayout(isVertical);
+        saveBarLayout(isVertical, BarLayout.removeIsland(layout, islandId));
+    }
+
+    function getEffectiveBarPosition(outputName) {
+        if (!outputName) return barPosition;
+        try {
+            const overrides = JSON.parse(barOutputOverrides || "{}");
+            if (overrides[outputName] && overrides[outputName].barPosition)
+                return overrides[outputName].barPosition;
+        } catch (_) {}
+        return barPosition;
+    }
+
+    function getEffectiveBarLayout(outputName, isVertical) {
+        if (outputName) {
+            try {
+                const overrides = JSON.parse(barOutputOverrides || "{}");
+                if (overrides[outputName]) {
+                    const key = isVertical ? "barLayoutVertical" : "barLayoutHorizontal";
+                    if (overrides[outputName][key]) {
+                        const fallback = isVertical ? defaultLayoutVertical : defaultLayoutHorizontal;
+                        return BarLayout.normalize(overrides[outputName][key], fallback);
+                    }
+                }
+            } catch (_) {}
+        }
+        return getBarLayout(isVertical);
+    }
+
+    function getEdgeBarLayout(outputName, edge) {
+        const primaryEdge = getEffectiveBarPosition(outputName);
+        const primaryVertical = primaryEdge === "left" || primaryEdge === "right";
+        const base = getEffectiveBarLayout(outputName, primaryVertical);
+        return BarPlacement.layoutFor(base, primaryEdge, edge,
+            barIslandPlacements, outputName);
+    }
+
+    function edgeHasIslands(outputName, edge) {
+        const layout = getEdgeBarLayout(outputName, edge);
+        return layout.start.length + layout.center.length + layout.end.length > 0;
+    }
+
+    function getIslandPlacement(outputName, islandId) {
+        const placements = BarPlacement.output(barIslandPlacements, outputName);
+        return placements[islandId] || null;
+    }
+
+    function placeIsland(outputName, islandId, edge, zone, orderedIds) {
+        let next = barIslandPlacements;
+        const screens = Quickshell.screens;
+        if (screens && screens.length > 0) {
+            for (let i = 0; i < screens.length; ++i)
+                next = JSON.stringify(BarPlacement.place(next, screens[i].name, islandId, edge, zone, orderedIds));
+        } else {
+            next = JSON.stringify(BarPlacement.place(next, outputName, islandId, edge, zone, orderedIds));
+        }
+        barIslandPlacements = next;
+        layoutRevision++;
+    }
+
+    function clearIslandPlacement(outputName, islandId) {
+        let next = barIslandPlacements;
+        const screens = Quickshell.screens;
+        if (screens && screens.length > 0) {
+            for (let i = 0; i < screens.length; ++i)
+                next = JSON.stringify(BarPlacement.clear(next, screens[i].name, islandId));
+        } else {
+            next = JSON.stringify(BarPlacement.clear(next, outputName, islandId));
+        }
+        barIslandPlacements = next;
+        layoutRevision++;
+    }
+
+    function setOutputOverride(outputName, key, value) {
+        if (!outputName) return;
+        let overrides = {};
+        try { overrides = JSON.parse(barOutputOverrides || "{}"); } catch (_) {}
+        if (!overrides[outputName]) overrides[outputName] = {};
+        overrides[outputName][key] = value;
+        barOutputOverrides = JSON.stringify(overrides);
+    }
+
+    function clearOutputOverrides(outputName) {
+        if (!outputName) return;
+        let overrides = {};
+        try { overrides = JSON.parse(barOutputOverrides || "{}"); } catch (_) {}
+        delete overrides[outputName];
+        barOutputOverrides = JSON.stringify(overrides);
+    }
+
+    readonly property string clockFormat: clock12h
+        ? (showSeconds ? "hh:mm:ss AP" : "hh:mm AP")
+        : (showSeconds ? "HH:mm:ss" : "HH:mm")
     readonly property string configRoot: {
         const xdg = Quickshell.env("XDG_CONFIG_HOME") || "";
         const home = Quickshell.env("HOME") || "/tmp";
@@ -110,6 +300,62 @@ QtObject {
             showTray = true;
             showDate = true;
         }
+    }
+
+    function applyDesktopPreset(name) {
+        if (name === "serpantinum") {
+            accentName = "violet";
+            barPosition = "top";
+            barMode = "capsules";
+            barHeightProfile = "nominal";
+            ephemerisStyle = "deck";
+            motionSpeedProfile = "fluid";
+            applyTypographyPreset("serpantinum");
+            applyBarLayoutPreset({start: ["launcher", "workspaces", "media", "window_title"], center: ["clock"], end: ["system_stats", "status", "tray", "controls"]});
+        } else if (name === "caelestia") {
+            accentName = "cyan";
+            barPosition = "left";
+            barMode = "capsules";
+            barHeightProfile = "compact";
+            ephemerisStyle = "spotlight";
+            motionSpeedProfile = "snappy";
+            applyTypographyPreset("readable");
+            applyBarLayoutPreset({start: ["launcher", "workspaces"], center: ["clock"], end: ["status", "tray", "controls"]});
+        } else if (name === "solaris") {
+            accentName = "amber";
+            barPosition = "bottom";
+            barMode = "docked";
+            barHeightProfile = "nominal";
+            ephemerisStyle = "spotlight";
+            motionSpeedProfile = "fluid";
+            clock12h = false;
+            applyBarLayoutPreset({start: ["launcher", "workspaces", "media"], center: ["clock"], end: ["system_stats", "status", "tray", "controls"]});
+        } else if (name === "cyberpunk") {
+            accentName = "rose";
+            barPosition = "right";
+            barMode = "capsules";
+            barHeightProfile = "compact";
+            ephemerisStyle = "spotlight";
+            motionSpeedProfile = "instant";
+            applyTypographyPreset("serpantinum");
+            applyBarLayoutPreset({start: ["launcher", "workspaces"], center: ["clock", "media"], end: ["status", "tray", "controls"]});
+        } else if (name === "minimalist") {
+            accentName = "silver";
+            barPosition = "top";
+            barMode = "floating";
+            barHeightProfile = "compact";
+            ephemerisStyle = "spotlight";
+            motionSpeedProfile = "snappy";
+            applyBarPreset("minimal");
+            applyBarLayoutPreset({start: ["launcher"], center: ["clock"], end: ["status"]});
+        }
+    }
+
+    function applyBarLayoutPreset(layout) {
+        barLayoutHorizontal = JSON.stringify(BarLayout.normalize(layout, defaultLayoutHorizontal));
+        barLayoutVertical = JSON.stringify(BarLayout.normalize(layout, defaultLayoutVertical));
+        barIslandPlacements = "";
+        barOutputOverrides = "";
     }
 
     function migrateLegacyPersonalDefaults() {
@@ -190,6 +436,12 @@ QtObject {
             id: settingsAdapter
             property bool compact: false
             property bool motion: true
+            property bool barIconMotion: true
+            property bool osdVolume: true
+            property bool osdMicrophone: true
+            property bool osdBrightness: true
+            property int osdDuration: 1450
+            property bool joinedSurfaces: false
             property bool animateStars: true
             property string atmosphereStyle: "nominal"
             property bool adaptivePalette: false
@@ -246,6 +498,27 @@ QtObject {
             property string browser: ""
             property string fileManager: ""
             property string dateFormat: "yyyy · MM · dd"
+            property string barPosition: "top"
+            property string barHeightProfile: "nominal"
+            property bool clock12h: false
+            property bool showBatteryPercent: false
+            property string ephemerisStyle: "spotlight"
+            property string motionSpeedProfile: "fluid"
+            property string defaultLaunchTab: "apps"
+            property bool showTabApps: true
+            property bool showTabMedia: true
+            property bool showTabCalendar: true
+            property bool showTabWalls: true
+            property bool showTabClipboard: true
+            property bool showTabCapture: true
+            property string notificationPosition: "top-right"
+            property bool enableCalculator: true
+            property string barLayoutHorizontal: ""
+            property string barLayoutVertical: ""
+            property string barOutputOverrides: ""
+            property int barIslandSpacing: 4
+            property string barIslandPlacements: ""
+            property string barThicknessPreset: "nominal"
         }
     }
 }

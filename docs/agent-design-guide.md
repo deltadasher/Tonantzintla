@@ -2,6 +2,9 @@
 
 Updated: 2026-09-05. Audience: coding and design agents working on this repository.
 
+For the current Gemini handoff, start with
+[the dated 1.1 roadmap](gemini-roadmap-1.1.md), including its P0 integration gaps.
+
 ## 1. The product, in one sentence
 
 An observatory you operate: astronomy gives the interface its identity, while
@@ -101,10 +104,12 @@ the smallest Niri-compatible solution that keeps visible shapes, clipping and in
 regions synchronized. Do not add a renderer dependency without considering packaging,
 fallback behavior and measured cost.
 
-**Important current gap:** TonantzintlaMorphBackdrop.qml presently interpolates a
-rounded Rectangle from a source capsule to a panel. Restoring its loader restores
-that expansion, not Caelestia-style joined blob fields. Calendar's telemetry
-metaball shader is a separate effect. Agents must not conflate the two.
+**Verified 2026-09-06:** InstrumentGeometry and InstrumentBridge exist as preview
+components, but are not wired into the live Ephemeris host. The inactive settings
+toggle is removed pending integration. The isolated harness is
+src/quickshell/preview-instruments.qml. This is not Caelestia's SDF union renderer;
+Calendar's telemetry metaball shader is separate. Live integration, rounded-mask
+containment and fractional-scale validation remain required.
 
 ### Caelestia: requested state versus displayed state
 
@@ -222,3 +227,54 @@ separate gate. Do not initiate disruptive tests without user consent.
 
 When uncertain, choose a truthful limitation and a reversible implementation over
 a convincing-looking success message.
+
+## 8. Implementation follow-through: six priorities
+
+### Flight manual refinement (2026-09-06)
+
+The manual now has Overview, Keys and Lock only. The old Modules list contained
+hard-coded LIVE/READY labels rather than actual diagnostics and was removed.
+Overview uses a contained logo and stable navigation targets; the Umbra shortcut
+opens guidance rather than immediately locking. Lock uses persisted idle settings,
+and distinguishes the non-secure preview from an explicit Lock now action.
+Default shortcut documentation is labelled as such, not claimed as discovered
+live Niri bindings. Overview/Lock are scrollable and request a shorter host height.
+
+**Deferred idea, not approved for implementation:** a small local Observatory card
+with an optional user-chosen name, appearance presets and useful shortcuts. No
+account system, fabricated activity, automatic identity collection or hard-coded
+developer profile. The user is undecided; do not silently replace the manual with
+this concept. Prototype only after a new explicit request.
+
+- **Lock:** read-only `blackhole lock-status` queries the isolated lock's secure
+  state, not just process existence. Idle command/path changes restart the owned
+  watcher. Real authentication, inhibitors and suspend remain host acceptance gates;
+  no automated suspend behavior was added on an unverified path.
+- **Motion:** shared geometry and curved attachments are preview prototypes, not
+  integrated live-host features. Rapid switching and reduced motion have controller
+  tests; they do not prove live rounded containment or GPU visual acceptance.
+- **Settings:** cursor status distinguishes loading, unsupported, dirty and failed.
+  Apply checks the revision observed by the UI before editing, in addition to the
+  validation-time concurrency check. Saved configuration is not labelled as proof
+  of live appearance.
+- **Compact interaction:** launcher/clipboard offer content-driven heights bounded
+  by available space. Clipboard has Up/Down/Enter selection; player selection is
+  keyboard accessible and no longer truncates to three players.
+- **Media:** invalid/unknown duration cannot accidentally seek to zero, changing
+  tracks cancels drag seeking, artwork errors show a fallback, and in-flight lyrics
+  requests retain their original identity while the next request is queued.
+- **Displays:** Settings → Niri settings offers session-only scale previews,
+  confirmed against Niri output data. An independent watchdog restores the previous
+  scale after 15 seconds unless kept, and does not overwrite intervening external
+  scale changes. No persistent output configuration, mode, rotation or output-off
+  editing is exposed. Host rollback behavior still requires an explicit test;
+  process death, compositor failure or machine shutdown can defeat a watchdog.
+
+Additional references checked 2026-09-05: Serpantinum's
+[changelog](https://raw.githubusercontent.com/ilyamiro/serpantinum/master/CHANGELOG.md)
+documents adaptive panels and several media/location/locking fixes. Its version
+file and retrieved changelog disagree on the latest version; don't invent release
+attribution. [DMS](https://github.com/AvengeMedia/DankMaterialShell#features) is a
+reference for complete Niri/session integration and backend separation.
+[Noctalia](https://github.com/noctalia-dev/noctalia) is a reference for configuration
+ownership; its newer native renderer is distinct from legacy Quickshell versions.

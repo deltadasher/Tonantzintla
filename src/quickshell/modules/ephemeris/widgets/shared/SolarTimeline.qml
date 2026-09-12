@@ -78,6 +78,26 @@ Item {
             }
             ctx.beginPath(); ctx.moveTo(0, horizon); ctx.lineTo(width, horizon);
             ctx.strokeStyle = Theme.line; ctx.lineWidth = 1; ctx.stroke();
+
+            // Daylight area fill under the solar curve down to the horizon
+            if (dayStart >= 0 && dayEnd > dayStart) {
+                const dayGrad = ctx.createLinearGradient(0, height * 0.1, 0, horizon);
+                dayGrad.addColorStop(0, Qt.rgba(Theme.warning.r, Theme.warning.g, Theme.warning.b, 0.14));
+                dayGrad.addColorStop(1, Qt.rgba(Theme.warning.r, Theme.warning.g, Theme.warning.b, 0.01));
+                ctx.beginPath();
+                ctx.moveTo(dayStart * width, horizon);
+                const startStep = Math.round(dayStart * 120);
+                const endStep = Math.round(dayEnd * 120);
+                for (let i = startStep; i <= endStep; i++) {
+                    const f = i / 120;
+                    ctx.lineTo(f * width, Math.min(horizon, yAt(f)));
+                }
+                ctx.lineTo(dayEnd * width, horizon);
+                ctx.closePath();
+                ctx.fillStyle = dayGrad;
+                ctx.fill();
+            }
+
             for (let pass = 0; pass < 2; pass++) {
                 const limit = pass === 0 ? 1 : root.progress;
                 if (limit <= 0) continue;
@@ -99,7 +119,10 @@ Item {
                 const x = root.progress * width, y = yAt(root.progress);
                 ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height);
                 ctx.strokeStyle = Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.25); ctx.stroke();
-                ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2);
+                ctx.beginPath(); ctx.arc(x, y, 10, 0, Math.PI * 2);
+                ctx.fillStyle = Qt.rgba(Theme.warning.r, Theme.warning.g, Theme.warning.b, 0.22);
+                ctx.fill();
+                ctx.beginPath(); ctx.arc(x, y, 4.5, 0, Math.PI * 2);
                 ctx.fillStyle = Theme.warning; ctx.fill();
             }
         }

@@ -8,9 +8,10 @@ QtObject {
     property string controlPath: ""
     property string executable: "swayidle"
     property string error: ""
+    readonly property int effectiveSeconds: Math.max(60, Math.min(3600, seconds))
     readonly property string status: !enabled ? "Automatic locking is off"
         : error.length ? error
-        : watcher.running ? "Idle watcher running · locks after " + Math.round(seconds / 60) + " minutes"
+        : watcher.running ? "Idle watcher running · requests lock after " + Math.round(effectiveSeconds / 60) + " minutes"
         : "Starting idle watcher…"
 
     function quoted(value) { return "'" + value.replace(/'/g, "'\\''") + "'"; }
@@ -21,6 +22,8 @@ QtObject {
     }
     onEnabledChanged: restart()
     onSecondsChanged: restart()
+    onControlPathChanged: restart()
+    onExecutableChanged: restart()
     Component.onCompleted: restart()
 
     // Failed executable launches do not necessarily emit Process.exited.
@@ -43,7 +46,8 @@ QtObject {
             if (!root.enabled) return;
             if (watcher.running) { restart(); return; }
             root.error = "";
-            watcher.command = [root.executable, "-w", "timeout", String(Math.max(60, Math.min(3600, root.seconds))),
+            if (!root.controlPath.length) { root.error = "Lock command unavailable"; return; }
+            watcher.command = [root.executable, "-w", "timeout", String(root.effectiveSeconds),
                 "exec " + root.quoted(root.controlPath) + " lock"];
             watcher.running = true;
         }

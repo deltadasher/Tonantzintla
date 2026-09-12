@@ -21,6 +21,16 @@ ShellRoot {
     property bool umbraPreviewResident: Umbra.previewActive
     property bool umbraRevealResident: false
     readonly property bool sessionIngress: Quickshell.env("TONANTZINTLA_SESSION_INGRESS") === "1"
+
+    Connections {
+        target: Settings
+        function onBarPositionChanged() {
+            // Edge changes are global. Drop stale per-output placements so a
+            // widget left on the old edge cannot survive on one monitor.
+            Settings.barOutputOverrides = "";
+            Settings.barIslandPlacements = "";
+        }
+    }
     readonly property var focusedScreens: {
         const screens = Quickshell.screens;
         if (screens.length === 0)
@@ -34,6 +44,21 @@ ShellRoot {
         return [screens[0]];
     }
 
+    // Ephemeris remembers the output that launched it. Commands from outside
+    // a bar fall back to the compositor focus.
+    readonly property var ephemerisScreens: {
+        const screens = Quickshell.screens;
+        if (screens.length === 0)
+            return [];
+        const requested = ShellState.ephemerisOutput || Compositor.focusedOutput;
+        if (requested) {
+            for (let index = 0; index < screens.length; index++) {
+                if (screens[index].name === requested)
+                    return [screens[index]];
+            }
+        }
+        return [screens[0]];
+    }
     Connections {
         target: ShellState
 
@@ -101,6 +126,12 @@ ShellRoot {
             ShellState.openEphemeris(tab);
         }
 
+        function openSection(tab: string, section: string): void {
+            if (section && section.length > 0)
+                ShellState.settingsSection = section;
+            ShellState.openEphemeris(tab);
+        }
+
         function toggle(tab: string): void {
             ShellState.toggleEphemeris(tab);
         }
@@ -154,13 +185,64 @@ ShellRoot {
         }
     }
 
-    Variants {
-        model: Quickshell.screens
-        ApertureBar {}
+    IpcHandler {
+        target: "aperture"
+
+        function edit(): void {
+            ShellState.enterBarEditMode();
+        }
+
+        function closeEdit(): void {
+            ShellState.exitBarEditMode();
+        }
+
+        function toggleEdit(): void {
+            ShellState.toggleBarEditMode();
+        }
+
+        function openIsland(islandId: string): void {
+            ShellState.openIslandSettings(islandId, null, 960, 0, 100, 48);
+        }
+
+        function closeIsland(): void {
+            ShellState.closeIslandSettings();
+        }
+
+        function startDrag(islandId: string, zone: string): void {
+            ShellState.startIslandDrag(islandId, null, zone);
+        }
+
+        function updateDrag(gx: real, gy: real): void {
+            ShellState.updateIslandDrag(gx, gy, 1920, 1080, false);
+        }
+
+        function finishDrag(): void {
+            ShellState.finishIslandDrag(false);
+        }
     }
 
     Variants {
-        model: root.ephemerisResident ? root.focusedScreens : []
+        model: Quickshell.screens
+        ApertureOutput {}
+    }
+
+    Variants {
+        model: ShellState.islandSettingsVisible ? root.focusedScreens : []
+        IslandQuickSettings {}
+    }
+
+    Variants {
+        model: ShellState.widgetSettingsVisible ? root.focusedScreens : []
+        WidgetQuickSettings {}
+    }
+
+    Variants {
+        model: ShellState.barEditMode ? root.focusedScreens : []
+        BarEditStudio {}
+    }
+
+    Variants {
+        model: root.ephemerisResident ? root.ephemerisScreens : []
         EphemerisSurface {}
     }
 

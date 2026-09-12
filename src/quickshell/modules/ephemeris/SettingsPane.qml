@@ -20,19 +20,19 @@ Item {
     // plus an optional enabledKey gating the row on another setting.
     component ToggleGrid: GridLayout {
         id: toggleGrid
-        property var rows: []
+        property var toggleRows: []
         columns: 2
         columnSpacing: 10
         rowSpacing: 10
 
         Repeater {
-            model: toggleGrid.rows
+            model: toggleGrid.toggleRows
             SettingToggle {
                 required property var modelData
                 Layout.fillWidth: true
                 enabled: !modelData.enabledKey || Settings[modelData.enabledKey] === true
                 label: modelData.label
-                detail: modelData.detail
+                detail: modelData.detail || ""
                 checked: Settings[modelData.key] === true
                 onToggled: Settings[modelData.key] = !Settings[modelData.key]
             }
@@ -110,7 +110,7 @@ Item {
                     Repeater {
                         model: [
                             { "key": "appearance", "label": "Appearance" },
-                            { "key": "bar", "label": "Bar" },
+                            { "key": "bar-editor", "label": "Bar editor" },
                             { "key": "launcher", "label": "Panels" },
                             { "key": "umbra", "label": "Lock screen" },
                             { "key": "system", "label": "System" },
@@ -157,7 +157,12 @@ Item {
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: {
-                                    ShellState.settingsSection = sectionButton.modelData.key;
+                                    if (sectionButton.modelData.key === "bar-editor") {
+                                        ShellState.closeEphemeris();
+                                        ShellState.enterBarEditMode();
+                                    } else {
+                                        ShellState.settingsSection = sectionButton.modelData.key;
+                                    }
                                     settingsFlick.contentY = 0;
                                 }
                             }
@@ -186,7 +191,6 @@ Item {
                     opacity: root.sectionReveal
                     transform: Translate { y: (1 - root.sectionReveal) * 16 }
                     sourceComponent: ShellState.settingsSection === "appearance" ? appearancePage
-                        : ShellState.settingsSection === "bar" ? barPage
                         : ShellState.settingsSection === "launcher" ? launcherPage
                         : ShellState.settingsSection === "umbra" ? umbraPage
                         : ShellState.settingsSection === "extensions" ? extensionsPage
@@ -199,7 +203,12 @@ Item {
 
     Component {
         id: niriPage
-        CursorSettings { width: pageLoader.width }
+        ColumnLayout {
+            width: pageLoader.width
+            spacing: 28
+            CursorSettings { Layout.fillWidth: true }
+            OutputSettings { Layout.fillWidth: true }
+        }
     }
 
     Component {
@@ -208,21 +217,82 @@ Item {
             width: pageLoader.width
             spacing: 10
 
-            Text {
-                text: "COLOR"
-                color: Theme.muted
-                font.family: Theme.fontMono
-                font.pixelSize: 11
-                font.letterSpacing: 1.1
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+
+                Repeater {
+                    model: [
+                        { name: "serpantinum", label: "Serpantinum", accent: "#a78bfa", desc: "Capsules & Fluid" },
+                        { name: "caelestia", label: "Caelestia", accent: "#38bdf8", desc: "Docked & Spotlight" },
+                        { name: "solaris", label: "Solaris", accent: "#fbbf24", desc: "Gold & Crisp" },
+                        { name: "cyberpunk", label: "Cyberpunk", accent: "#f43f5e", desc: "Left Bar & Vivid" },
+                        { name: "minimalist", label: "Minimalist", accent: "#94a3b8", desc: "Docked Bottom" }
+                    ]
+
+                    Rectangle {
+                        id: presetCard
+                        required property var modelData
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 52
+                        radius: 10
+                        color: presetPointer.containsMouse ? Theme.barNeutralHover : Qt.rgba(Theme.mantle.r, Theme.mantle.g, Theme.mantle.b, 0.6)
+                        border.width: 1
+                        border.color: presetPointer.containsMouse ? Theme.accent : Theme.barHairline
+
+                        Rectangle {
+                            width: 3
+                            height: 16
+                            radius: 1.5
+                            color: presetCard.modelData.accent
+                            anchors.left: parent.left
+                            anchors.leftMargin: 8
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        ColumnLayout {
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.left: parent.left
+                            anchors.leftMargin: 16
+                            anchors.right: parent.right
+                            anchors.rightMargin: 6
+                            spacing: 1
+
+                            Text {
+                                text: presetCard.modelData.label
+                                color: Theme.moon
+                                font.family: Theme.fontDisplay
+                                font.pixelSize: 11
+                                font.weight: Font.Bold
+                                elide: Text.ElideRight
+                            }
+                            Text {
+                                text: presetCard.modelData.desc
+                                color: Theme.muted
+                                font.family: Theme.fontMono
+                                font.pixelSize: 8
+                                elide: Text.ElideRight
+                            }
+                        }
+
+                        MouseArea {
+                            id: presetPointer
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: Settings.applyDesktopPreset(presetCard.modelData.name)
+                        }
+                    }
+                }
             }
 
             Row {
                 Layout.fillWidth: true
                 spacing: 18
-                height: 64
+                Layout.preferredHeight: 64
 
                 Repeater {
-                    model: ["violet", "cyan", "rose", "amber"]
+                    model: ["violet", "cyan", "rose", "amber", "emerald", "solar", "silver"]
                     Item {
                         id: accentChoice
                         required property string modelData
@@ -271,23 +341,13 @@ Item {
             SettingToggle {
                 Layout.fillWidth: true
                 label: "Wallpaper colors"
-                detail: "Pick theme colors from your wallpaper using Matugen"
                 checked: Settings.adaptivePalette
                 onToggled: Settings.adaptivePalette = !Settings.adaptivePalette
-            }
-
-            Text {
-                text: "TYPE"
-                color: Theme.muted
-                font.family: Theme.fontMono
-                font.pixelSize: 11
-                font.letterSpacing: 1.1
             }
 
             SettingChoice {
                 Layout.fillWidth: true
                 label: "Font preset"
-                detail: "Monospace-first, a softer reading mix, or system fonts"
                 value: Settings.typographyProfile
                 choices: [
                     { "label": "SERP", "value": "serpantinum" },
@@ -306,7 +366,6 @@ Item {
                 SettingTextField {
                     Layout.fillWidth: true
                     label: "Display font"
-                    detail: "Headings, clock, and large readouts"
                     value: Settings.fontDisplay
                     status: FontState.displayStatus
                     statusOk: FontState.displayOk
@@ -318,7 +377,6 @@ Item {
                 SettingTextField {
                     Layout.fillWidth: true
                     label: "Interface font"
-                    detail: "Labels and longer text"
                     value: Settings.fontText
                     status: FontState.textStatus
                     statusOk: FontState.textOk
@@ -330,7 +388,6 @@ Item {
                 SettingTextField {
                     Layout.fillWidth: true
                     label: "Monospace font"
-                    detail: "Numbers, codes, and small labels"
                     value: Settings.fontMono
                     status: FontState.monoStatus
                     statusOk: FontState.monoOk
@@ -342,7 +399,6 @@ Item {
                 SettingTextField {
                     Layout.fillWidth: true
                     label: "Icon font"
-                    detail: "Nerd Font icons used by the shell"
                     value: Settings.fontIcon
                     status: FontState.iconStatus
                     statusOk: FontState.iconOk
@@ -356,7 +412,6 @@ Item {
             SettingChoice {
                 Layout.fillWidth: true
                 label: "Panel animation"
-                detail: "How panels appear when opened"
                 value: Settings.motionStyle
                 choices: [
                     { "label": "RISE", "value": "rise" },
@@ -367,8 +422,20 @@ Item {
 
             SettingChoice {
                 Layout.fillWidth: true
+                label: "Animation speed"
+                value: Settings.motionSpeedProfile
+                choices: [
+                    { "label": "INSTANT", "value": "instant" },
+                    { "label": "SNAPPY", "value": "snappy" },
+                    { "label": "FLUID", "value": "fluid" },
+                    { "label": "CINEMATIC", "value": "cinematic" }
+                ]
+                onSelected: function(value) { Settings.motionSpeedProfile = value; }
+            }
+
+            SettingChoice {
+                Layout.fillWidth: true
                 label: "Background detail"
-                detail: "Amount of background detail in panels"
                 value: Settings.atmosphereStyle
                 choices: [
                     { "label": "QUIET", "value": "quiet" },
@@ -380,12 +447,14 @@ Item {
 
             ToggleGrid {
                 Layout.fillWidth: true
-                rows: [
+                toggleRows: [
                     { "key": "motion", "label": "Animations", "detail": "Enable transitions and animations" },
                     { "key": "animateStars", "label": "Animated stars", "detail": "Animate stars behind panels" },
                     { "key": "compact", "label": "Compact mode", "detail": "Make the bar shorter" }
                 ]
             }
+
+
             Item { Layout.preferredHeight: 8 }
         }
     }
@@ -396,18 +465,105 @@ Item {
             width: pageLoader.width
             spacing: 10
 
-            Text {
-                text: "BAR ITEMS"
-                color: Theme.muted
-                font.family: Theme.fontMono
-                font.pixelSize: 11
-                font.letterSpacing: 1.1
+            // Bar Studio Launcher Card
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: 64
+                radius: 14
+                color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, studioBtnHover.containsMouse ? 0.20 : 0.10)
+                border.width: 1.5
+                border.color: Theme.accent
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: 14
+                    spacing: 12
+
+                    Text {
+                        text: "✦"
+                        color: Theme.accent
+                        font.pixelSize: 22
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 2
+                        Text {
+                            text: "Arrange the bar"
+                            color: Theme.moon
+                            font.family: Theme.fontDisplay
+                            font.pixelSize: 14
+                            font.bold: true
+                        }
+                        Text {
+                            text: "Move widgets, add or remove them, and set what shows on each display"
+                            color: Theme.muted
+                            font.family: Theme.fontText
+                            font.pixelSize: 11
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                        }
+                    }
+
+                    Rectangle {
+                        implicitWidth: openStudioText.implicitWidth + 24
+                        implicitHeight: 34
+                        radius: 10
+                        color: Theme.accent
+                        border.width: 0
+
+                        Text {
+                            id: openStudioText
+                            anchors.centerIn: parent
+                            text: "Edit Mode ✦"
+                            color: Theme.void_
+                            font.family: Theme.fontText
+                            font.pixelSize: 12
+                            font.bold: true
+                        }
+                    }
+                }
+
+                MouseArea {
+                    id: studioBtnHover
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        ShellState.closeEphemeris();
+                        ShellState.enterBarEditMode();
+                    }
+                }
+            }
+
+            SettingChoice {
+                Layout.fillWidth: true
+                label: "Bar position"
+                value: Settings.barPosition
+                choices: [
+                    { "label": "TOP", "value": "top" },
+                    { "label": "BOTTOM", "value": "bottom" },
+                    { "label": "LEFT", "value": "left" },
+                    { "label": "RIGHT", "value": "right" }
+                ]
+                onSelected: function(value) { Settings.barPosition = value; }
+            }
+
+            SettingChoice {
+                Layout.fillWidth: true
+                label: "Bar size"
+                value: Settings.barHeightProfile
+                choices: [
+                    { "label": "COMPACT", "value": "compact" },
+                    { "label": "NOMINAL", "value": "nominal" },
+                    { "label": "TALL", "value": "tall" }
+                ]
+                onSelected: function(value) { Settings.barHeightProfile = value; }
             }
 
             SettingChoice {
                 Layout.fillWidth: true
                 label: "Bar style"
-                detail: "Docked, floating, or separate capsules"
                 value: Settings.barMode
                 choices: [
                     { "label": "DOCKED", "value": "docked" },
@@ -419,9 +575,19 @@ Item {
 
             SettingChoice {
                 Layout.fillWidth: true
+                label: "Time notation"
+                value: Settings.clock12h ? "12h" : "24h"
+                choices: [
+                    { "label": "24-HOUR", "value": "24h" },
+                    { "label": "12-HOUR", "value": "12h" }
+                ]
+                onSelected: function(value) { Settings.clock12h = value === "12h"; }
+            }
+
+            SettingChoice {
+                Layout.fillWidth: true
                 visible: Settings.barMode !== "docked"
                 label: "Edge spacing"
-                detail: "Space between the bar and the screen edge"
                 value: Settings.barMargin
                 choices: [
                     { "label": "TIGHT", "value": 8 },
@@ -434,7 +600,6 @@ Item {
             SettingChoice {
                 Layout.fillWidth: true
                 label: "Glass density"
-                detail: "How see-through the bar is"
                 value: Settings.barOpacity
                 choices: [
                     { "label": "LIGHT", "value": 0.82 },
@@ -447,7 +612,6 @@ Item {
             SettingChoice {
                 Layout.fillWidth: true
                 label: "Widget preset"
-                detail: "Apply a quick visibility preset, then tune individual channels"
                 value: ""
                 choices: [
                     { "label": "MINIMAL", "value": "minimal" },
@@ -459,26 +623,33 @@ Item {
 
             ToggleGrid {
                 Layout.fillWidth: true
-                rows: [
-                    { "key": "showLauncherButton", "label": "Launcher control", "detail": "Show the app launcher button" },
-                    { "key": "showSettingsButton", "label": "Settings control", "detail": "Show the settings button" },
-                    { "key": "showWorkspaces", "label": "Workspaces", "detail": "Show Compositor workspaces on this screen" },
-                    { "key": "showFocusedWindow", "label": "Focused window", "detail": "Show the active app and window title" },
-                    { "key": "showMedia", "label": "Media", "detail": "Album art, title, and playback controls" },
-                    { "key": "showTray", "label": "System tray", "detail": "Show tray icons from apps" },
-                    { "key": "showMediaProgress", "label": "Playback progress", "detail": "Show the playback progress bar" },
-                    { "key": "showMediaTime", "label": "Playback time", "detail": "Show elapsed and total time" },
-                    { "key": "showSystemStats", "label": "System stats", "detail": "CPU and memory readings" },
-                    { "key": "showAudio", "label": "Volume", "detail": "Volume, click or scroll to change" },
-                    { "key": "showNetworkLabel", "label": "Network label", "detail": "Show active connection name" },
-                    { "key": "showBluetooth", "label": "Bluetooth", "detail": "Bluetooth state and connected devices" },
-                    { "key": "showBrightness", "label": "Brightness", "detail": "Screen brightness, scroll to change" },
-                    { "key": "showBattery", "label": "Battery", "detail": "Charge level and low-battery warning" },
-                    { "key": "showMicrophone", "label": "Microphone", "detail": "Mic level and mute button" },
-                    { "key": "showSeconds", "label": "Show seconds", "detail": "Show seconds on the clock" },
-                    { "key": "showDate", "label": "Date", "detail": "Show the date under the clock" }
+                toggleRows: [
+                    { "key": "showLauncherButton", "label": "Launcher control" },
+                    { "key": "barIconMotion", "label": "Icon opening animations", "detail": "A short response when a bar panel opens" },
+                    { "key": "showSettingsButton", "label": "Settings control" },
+                    { "key": "showWorkspaces", "label": "Workspaces" },
+                    { "key": "showFocusedWindow", "label": "Focused window" },
+                    { "key": "showMedia", "label": "Media" },
+                    { "key": "showTray", "label": "System tray" },
+                    { "key": "showMediaProgress", "label": "Playback progress" },
+                    { "key": "showMediaTime", "label": "Playback time" },
+                    { "key": "showSystemStats", "label": "System stats" },
+                    { "key": "showAudio", "label": "Volume" },
+                    { "key": "showNetworkLabel", "label": "Network label" },
+                    { "key": "showBluetooth", "label": "Bluetooth" },
+                    { "key": "showBrightness", "label": "Brightness" },
+                    { "key": "showBattery", "label": "Battery" },
+                    { "key": "showBatteryPercent", "label": "Battery percentage" },
+                    { "key": "showMicrophone", "label": "Microphone" },
+                    { "key": "showSeconds", "label": "Show seconds" },
+                    { "key": "showDate", "label": "Date" }
                 ]
             }
+
+            IslandArrangementEditor {
+                Layout.fillWidth: true
+            }
+
             Item { Layout.preferredHeight: 8 }
         }
     }
@@ -489,18 +660,55 @@ Item {
             width: pageLoader.width
             spacing: 10
 
-            Text {
-                text: "CATALOG"
-                color: Theme.muted
-                font.family: Theme.fontMono
-                font.pixelSize: 11
-                font.letterSpacing: 1.1
+            SettingChoice {
+                Layout.fillWidth: true
+                label: "Default panel"
+                value: Settings.defaultLaunchTab
+                choices: [
+                    { "label": "APPLICATIONS", "value": "apps" },
+                    { "label": "OBSERVATORY", "value": "system" },
+                    { "label": "RESONANCE", "value": "media" },
+                    { "label": "WALLPAPERS", "value": "walls" },
+                    { "label": "CALENDAR", "value": "calendar" }
+                ]
+                onSelected: function(value) { Settings.defaultLaunchTab = value; }
             }
 
             SettingChoice {
                 Layout.fillWidth: true
+                label: "Ephemeris presentation"
+                value: Settings.ephemerisStyle
+                choices: [
+                    { "label": "SPOTLIGHT", "value": "spotlight" },
+                    { "label": "DECK", "value": "deck" },
+                    { "label": "COMPACT", "value": "compact" }
+                ]
+                onSelected: function(value) { Settings.ephemerisStyle = value; }
+            }
+
+            SettingChoice {
+                Layout.fillWidth: true
+                label: "Feedback duration"
+                value: Settings.osdDuration
+                choices: [
+                    { "label": "1s", "value": 1000 },
+                    { "label": "DEFAULT", "value": 1450 },
+                    { "label": "1.5s", "value": 1500 },
+                    { "label": "2.5s", "value": 2500 }
+                ]
+                onSelected: function(value) { Settings.osdDuration = value; }
+            }
+            ToggleGrid {
+                Layout.fillWidth: true
+                toggleRows: [
+                    { "key": "osdVolume", "label": "Volume feedback" },
+                    { "key": "osdMicrophone", "label": "Microphone feedback" },
+                    { "key": "osdBrightness", "label": "Brightness feedback" }
+                ]
+            }
+            SettingChoice {
+                Layout.fillWidth: true
                 label: "Max search results"
-                detail: "Most apps to show in results"
                 value: Settings.launcherMaxResults
                 choices: [
                     { "label": "40", "value": 40 },
@@ -512,38 +720,16 @@ Item {
 
             ToggleGrid {
                 Layout.fillWidth: true
-                rows: [
-                    { "key": "showAppDescriptions", "label": "App descriptions", "detail": "Show descriptions below application names" }
+                toggleRows: [
+                    { "key": "enableCalculator", "label": "Inline calculator & math" },
+                    { "key": "showAppDescriptions", "label": "App descriptions" },
+                    { "key": "showTabApps", "label": "Apps panel" },
+                    { "key": "showTabMedia", "label": "Media console" },
+                    { "key": "showTabCalendar", "label": "Calendar panel" },
+                    { "key": "showTabWalls", "label": "Wallpaper panel" },
+                    { "key": "showTabClipboard", "label": "Clipboard panel" },
+                    { "key": "showTabCapture", "label": "Screen optics panel" }
                 ]
-            }
-
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 76
-                radius: Theme.radiusMedium
-                color: Theme.accentVeil
-                border.width: 0
-                border.color: Theme.accentLine
-                ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: 14
-                    spacing: 4
-                    Text {
-                        text: "INDEX"
-                        color: Theme.accent
-                        font.family: Theme.fontMono
-                        font.pixelSize: 11
-                        font.letterSpacing: 1
-                    }
-                    Text {
-                        text: "Apps are indexed live. Both exact and fuzzy search work."
-                        color: Theme.moon
-                        font.family: Theme.fontText
-                        font.pixelSize: 10
-                        wrapMode: Text.WordWrap
-                        Layout.fillWidth: true
-                    }
-                }
             }
             Item { Layout.preferredHeight: 8 }
         }
@@ -558,7 +744,6 @@ Item {
             SettingToggle {
                 Layout.fillWidth: true
                 label: "Lock when inactive"
-                detail: "Uses Umbra's real session lock; idle-inhibiting apps can delay it"
                 checked: Settings.idleLockEnabled
                 onToggled: Settings.idleLockEnabled = !Settings.idleLockEnabled
             }
@@ -570,69 +755,21 @@ Item {
                 choices: [{label: "1m", value: 1}, {label: "5m", value: 5}, {label: "10m", value: 10}, {label: "15m", value: 15}, {label: "30m", value: 30}]
                 onSelected: function(value) { Settings.idleLockMinutes = value; }
             }
-            Text {
-                Layout.fillWidth: true
-                text: IdleLock.status
-                color: IdleLock.error.length ? Theme.danger : Theme.muted
-                font.family: Theme.fontText
-                font.pixelSize: 11
-                wrapMode: Text.Wrap
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 2
-                    Text {
-                        text: "LOCK SCREEN"
-                        color: Theme.moon
-                        font.family: Theme.fontDisplay
-                        font.pixelSize: 16
-                        font.weight: Font.DemiBold
-                    }
-                    Text {
-                        text: "SCREEN LOCK  //  PASSWORD REQUIRED"
-                        color: Theme.muted
-                        font.family: Theme.fontMono
-                        font.pixelSize: 11
-                        font.letterSpacing: 1
-                    }
-                }
-                Rectangle {
-                    Layout.preferredWidth: umbraStatus.implicitWidth + 22
-                    Layout.preferredHeight: 32
-                    radius: height / 2
-                    color: Theme.accentVeil
-                    border.width: 0
-                    border.color: Theme.accentLine
-                    Text {
-                        id: umbraStatus
-                        anchors.centerIn: parent
-                        text: Umbra.stateCode
-                        color: Umbra.failed ? Theme.danger : Theme.success
-                        font.family: Theme.fontMono
-                        font.pixelSize: 10
-                        font.letterSpacing: 0.9
-                    }
-                }
-            }
 
             ToggleGrid {
                 Layout.fillWidth: true
-                rows: [
-                    { "key": "umbraMotion", "label": "Animations", "detail": "Animate the background and login effects" },
-                    { "key": "umbraUseWallpaper", "label": "Active wallpaper", "detail": "Use your current wallpaper behind the lock screen" },
-                    { "key": "umbraBlurWallpaper", "enabledKey": "umbraUseWallpaper", "label": "Blur wallpaper", "detail": "Blur and dim the wallpaper behind the lock screen" },
-                    { "key": "umbraShowMedia", "label": "Music controls", "detail": "Show album art and playback controls" },
-                    { "key": "umbraShowWeather", "label": "Weather", "detail": "Show the temperature next to the clock" }
+                toggleRows: [
+                    { "key": "umbraMotion", "label": "Animations" },
+                    { "key": "umbraUseWallpaper", "label": "Active wallpaper" },
+                    { "key": "umbraBlurWallpaper", "enabledKey": "umbraUseWallpaper", "label": "Blur wallpaper" },
+                    { "key": "umbraShowMedia", "label": "Music controls" },
+                    { "key": "umbraShowWeather", "label": "Weather" }
                 ]
             }
 
             SettingTextField {
                 Layout.fillWidth: true
                 label: "PAM service"
-                detail: "PAM profile in /etc/pam.d; login is the safe default"
                 value: Settings.umbraPamService
                 status: Umbra.pamAvailable ? "AVAILABLE" : "CHECK PROFILE"
                 statusOk: Umbra.pamAvailable
@@ -644,46 +781,31 @@ Item {
 
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 82
+                Layout.preferredHeight: 50
                 radius: Theme.radiusMedium
-                color: Qt.rgba(Theme.cyan.r, Theme.cyan.g, Theme.cyan.b, 0.07)
+                color: Theme.controlRest
                 border.width: 0
-                border.color: Qt.rgba(Theme.cyan.r, Theme.cyan.g, Theme.cyan.b, 0.28)
                 RowLayout {
                     anchors.fill: parent
-                    anchors.margins: 14
-                    spacing: 12
-                    ColumnLayout {
+                    anchors.leftMargin: 14
+                    anchors.rightMargin: 10
+                    Text {
                         Layout.fillWidth: true
-                        spacing: 3
-                        Text {
-                            text: "PREVIEW"
-                            color: Theme.cyan
-                            font.family: Theme.fontMono
-                            font.pixelSize: 11
-                            font.weight: Font.Bold
-                            font.letterSpacing: 1
-                        }
-                        Text {
-                            Layout.fillWidth: true
-                            text: "See the full lock screen without actually locking. Press Escape to return."
-                            color: Theme.moon
-                            font.family: Theme.fontText
-                            font.pixelSize: 10
-                            wrapMode: Text.WordWrap
-                        }
+                        text: "Preview lock screen"
+                        color: Theme.moon
+                        font.family: Theme.fontText
+                        font.pixelSize: 12
+                        font.weight: Font.Medium
                     }
                     Rectangle {
-                        Layout.preferredWidth: 136
-                        Layout.preferredHeight: 40
+                        Layout.preferredWidth: 100
+                        Layout.preferredHeight: 32
                         radius: Theme.radiusSmall
-                        color: previewPointer.containsMouse ? Theme.accent : Theme.accentVeil
-                        border.width: 0
-                        border.color: Theme.accentLine
+                        color: previewPointer.containsMouse ? Theme.accent : Theme.controlHover
                         Text {
                             anchors.centerIn: parent
-                            text: "PREVIEW LOCK SCREEN"
-                            color: previewPointer.containsMouse ? Theme.void_ : Theme.accent
+                            text: "PREVIEW"
+                            color: previewPointer.containsMouse ? Theme.void_ : Theme.moon
                             font.family: Theme.fontMono
                             font.pixelSize: 11
                             font.weight: Font.Bold
@@ -698,40 +820,36 @@ Item {
                                 Umbra.preview();
                             }
                         }
-                        Behavior on color { ColorAnimation { duration: Theme.motionFast } }
                     }
                 }
             }
 
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 64
+                Layout.preferredHeight: 50
                 radius: Theme.radiusMedium
-                color: Theme.mantle
+                color: Theme.controlRest
                 border.width: 0
-                border.color: Theme.line
                 RowLayout {
                     anchors.fill: parent
-                    anchors.margins: 12
-                    spacing: 12
+                    anchors.leftMargin: 14
+                    anchors.rightMargin: 10
                     Text {
                         Layout.fillWidth: true
-                        text: "SECURE SESSION"
-                        color: Theme.muted
-                        font.family: Theme.fontMono
-                        font.pixelSize: 11
-                        font.letterSpacing: 0.8
+                        text: "Lock session now"
+                        color: Theme.moon
+                        font.family: Theme.fontText
+                        font.pixelSize: 12
+                        font.weight: Font.Medium
                     }
                     Rectangle {
-                        Layout.preferredWidth: 120
-                        Layout.preferredHeight: 36
+                        Layout.preferredWidth: 100
+                        Layout.preferredHeight: 32
                         radius: Theme.radiusSmall
-                        color: lockPointer.containsMouse ? Theme.rose : Theme.elevated
-                        border.width: 0
-                        border.color: Qt.rgba(Theme.rose.r, Theme.rose.g, Theme.rose.b, 0.42)
+                        color: lockPointer.containsMouse ? Theme.rose : Theme.controlDanger
                         Text {
                             anchors.centerIn: parent
-                            text: "LOCK SESSION"
+                            text: "LOCK"
                             color: lockPointer.containsMouse ? Theme.void_ : Theme.rose
                             font.family: Theme.fontMono
                             font.pixelSize: 11
@@ -747,7 +865,6 @@ Item {
                                 Umbra.launchLock();
                             }
                         }
-                        Behavior on color { ColorAnimation { duration: Theme.motionFast } }
                     }
                 }
             }
@@ -761,49 +878,41 @@ Item {
             width: pageLoader.width
             spacing: 10
 
-            Text {
-                text: "APPS"
-                color: Theme.muted
-                font.family: Theme.fontMono
-                font.pixelSize: 11
-                font.letterSpacing: 1.1
-            }
-
             SettingTextField {
                 Layout.fillWidth: true
                 label: "Terminal"
-                detail: "Leave blank to use the system terminal"
                 value: Settings.terminal
                 onCommitted: function(value) { Settings.terminal = value.trim(); }
             }
             SettingTextField {
                 Layout.fillWidth: true
                 label: "Browser"
-                detail: "Leave blank to use the system browser"
                 value: Settings.browser
                 onCommitted: function(value) { Settings.browser = value.trim(); }
             }
             SettingTextField {
                 Layout.fillWidth: true
                 label: "File manager"
-                detail: "Leave blank to use the system file manager"
                 value: Settings.fileManager
                 onCommitted: function(value) { Settings.fileManager = value.trim(); }
             }
 
-            Text {
-                text: "WEATHER"
-                color: Theme.muted
-                font.family: Theme.fontMono
-                font.pixelSize: 11
-                font.letterSpacing: 1.1
-                Layout.topMargin: 4
+            SettingChoice {
+                Layout.fillWidth: true
+                label: "Notification placement"
+                value: Settings.notificationPosition
+                choices: [
+                    { "label": "TOP RIGHT", "value": "top-right" },
+                    { "label": "TOP LEFT", "value": "top-left" },
+                    { "label": "BOTTOM RIGHT", "value": "bottom-right" },
+                    { "label": "BOTTOM LEFT", "value": "bottom-left" }
+                ]
+                onSelected: function(value) { Settings.notificationPosition = value; }
             }
 
             SettingToggle {
                 Layout.fillWidth: true
                 label: "Weather forecast"
-                detail: "Current, hourly, and five-day forecast in the calendar"
                 checked: Settings.weatherEnabled
                 onToggled: Settings.weatherEnabled = !Settings.weatherEnabled
             }
@@ -812,7 +921,6 @@ Item {
                 Layout.fillWidth: true
                 enabled: Settings.weatherEnabled
                 label: "Forecast location"
-                detail: "Set once; Tonantzintla never guesses your location"
                 value: Settings.weatherLocation
                 onCommitted: function(value) {
                     Settings.weatherLocation = value.trim();
@@ -823,22 +931,12 @@ Item {
                 Layout.fillWidth: true
                 enabled: Settings.weatherEnabled
                 label: "Temperature scale"
-                detail: "Units used for weather"
                 value: Settings.temperatureUnit
                 choices: [
                     { "label": "CELSIUS", "value": "celsius" },
                     { "label": "FAHRENHEIT", "value": "fahrenheit" }
                 ]
                 onSelected: function(value) { Settings.temperatureUnit = value; }
-            }
-
-            Text {
-                text: "STATUS"
-                color: Theme.muted
-                font.family: Theme.fontMono
-                font.pixelSize: 11
-                font.letterSpacing: 1.1
-                Layout.topMargin: 4
             }
 
             GridLayout {
@@ -916,13 +1014,6 @@ Item {
             width: pageLoader.width
             spacing: 16
 
-            Text {
-                text: "On the bar"
-                color: Theme.muted
-                font.family: Theme.fontText
-                font.pixelSize: 12
-                font.weight: Font.DemiBold
-            }
 
             ColumnLayout {
                 Layout.fillWidth: true
@@ -1025,14 +1116,7 @@ Item {
                 }
             }
 
-            Text {
-                text: "Always on"
-                color: Theme.muted
-                font.family: Theme.fontText
-                font.pixelSize: 12
-                font.weight: Font.DemiBold
-                Layout.topMargin: 4
-            }
+
 
             ColumnLayout {
                 Layout.fillWidth: true

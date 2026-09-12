@@ -16,54 +16,67 @@ Item {
         return Math.max(0, found);
     }
 
-    implicitWidth: workspaceRow.implicitWidth
-    implicitHeight: 30
+    readonly property bool isVertical: root.parent && typeof root.parent.isVertical !== "undefined" ? root.parent.isVertical : (Settings.barPosition === "left" || Settings.barPosition === "right")
+
+    implicitWidth: isVertical ? 30 : workspaceGrid.implicitWidth
+    implicitHeight: isVertical ? workspaceGrid.implicitHeight : 30
 
     Rectangle {
         visible: root.workspaces.length > 0
-        readonly property real targetLeft: root.activeIndex * (30 + workspaceRow.spacing)
-        property real animatedLeft: targetLeft
-        property real animatedRight: targetLeft + 30
-        x: animatedLeft
-        width: animatedRight - animatedLeft
-        height: 30
+        readonly property real targetOffset: root.activeIndex * (30 + 5)
+        property real animatedStart: targetOffset
+        property real animatedEnd: targetOffset + 30
+        x: root.isVertical ? 0 : animatedStart
+        y: root.isVertical ? animatedStart : 0
+        width: root.isVertical ? 30 : (animatedEnd - animatedStart)
+        height: root.isVertical ? (animatedEnd - animatedStart) : 30
         radius: 9
         color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.84)
         z: 0
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: -2
+            radius: parent.radius + 1
+            color: Theme.accent
+            opacity: 0.18
+            z: -1
+        }
 
         property int previousIndex: 0
         property int currentIndex: root.activeIndex
         onCurrentIndexChanged: {
             if (currentIndex > previousIndex) {
-                leftMotion.duration = 340;
-                rightMotion.duration = 180;
+                startMotion.duration = 340;
+                endMotion.duration = 180;
             } else {
-                leftMotion.duration = 180;
-                rightMotion.duration = 340;
+                startMotion.duration = 180;
+                endMotion.duration = 340;
             }
             previousIndex = currentIndex;
-            animatedLeft = targetLeft;
-            animatedRight = targetLeft + 30;
+            animatedStart = targetOffset;
+            animatedEnd = targetOffset + 30;
         }
 
-        Behavior on animatedLeft {
+        Behavior on animatedStart {
             NumberAnimation {
-                id: leftMotion
+                id: startMotion
                 duration: Settings.motion ? 240 : 0
                 easing.type: Easing.OutExpo
             }
         }
-        Behavior on animatedRight {
+        Behavior on animatedEnd {
             NumberAnimation {
-                id: rightMotion
+                id: endMotion
                 duration: Settings.motion ? 240 : 0
                 easing.type: Easing.OutExpo
             }
         }
     }
 
-    Row {
-        id: workspaceRow
+    Grid {
+        id: workspaceGrid
+        columns: root.isVertical ? 1 : -1
         spacing: 5
         z: 1
 
@@ -77,7 +90,10 @@ Item {
                 readonly property bool active: modelData.is_active === true
                 readonly property bool focused: modelData.is_focused === true
                 readonly property bool urgent: modelData.is_urgent === true
-                property real entrance: 0
+                readonly property bool hasWindows: Compositor.windows.some(function(w) {
+                    return w.workspace_id === cell.modelData.id;
+                })
+                property real entrance: 1
 
                 width: 30
                 height: 30
@@ -104,6 +120,18 @@ Item {
                         font.family: Theme.fontMono
                         font.pixelSize: 10
                         font.weight: cell.active ? Font.Black : Font.DemiBold
+                    }
+
+                    Rectangle {
+                        visible: cell.hasWindows && !cell.active
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.bottom: parent.bottom
+                        anchors.bottomMargin: 3
+                        width: 3
+                        height: 3
+                        radius: 1.5
+                        color: cellPointer.containsMouse ? Theme.accent : Theme.muted
+                        opacity: 0.8
                     }
 
                     Behavior on width { NumberAnimation { duration: Settings.motion ? 190 : 0; easing.type: Easing.OutBack } }

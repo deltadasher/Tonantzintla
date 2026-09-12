@@ -41,16 +41,25 @@ Item {
             onPaint: {
                 const ctx = getContext("2d");
                 ctx.reset();
-                ctx.strokeStyle = Theme.accent;
-                ctx.globalAlpha = 0.5;
-                ctx.lineWidth = 2;
                 for (const link of Audio.routes) {
                     const a = root.sourceIndex(link.source), b = root.targetIndex(link.target);
                     if (a < 0 || b < 0) continue;
                     const y1 = a * root.rowHeight + 26, y2 = b * root.rowHeight + 26;
+
+                    // Ambient glow pass
                     ctx.beginPath();
                     ctx.moveTo(root.cardWidth, y1);
                     ctx.bezierCurveTo(width * 0.5, y1, width * 0.5, y2, width - root.cardWidth, y2);
+                    ctx.strokeStyle = Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.16);
+                    ctx.lineWidth = 6;
+                    ctx.stroke();
+
+                    // Core cable
+                    ctx.beginPath();
+                    ctx.moveTo(root.cardWidth, y1);
+                    ctx.bezierCurveTo(width * 0.5, y1, width * 0.5, y2, width - root.cardWidth, y2);
+                    ctx.strokeStyle = Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.72);
+                    ctx.lineWidth = 2;
                     ctx.stroke();
                 }
             }
@@ -77,9 +86,10 @@ Item {
                         radius: 12
                         readonly property bool actionable: column.sourceSide ? Audio.canRoute(modelData)
                             : root.selectedStream !== null && Audio.outputs.indexOf(modelData) >= 0
-                        color: root.selectedStream === modelData ? Theme.accentVeil : Theme.mantle
-                        border.width: activeFocus || pointer.containsMouse ? 1 : 0
-                        border.color: Theme.accent
+                        color: root.selectedStream === modelData ? Theme.controlActive
+                            : pointer.containsMouse || activeFocus ? Theme.controlHover : Theme.elevated
+                        border.width: 0
+                        Behavior on color { ColorAnimation { duration: Theme.motionFast } }
                         activeFocusOnTab: actionable
                         Accessible.role: Accessible.Button
                         Accessible.name: Audio.nodeTitle(modelData)

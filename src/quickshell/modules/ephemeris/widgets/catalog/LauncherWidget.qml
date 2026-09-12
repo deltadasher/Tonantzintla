@@ -16,15 +16,19 @@ Item {
     property string query: ""
     property string category: "all"
     property string selection: ""
+    property string selectionQuery: ""
+    property string selectionCategory: "all"
     property string feedback: ""
+    readonly property bool inputAtBottom: Settings.barPosition === "bottom"
+    readonly property real preferredSurfaceHeight: Math.min(760, 250 + Math.max(1, results.length) * 68)
     readonly property var applications: Model.applications(DesktopEntries.applications.values)
-    readonly property var entries: applications.concat(Model.surfaceCommands(Registry.widgets()), settingsCommands, sessionCommands)
-    readonly property var results: Model.filter(entries, query, category, LaunchHistory.favorites)
+    readonly property var entries: applications.concat(Model.surfaceCommands(Registry.widgets(Settings)), settingsCommands, sessionCommands)
+    readonly property var results: Model.filter(entries, query, category, LaunchHistory.favorites, Settings.enableCalculator)
         .slice(0, Math.max(1, Settings.launcherMaxResults))
     readonly property var selected: results.find(function(entry) { return entry.id === selection; }) || null
     readonly property var settingsCommands: [
         { id: "settings:appearance", kind: "settings", target: "appearance", name: "Appearance settings", detail: "Palette, typography and atmosphere", keywords: "theme colors colour font motion density" },
-        { id: "settings:bar", kind: "settings", target: "bar", name: "Bar settings", detail: "Aperture layout and indicators", keywords: "aperture bar clock position" },
+        { id: "settings:bar", kind: "settings", target: "bar", name: "Bar editor", detail: "Open the Aperture bar editor", keywords: "aperture bar clock position arrange" },
         { id: "settings:launcher", kind: "settings", target: "launcher", name: "Panel settings", detail: "Launcher and surface behavior", keywords: "apps ephemeris animation transition" },
         { id: "settings:umbra", kind: "settings", target: "umbra", name: "Lock screen settings", detail: "Umbra appearance and behavior", keywords: "lock umbra" },
         { id: "settings:system", kind: "settings", target: "system", name: "System settings", detail: "Preferred applications and integrations", keywords: "browser terminal file manager defaults" },
@@ -47,7 +51,10 @@ Item {
     }
 
     function reconcileSelection() {
-        selection = Model.selectedId(results, selection);
+        const changedSearch = selectionQuery !== query || selectionCategory !== category;
+        selection = Model.selectedId(results, changedSearch ? "" : selection);
+        selectionQuery = query;
+        selectionCategory = category;
         Qt.callLater(keepSelectionVisible);
     }
 
@@ -77,6 +84,11 @@ Item {
         } else if (entry.kind === "surface") {
             ShellState.openEphemeris(entry.target);
         } else if (entry.kind === "settings") {
+            if (entry.target === "bar") {
+                ShellState.closeEphemeris();
+                ShellState.enterBarEditMode();
+                return;
+            }
             ShellState.settingsSection = entry.target;
             ShellState.openEphemeris("settings");
         } else if (entry.kind === "launch" && ["terminal", "browser", "files"].indexOf(entry.target) >= 0) {
@@ -92,6 +104,12 @@ Item {
             ShellState.closeEphemeris();
         } else if (entry.kind === "lock") {
             Umbra.launchLock();
+            ShellState.closeEphemeris();
+        } else if (entry.kind === "calc" || entry.kind === "astro") {
+            Clipboard.setText(entry.result);
+            ShellState.closeEphemeris();
+        } else if (entry.kind === "terminal_cmd") {
+            Quickshell.execDetached([Environment.controlPath, "terminal", "-e", "sh", "-c", entry.cmd + "; exec ${SHELL:-bash}"]);
             ShellState.closeEphemeris();
         }
     }
@@ -175,90 +193,11 @@ Item {
             }
         }
 
-        Rectangle {
+        Item {
+            id: topControlsSlot
             Layout.fillWidth: true
-            Layout.preferredHeight: 50
-            radius: Theme.radiusMedium
-            color: searchInput.activeFocus ? Theme.fieldFocus : Theme.mantle
-            border.width: 1
-            border.color: searchInput.activeFocus ? Theme.accentLine : "transparent"
-
-            TextInput {
-                id: searchInput
-                anchors.fill: parent
-                anchors.leftMargin: 16
-                anchors.rightMargin: 16
-                verticalAlignment: TextInput.AlignVCenter
-                color: Theme.moon
-                selectionColor: Theme.accent
-                selectedTextColor: Theme.void_
-                font.family: Theme.fontText
-                font.pixelSize: 15
-                clip: true
-                text: root.query
-                onTextChanged: { root.query = text; root.feedback = ""; }
-                Keys.onPressed: function(event) {
-                    if (event.key === Qt.Key_Down) {
-                        root.moveSelection(1); event.accepted = true;
-                    } else if (event.key === Qt.Key_Up) {
-                        root.moveSelection(-1); event.accepted = true;
-                    } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                        root.activate(root.selected); event.accepted = true;
-                    } else if (event.key === Qt.Key_Escape) {
-                        if (root.query.length) searchInput.clear();
-                        else ShellState.closeEphemeris();
-                        event.accepted = true;
-                    } else if (event.key === Qt.Key_P && (event.modifiers & Qt.ControlModifier)) {
-                        root.toggleSelectedFavorite(); event.accepted = true;
-                    }
-                }
-            }
-            Text {
-                anchors.left: parent.left
-                anchors.leftMargin: 16
-                anchors.verticalCenter: parent.verticalCenter
-                visible: searchInput.text.length === 0
-                text: "Find apps, actions or settings…"
-                color: Theme.muted
-                font.family: Theme.fontText
-                font.pixelSize: 14
-            }
-        }
-
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 6
-            Repeater {
-                model: [{ id: "all", name: "ALL" }, { id: "apps", name: "APPS" },
-                    { id: "actions", name: "ACTIONS" }, { id: "saved", name: "SAVED" }]
-                Rectangle {
-                    id: categoryChip
-                    required property var modelData
-                    readonly property bool active: root.query.trim().charAt(0) === ">"
-                        ? modelData.id === "actions" : root.category === modelData.id
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 30
-                    radius: Theme.radiusSmall
-                    color: active ? Theme.controlActive : categoryPointer.containsMouse ? Theme.controlHover : Theme.controlRest
-                    Accessible.role: Accessible.Button
-                    Accessible.name: "Show " + modelData.name.toLowerCase()
-                    Accessible.onPressAction: root.selectCategory(modelData.id)
-                    Text {
-                        anchors.centerIn: parent
-                        text: categoryChip.modelData.name
-                        color: categoryChip.active ? Theme.accent : Theme.muted
-                        font.family: Theme.fontMono
-                        font.pixelSize: 10
-                    }
-                    MouseArea {
-                        id: categoryPointer
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.selectCategory(categoryChip.modelData.id)
-                    }
-                }
-            }
+            implicitHeight: searchControls.implicitHeight
+            visible: !root.inputAtBottom
         }
 
         ListView {
@@ -315,13 +254,54 @@ Item {
                             source: result.modelData.kind === "app"
                                 ? Quickshell.iconPath(result.modelData.app.icon, "application-x-executable") : ""
                         }
-                        Text {
+                        Canvas {
+                            id: astroGeminiDiamond
                             anchors.centerIn: parent
-                            visible: result.modelData.kind !== "app"
-                            text: result.modelData.kind === "media" ? "♪" : result.modelData.kind === "settings" ? "⚙" : "›"
-                            color: Theme.accent
+                            width: 22
+                            height: 22
+                            visible: result.modelData.kind === "astro"
+                            antialiasing: true
+                            onPaint: {
+                                const ctx = getContext("2d");
+                                ctx.reset();
+                                ctx.clearRect(0, 0, width, height);
+                                const cx = width / 2;
+                                const cy = height / 2;
+                                const r = 8.5;
+                                ctx.beginPath();
+                                ctx.moveTo(cx, cy - r);
+                                ctx.quadraticCurveTo(cx, cy, cx + r, cy);
+                                ctx.quadraticCurveTo(cx, cy, cx, cy + r);
+                                ctx.quadraticCurveTo(cx, cy, cx - r, cy);
+                                ctx.quadraticCurveTo(cx, cy, cx, cy - r);
+                                ctx.closePath();
+                                ctx.fillStyle = Theme.warning;
+                                ctx.fill();
+                            }
+                            Component.onCompleted: requestPaint()
+                            Connections {
+                                target: result
+                                function onModelDataChanged() {
+                                    if (result.modelData && result.modelData.kind === "astro")
+                                        astroGeminiDiamond.requestPaint();
+                                }
+                            }
+                        }
+                        Text {
+                            anchors.fill: parent
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            visible: result.modelData.kind !== "app" && result.modelData.kind !== "astro"
+                            text: result.modelData.kind === "media" ? "♪"
+                                : result.modelData.kind === "settings" ? "⚙"
+                                : result.modelData.kind === "calc" ? "="
+                                : result.modelData.kind === "terminal_cmd" ? "$"
+                                : "›"
+                            color: result.modelData.kind === "calc" ? Theme.cyan
+                                : result.modelData.kind === "terminal_cmd" ? Theme.success
+                                : Theme.accent
                             font.family: Theme.fontMono
-                            font.pixelSize: 19
+                            font.pixelSize: 18
                         }
                     }
 
@@ -400,6 +380,128 @@ Item {
                     color: Theme.muted
                     font.family: Theme.fontText
                     font.pixelSize: 12
+                }
+            }
+        }
+
+        Item {
+            id: bottomControlsSlot
+            Layout.fillWidth: true
+            implicitHeight: searchControls.implicitHeight
+            visible: root.inputAtBottom
+        }
+
+        Item {
+            id: searchControls
+            parent: root.inputAtBottom ? bottomControlsSlot : topControlsSlot
+            anchors.fill: parent
+            implicitHeight: 88
+
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: 8
+
+                Item {
+                    id: topSearchInputSlot
+                    Layout.fillWidth: true
+                    implicitHeight: 50
+                    visible: !root.inputAtBottom
+                }
+
+                RowLayout {
+                    id: categoriesBar
+                    Layout.fillWidth: true
+                    spacing: 6
+                    Repeater {
+                        model: [{ id: "all", name: "ALL" }, { id: "apps", name: "APPS" },
+                            { id: "actions", name: "ACTIONS" }, { id: "saved", name: "SAVED" }]
+                        Rectangle {
+                            id: categoryChip
+                            required property var modelData
+                            readonly property bool active: root.query.trim().charAt(0) === ">"
+                                ? modelData.id === "actions" : root.category === modelData.id
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 30
+                            radius: Theme.radiusSmall
+                            color: active ? Theme.controlActive : categoryPointer.containsMouse ? Theme.controlHover : Theme.controlRest
+                            Accessible.role: Accessible.Button
+                            Accessible.name: "Show " + modelData.name.toLowerCase()
+                            Accessible.onPressAction: root.selectCategory(modelData.id)
+                            Text {
+                                anchors.centerIn: parent
+                                text: categoryChip.modelData.name
+                                color: categoryChip.active ? Theme.accent : Theme.muted
+                                font.family: Theme.fontMono
+                                font.pixelSize: 10
+                            }
+                            MouseArea {
+                                id: categoryPointer
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.selectCategory(categoryChip.modelData.id)
+                            }
+                        }
+                    }
+                }
+
+                Item {
+                    id: bottomSearchInputSlot
+                    Layout.fillWidth: true
+                    implicitHeight: 50
+                    visible: root.inputAtBottom
+                }
+            }
+
+            Rectangle {
+                id: searchInputBox
+                parent: root.inputAtBottom ? bottomSearchInputSlot : topSearchInputSlot
+                anchors.fill: parent
+                implicitHeight: 50
+                radius: Theme.radiusMedium
+                color: searchInput.activeFocus ? Theme.fieldFocus : Theme.mantle
+                border.width: 1
+                border.color: searchInput.activeFocus ? Theme.accentLine : "transparent"
+
+                TextInput {
+                    id: searchInput
+                    anchors.fill: parent
+                    anchors.leftMargin: 16
+                    anchors.rightMargin: 16
+                    verticalAlignment: TextInput.AlignVCenter
+                    color: Theme.moon
+                    selectionColor: Theme.accent
+                    selectedTextColor: Theme.void_
+                    font.family: Theme.fontText
+                    font.pixelSize: 15
+                    clip: true
+                    text: root.query
+                    onTextChanged: { root.query = text; root.feedback = ""; }
+                    Keys.onPressed: function(event) {
+                        if (event.key === Qt.Key_Down) {
+                            root.moveSelection(1); event.accepted = true;
+                        } else if (event.key === Qt.Key_Up) {
+                            root.moveSelection(-1); event.accepted = true;
+                        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                            root.activate(root.selected); event.accepted = true;
+                        } else if (event.key === Qt.Key_Escape) {
+                            if (root.query.length) searchInput.clear();
+                            else ShellState.closeEphemeris();
+                            event.accepted = true;
+                        } else if (event.key === Qt.Key_P && (event.modifiers & Qt.ControlModifier)) {
+                            root.toggleSelectedFavorite(); event.accepted = true;
+                        }
+                    }
+                }
+                Text {
+                    anchors.left: parent.left
+                    anchors.leftMargin: 16
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: searchInput.text.length === 0
+                    text: "Find apps, actions or settings…"
+                    color: Theme.muted
+                    font.family: Theme.fontText
+                    font.pixelSize: 14
                 }
             }
         }

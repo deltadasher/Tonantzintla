@@ -2,6 +2,7 @@ import QtQuick
 import QtTest
 import "../../src/quickshell/components"
 import "../../src/quickshell/modules/ephemeris/EphemerisRegistry.js" as Registry
+import "../../src/quickshell/services/MediaMath.js" as MediaMath
 
 TestCase {
     id: test
@@ -9,6 +10,30 @@ TestCase {
     when: windowShown
     width: 640; height: 420
     SurfaceTransition { id: controller }
+    InstrumentGeometry { id: geometry }
+    function test_media_unknown_duration_never_seeks_to_zero() {
+        compare(MediaMath.relativeSeek(0, 42, -10), null);
+        compare(MediaMath.absoluteSeek(0, 0.5), null);
+        compare(MediaMath.relativeSeek(120, 42, -10), 32);
+        compare(MediaMath.relativeSeek(120, 118, 10), 120);
+        compare(MediaMath.absoluteSeek(120, NaN), null);
+        compare(MediaMath.duration(Infinity), 0);
+    }
+    function test_geometry_shares_clipping_bounds() {
+        geometry.origin = Qt.rect(24, 8, 48, 40);
+        geometry.destination = Qt.rect(16, 80, 900, 600);
+        geometry.motion = true;
+        for (const progress of [-1, 0, 0.25, 0.5, 0.75, 1, 2]) {
+            geometry.progress = progress;
+            verify(geometry.radius <= geometry.width / 2);
+            verify(geometry.radius <= geometry.height / 2);
+            verify(geometry.width >= 48 && geometry.width <= 900);
+        }
+        geometry.motion = false;
+        geometry.progress = 0;
+        compare(geometry.width, 900);
+        compare(geometry.radius, 26);
+    }
     SignalSpy { id: deployment; target: controller; signalName: "deploying" }
     function init() {
         controller.requestedVisible = false;

@@ -69,11 +69,17 @@ or authentication state: the display manager remains responsible for users,
 sessions, login, and power actions. GDM is detected but intentionally left
 untouched because it has no stable custom greeter-theme API.
 
-Authentication uses a visual handoff instead of waiting for SDDM's success
-signal. Submitting begins the event-horizon capture first; SDDM receives the
-login request once the screen is nearly consumed. A rejected password recoils
-the field. A successful Niri session starts Tonantzintla through `session-start`,
-which holds an opaque Umbra veil and opens a circular aperture onto the desktop.
+Authentication uses a visual handoff that respects each display manager's
+ownership. In the SDDM theme, submitting completes the event-horizon capture
+before `sddm.login` is called, because SDDM begins the session immediately after
+accepting that request. LightDM's web theme waits for the same bounded capture
+window after `authentication_complete` before calling `start_session_sync`.
+This LightDM delay is a prototype, not a tested prompt/retry state machine;
+completion-event gating and failed-session recovery remain P0 handoff work in
+[the Gemini roadmap](gemini-roadmap-1.1.md). SDDM has a rejection recoil; LightDM
+currently reports rejection as text and clears the password. A successful Niri session starts
+Tonantzintla through `session-start`, which holds an opaque Umbra veil and opens
+a circular aperture onto the desktop.
 
 Preview SDDM safely without changing the active display-manager theme:
 

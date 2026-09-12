@@ -277,6 +277,7 @@ ClippingRectangle {
                     progress: Media.progress
                     playing: Media.playing
                     enabledControl: Media.canSeek
+                    trackKey: Media.trackKey
                     onSeekRequested: function(progress) { Media.seekTo(progress); }
                 }
 
@@ -328,6 +329,7 @@ ClippingRectangle {
                     }
                     MultiEffect {
                         anchors.fill: parent
+                        visible: planetArt.status === Image.Ready
                         source: planetArt
                         maskEnabled: true
                         maskSource: planetMask
@@ -341,7 +343,7 @@ ClippingRectangle {
                             GradientStop { position: 1; color: Qt.rgba(Theme.void_.r, Theme.void_.g, Theme.void_.b, 0.82) }
                         }
                     }
-                    Text { anchors.centerIn: parent; visible: Media.artUrl.length === 0; text: Media.mediaKind === "VIDEO" ? "󰕧" : "󰎆"; color: Theme.accent; font.family: Theme.fontIcon; font.pixelSize: 70 }
+                    Text { anchors.centerIn: parent; visible: planetArt.status !== Image.Ready; text: Media.mediaKind === "VIDEO" ? "󰕧" : "󰎆"; color: Theme.accent; font.family: Theme.fontIcon; font.pixelSize: 70 }
                     Behavior on width { NumberAnimation { duration: 90; easing.type: Easing.OutQuad } }
                     Behavior on height { NumberAnimation { duration: 90; easing.type: Easing.OutQuad } }
                     Behavior on radius { NumberAnimation { duration: 120; easing.type: Easing.OutQuad } }
@@ -399,26 +401,31 @@ ClippingRectangle {
                     Text { Layout.fillWidth: true; text: "VIA " + Media.identity.toUpperCase(); color: Theme.lineBright; font.family: Theme.fontMono; font.pixelSize: 11; font.weight: Font.Bold; elide: Text.ElideRight }
                 }
 
-                RowLayout {
+                Flow {
                     visible: Media.playerCount > 1
                     Layout.fillWidth: true
                     spacing: 5
                     Repeater {
-                        model: Media.players.slice(0, 3)
+                        model: Media.players
                         Rectangle {
                             required property var modelData
-                            Layout.preferredWidth: Math.min(128, playerName.implicitWidth + 18)
-                            Layout.preferredHeight: 28
+                            width: 128
+                            height: 32
+                            activeFocusOnTab: true
+                            Accessible.role: Accessible.Button
+                            Accessible.name: "Play controls for " + modelData.identity
+                            Keys.onReturnPressed: Media.selectPlayer(modelData.uniqueId)
+                            Keys.onSpacePressed: Media.selectPlayer(modelData.uniqueId)
+                            Accessible.onPressAction: Media.selectPlayer(modelData.uniqueId)
                             radius: 9
                             readonly property bool active: Media.player && Media.player.uniqueId === modelData.uniqueId
-                            color: active ? Theme.accentVeil : playerPointer.containsMouse ? Theme.elevated : Theme.barNeutral
+                            color: active ? Theme.accentVeil : playerPointer.containsMouse || activeFocus ? Theme.elevated : Theme.barNeutral
                             border.width: 0
                             border.color: active ? Theme.accentLine : Theme.barHairlineHover
                             Text { id: playerName; anchors.centerIn: parent; width: parent.width - 12; text: parent.modelData.identity.toUpperCase(); color: parent.active ? Theme.accent : Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Bold; elide: Text.ElideRight; horizontalAlignment: Text.AlignHCenter }
                             MouseArea { id: playerPointer; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Media.selectPlayer(parent.modelData.uniqueId) }
                         }
                     }
-                    Item { Layout.fillWidth: true }
                 }
 
                 RowLayout {
@@ -442,7 +449,7 @@ ClippingRectangle {
                     Layout.preferredHeight: 96
                     progress: Media.progress
                     energy: root.spectrumEnergy
-                    trackKey: Media.title + "\u001f" + Media.artist
+                    trackKey: Media.trackKey
                     enabledControl: Media.canSeek
                     onSeekRequested: function(progress) { Media.seekTo(progress); }
                 }

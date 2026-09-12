@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell.Services.Mpris
+import "MediaMath.js" as MediaMath
 
 QtObject {
     id: root
@@ -25,7 +26,7 @@ QtObject {
     readonly property bool available: player !== null
     readonly property int playerCount: players.length
     readonly property bool playing: available && player.isPlaying
-    readonly property bool canSeek: available && player.canSeek
+    readonly property bool canSeek: available && player.canSeek && length > 0
     readonly property string title: available && player.trackTitle
         ? player.trackTitle : "Nothing playing"
     readonly property string artist: available && player.trackArtist
@@ -37,7 +38,10 @@ QtObject {
     readonly property string sourceUrl: available && player.metadata
         && player.metadata["xesam:url"] ? String(player.metadata["xesam:url"]) : ""
     readonly property real position: available && player.positionSupported ? player.position : 0
-    readonly property real length: available && player.lengthSupported ? player.length : 0
+    readonly property real length: available && player.lengthSupported ? MediaMath.duration(player.length) : 0
+    readonly property string trackKey: (available ? String(player.uniqueId) : "") + "\u001f"
+        + (available && player.metadata ? String(player.metadata["mpris:trackid"] || "") : "")
+        + "\u001f" + title + "\u001f" + artist + "\u001f" + sourceUrl
     readonly property real progress: length > 0 ? Math.max(0, Math.min(1, position / length)) : 0
     readonly property string mediaKind: {
         const source = (identity + " " + title + " " + sourceUrl).toLowerCase();
@@ -89,15 +93,17 @@ QtObject {
     }
 
     function seekTo(progress) {
-        if (!available || !canSeek || length <= 0)
+        if (!available || !canSeek || !isFinite(progress))
             return;
-        player.position = Math.max(0, Math.min(length, progress * length));
+        const target = MediaMath.absoluteSeek(length, progress);
+        if (target !== null) player.position = target;
     }
 
     function seekRelative(seconds) {
-        if (!available || !canSeek)
+        if (!available || !canSeek || !isFinite(seconds))
             return;
-        player.position = Math.max(0, Math.min(length, position + seconds));
+        const target = MediaMath.relativeSeek(length, position, seconds);
+        if (target !== null) player.position = target;
     }
 
     function raise() {

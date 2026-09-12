@@ -63,6 +63,10 @@ QS_CAPTURE="$test_root/notify-call" PATH="$fake_bin:$PATH" \
     "$project_root/bin/blackhole" notify "Hello" "World"
 [[ "$(<"$test_root/notify-call")" == "-p $project_root/src/quickshell ipc call transit preview Hello World" ]]
 
+QS_CAPTURE="$test_root/lock-status-call" PATH="$fake_bin:$PATH" \
+    "$project_root/bin/blackhole" lock-status
+[[ "$(<"$test_root/lock-status-call")" == "-p $project_root/src/quickshell/umbra-lock.qml ipc call lockState status" ]]
+
 cat >"$fake_bin/xdg-terminal-exec" <<'EOF'
 #!/usr/bin/env bash
 printf 'terminal\n' >"$LAUNCH_CAPTURE"
