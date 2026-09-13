@@ -19,7 +19,6 @@ Loader {
             case "window_title": return Qt.resolvedUrl("WindowTitleIsland.qml");
             case "clock": return Qt.resolvedUrl("ClockIsland.qml");
             case "system_stats": return Qt.resolvedUrl("SystemStatsIsland.qml");
-            case "volume": return Qt.resolvedUrl("VolumeIsland.qml");
             case "status": return Qt.resolvedUrl("StatusIsland.qml");
             case "tray": return Qt.resolvedUrl("TrayIsland.qml");
             case "controls": return Qt.resolvedUrl("ControlsIsland.qml");

@@ -1,7 +1,7 @@
 .pragma library
 
 var zones = ["start", "center", "end"];
-var islands = ["launcher", "workspaces", "media", "window_title", "clock", "system_stats", "volume", "status", "tray", "controls"];
+var islands = ["launcher", "workspaces", "media", "window_title", "clock", "system_stats", "status", "tray", "controls"];
 
 function normalize(value, fallback) {
     var source = value;

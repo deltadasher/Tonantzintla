@@ -106,13 +106,13 @@ QtObject {
     readonly property var defaultLayoutHorizontal: ({
         "start": ["launcher", "workspaces", "media", "window_title"],
         "center": ["clock"],
-        "end": ["system_stats", "volume", "status", "tray", "controls"]
+        "end": ["system_stats", "status", "tray", "controls"]
     })
 
     readonly property var defaultLayoutVertical: ({
         "start": ["launcher", "workspaces"],
         "center": ["clock"],
-        "end": ["system_stats", "volume", "status", "tray", "controls"]
+        "end": ["system_stats", "status", "tray", "controls"]
     })
 
     readonly property var activeLayoutHorizontal: {
@@ -311,7 +311,7 @@ QtObject {
             ephemerisStyle = "deck";
             motionSpeedProfile = "fluid";
             applyTypographyPreset("serpantinum");
-            applyBarLayoutPreset({start: ["launcher", "workspaces", "media", "window_title"], center: ["clock"], end: ["system_stats", "volume", "status", "tray", "controls"]});
+            applyBarLayoutPreset({start: ["launcher", "workspaces", "media", "window_title"], center: ["clock"], end: ["system_stats", "status", "tray", "controls"]});
         } else if (name === "caelestia") {
             accentName = "cyan";
             barPosition = "left";
@@ -320,7 +320,7 @@ QtObject {
             ephemerisStyle = "spotlight";
             motionSpeedProfile = "snappy";
             applyTypographyPreset("readable");
-            applyBarLayoutPreset({start: ["launcher", "workspaces"], center: ["clock"], end: ["status", "volume", "tray", "controls"]});
+            applyBarLayoutPreset({start: ["launcher", "workspaces"], center: ["clock"], end: ["status", "tray", "controls"]});
         } else if (name === "solaris") {
             accentName = "amber";
             barPosition = "bottom";
@@ -329,7 +329,7 @@ QtObject {
             ephemerisStyle = "spotlight";
             motionSpeedProfile = "fluid";
             clock12h = false;
-            applyBarLayoutPreset({start: ["launcher", "workspaces", "media"], center: ["clock"], end: ["system_stats", "volume", "status", "tray", "controls"]});
+            applyBarLayoutPreset({start: ["launcher", "workspaces", "media"], center: ["clock"], end: ["system_stats", "status", "tray", "controls"]});
         } else if (name === "cyberpunk") {
             accentName = "rose";
             barPosition = "right";
@@ -338,7 +338,7 @@ QtObject {
             ephemerisStyle = "spotlight";
             motionSpeedProfile = "instant";
             applyTypographyPreset("serpantinum");
-            applyBarLayoutPreset({start: ["launcher", "workspaces"], center: ["clock", "media"], end: ["status", "volume", "tray", "controls"]});
+            applyBarLayoutPreset({start: ["launcher", "workspaces"], center: ["clock", "media"], end: ["status", "tray", "controls"]});
         } else if (name === "minimalist") {
             accentName = "silver";
             barPosition = "top";

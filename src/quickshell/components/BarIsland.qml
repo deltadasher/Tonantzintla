@@ -60,7 +60,6 @@ Rectangle {
         window_title: "▭",
         clock: "◷",
         system_stats: "▤",
-        volume: "VOL",
         status: "◉",
         tray: "⋯",
         controls: "⚙"
