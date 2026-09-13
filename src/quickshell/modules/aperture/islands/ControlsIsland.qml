@@ -11,15 +11,17 @@ BarIsland {
     readonly property bool isVertical: barWindow ? barWindow.isVertical : (Settings.barPosition === "left" || Settings.barPosition === "right")
 
     NotificationIndicator {
-        onActivated: root.toggleEphemeris("notifications")
+        id: notificationControl
+        onActivated: root.toggleEphemeris("notifications", notificationControl)
     }
 
     BarButton {
+        id: settingsControl
         visible: Settings.showSettingsButton
         glyph: "⚙"
         accessibleLabel: "Open settings"
         targetPanel: "settings"
         motionKind: "gear"
-        onActivated: root.toggleEphemeris("settings")
+        onActivated: root.toggleEphemeris("settings", settingsControl)
     }
 }

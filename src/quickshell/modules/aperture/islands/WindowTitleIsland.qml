@@ -13,11 +13,12 @@ BarIsland {
     FocusedSignal { visible: !root.isVertical }
 
     BarButton {
+        id: workspaceControl
         visible: root.isVertical
         glyph: "▭"
         accessibleLabel: "Open workspace overview"
         targetPanel: "workspaces"
         motionKind: "workspace"
-        onActivated: root.toggleEphemeris("workspaces")
+        onActivated: root.toggleEphemeris("workspaces", workspaceControl)
     }
 }

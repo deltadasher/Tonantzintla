@@ -17,6 +17,7 @@ BarIsland {
     reveal: barWindow ? barWindow.systemReveal : (typeof window !== "undefined" && window ? window.systemReveal : 1)
 
     StatusPill {
+        id: recordingControl
         visible: Environment.recording
         code: "REC"
         value: "LIVE"
@@ -24,10 +25,11 @@ BarIsland {
         warning: true
         accentColor: Theme.danger
         accessibleLabel: "Screen recording active"
-        onActivated: root.toggleEphemeris("capture")
+        onActivated: root.toggleEphemeris("capture", recordingControl)
     }
 
     StatusPill {
+        id: microphoneControl
         visible: Settings.showMicrophone && (root.isVertical ? (!barWindow || barWindow.height >= 920) : (!barWindow || barWindow.width >= 1180))
         code: Audio.inputMuted ? "MIC×" : "MIC"
         value: Audio.inputPercent + "%"
@@ -35,10 +37,11 @@ BarIsland {
         warning: Audio.inputMuted
         accentColor: Theme.rose
         accessibleLabel: "Microphone " + value
-        onActivated: root.toggleEphemeris("audio")
+        onActivated: root.toggleEphemeris("audio", microphoneControl)
     }
 
     StatusPill {
+        id: brightnessControl
         visible: Settings.showBrightness && DeviceState.brightnessAvailable
             && (root.isVertical ? (!barWindow || barWindow.height >= 980) : (!barWindow || barWindow.width >= 1360))
         code: "LUX"
@@ -48,10 +51,11 @@ BarIsland {
         onScrolled: function(delta) {
             DeviceState.changeBrightness(delta > 0 ? 5 : -5);
         }
-        onActivated: root.toggleEphemeris("settings")
+        onActivated: root.toggleEphemeris("settings", brightnessControl)
     }
 
     StatusPill {
+        id: bluetoothControl
         visible: Settings.showBluetooth && DeviceState.bluetoothAvailable
             && (root.isVertical ? (!barWindow || barWindow.height >= 860) : (!barWindow || barWindow.width >= 1260))
         code: "BT"
@@ -59,10 +63,11 @@ BarIsland {
         active: DeviceState.bluetoothEnabled
         accentColor: Theme.violet
         accessibleLabel: "Bluetooth " + value
-        onActivated: root.toggleEphemeris("network")
+        onActivated: root.toggleEphemeris("network", bluetoothControl)
     }
 
     StatusPill {
+        id: batteryControl
         visible: Settings.showBattery && DeviceState.batteryAvailable
         code: DeviceState.batteryCharging ? "PWR" : "BAT"
         value: DeviceState.batteryPercent + "%"
@@ -70,8 +75,12 @@ BarIsland {
         warning: DeviceState.batteryLow
         accentColor: DeviceState.batteryCharging ? Theme.success : Theme.cyan
         accessibleLabel: "Battery " + value
-        onActivated: root.toggleEphemeris("battery")
+        onActivated: root.toggleEphemeris("battery", batteryControl)
     }
 
-    NetworkPill { visible: root.isVertical || (!barWindow || barWindow.width >= 1080); outputName: root.barWindow ? root.barWindow.outputName : "" }
+    NetworkPill {
+        visible: root.isVertical || (!barWindow || barWindow.width >= 1080)
+        outputName: root.barWindow ? root.barWindow.outputName : ""
+        anchorHost: root
+    }
 }

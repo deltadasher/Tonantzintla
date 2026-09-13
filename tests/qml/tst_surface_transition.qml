@@ -114,4 +114,25 @@ TestCase {
         }
         compare(Registry.normalize("unknown"), "apps");
     }
+    function test_attached_layouts_stay_bounded_on_every_edge() {
+        const width = 1920;
+        const height = 1080;
+        const clearance = 72;
+        const anchors = {
+            top: {x: 1450, y: 12, width: 42, height: 42},
+            bottom: {x: 280, y: 1026, width: 42, height: 42},
+            left: {x: 12, y: 180, width: 42, height: 42},
+            right: {x: 1866, y: 790, width: 42, height: 42}
+        };
+        for (const edge of ["top", "bottom", "left", "right"]) {
+            const layout = Registry.getLayout("settings", width, height,
+                clearance, clearance, clearance, clearance);
+            Registry.attachLayout(layout, anchors[edge], edge, width, height,
+                clearance, clearance, clearance, clearance);
+            verify(layout.x >= clearance);
+            verify(layout.y >= clearance);
+            verify(layout.x + layout.width <= width - clearance);
+            verify(layout.y + layout.height <= height - clearance);
+        }
+    }
 }

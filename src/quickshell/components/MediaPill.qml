@@ -6,9 +6,11 @@ import ".."
 import "../services"
 
 ClippingRectangle {
+    id: root
 
     property bool embedded: false
     property string outputName: ""
+    property var anchorHost: null
     implicitWidth: Media.available ? (Settings.compact ? 320 : 400) : 0
     implicitHeight: Settings.compact ? 36 : 42
     radius: embedded ? 9 : height / 2
@@ -33,7 +35,8 @@ ClippingRectangle {
             else if (mouse.button === Qt.RightButton)
                 Media.raise();
             else
-                ShellState.toggleEphemeris("media", outputName);
+                anchorHost ? anchorHost.toggleEphemeris("media", root)
+                    : ShellState.toggleEphemeris("media", outputName);
         }
         onWheel: function(event) {
             if (event.angleDelta.y > 0)

@@ -6,6 +6,7 @@ import "../services"
 Rectangle {
     id: root
     property string outputName: ""
+    property var anchorHost: null
 
     readonly property var activeNetwork: NetState.wifiNetworks.find(function(network) {
         return network.connected === true;
@@ -143,7 +144,8 @@ Rectangle {
         anchors.fill: parent
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
-        onClicked: ShellState.toggleEphemeris("network", outputName)
+        onClicked: root.anchorHost ? root.anchorHost.toggleEphemeris("network", root)
+            : ShellState.toggleEphemeris("network", root.outputName)
     }
 
     Behavior on color { ColorAnimation { duration: Theme.motionFast } }

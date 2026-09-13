@@ -14,12 +14,13 @@ BarIsland {
     WorkspaceOrbit { output: root.outputName }
 
     BarButton {
+        id: workspaceControl
         implicitWidth: 30
         implicitHeight: 30
         glyph: "⊞"
         accessibleLabel: "Open Compositor workspace navigator"
         targetPanel: "workspaces"
         motionKind: "workspace"
-        onActivated: root.toggleEphemeris("workspaces")
+        onActivated: root.toggleEphemeris("workspaces", workspaceControl)
     }
 }

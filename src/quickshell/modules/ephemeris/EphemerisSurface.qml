@@ -23,6 +23,25 @@ PanelWindow {
     readonly property int bottomClearance: Settings.edgeHasIslands(outputName, "bottom") ? barClearance : 16
     readonly property int leftClearance: Settings.edgeHasIslands(outputName, "left") ? barClearance : 16
     readonly property int rightClearance: Settings.edgeHasIslands(outputName, "right") ? barClearance : 16
+    property bool displayedAnchorValid: false
+    property real displayedAnchorX: 0
+    property real displayedAnchorY: 0
+    property real displayedAnchorWidth: 0
+    property real displayedAnchorHeight: 0
+    property string displayedAnchorEdge: "top"
+    readonly property bool anchoredInstrument: displayedAnchorValid
+    readonly property string anchorEdge: anchoredInstrument
+        ? displayedAnchorEdge : Settings.getEffectiveBarPosition(outputName)
+
+    function captureRequestedAnchor() {
+        displayedAnchorValid = ShellState.ephemerisAnchorValid
+            && ShellState.ephemerisOutput === outputName;
+        displayedAnchorX = ShellState.ephemerisAnchorX;
+        displayedAnchorY = ShellState.ephemerisAnchorY;
+        displayedAnchorWidth = ShellState.ephemerisAnchorWidth;
+        displayedAnchorHeight = ShellState.ephemerisAnchorHeight;
+        displayedAnchorEdge = ShellState.ephemerisAnchorEdge;
+    }
     readonly property var widgetLayout: {
         const layout = Registry.getLayout(transition.activeTab, width, height,
             topClearance, bottomClearance, leftClearance, rightClearance,
@@ -31,6 +50,16 @@ PanelWindow {
                 && widgetLoader.item.preferredSurfaceHeight !== undefined)
             layout.height = Math.min(layout.height,
                 Math.max(240, widgetLoader.item.preferredSurfaceHeight));
+
+        if (anchoredInstrument && layout.placement !== "horizon") {
+            Registry.attachLayout(layout, {
+                x: displayedAnchorX,
+                y: displayedAnchorY,
+                width: displayedAnchorWidth,
+                height: displayedAnchorHeight
+            }, anchorEdge, width, height, topClearance, bottomClearance,
+                leftClearance, rightClearance);
+        }
         return layout;
     }
     readonly property color moduleTone: Theme.moduleAccent(transition.activeTab)
@@ -64,7 +93,20 @@ PanelWindow {
         onSettled: root.focusWidget()
     }
 
+    Connections {
+        target: transition
+        function onMountedChanged() {
+            if (transition.mounted)
+                root.captureRequestedAnchor();
+        }
+        function onActiveTabChanged() { root.captureRequestedAnchor(); }
+    }
+
     readonly property rect originRect: {
+        if (root.anchoredInstrument)
+            return Qt.rect(root.displayedAnchorX, root.displayedAnchorY,
+                root.displayedAnchorWidth, root.displayedAnchorHeight);
+
         const barPos = Settings.barPosition;
         const barThick = Settings.compact ? 34 : Theme.barHeight;
         const barPad = Settings.barMode === "docked" ? 2 : Math.max(4, Settings.barMargin);
@@ -121,7 +163,10 @@ PanelWindow {
         InstrumentBridge {
             anchors.fill: parent
             geometry: surfaceGeometry
-            visible: Settings.joinedSurfaces && surfaceGeometry.motion && surfaceGeometry.amount > 0.01 && surfaceGeometry.amount < 0.99 && !root.immersiveWidget
+            edge: root.anchorEdge
+            visible: root.anchoredInstrument && !root.immersiveWidget
+                && transition.revealProgress > 0.01
+            opacity: transition.revealProgress
         }
 
         ClippingRectangle {
