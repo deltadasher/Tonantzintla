@@ -343,6 +343,42 @@ Item {
                     ToolTipBubble { text: filterSatellite.modelData.label; shown: filterPointer.containsMouse }
                 }
             }
+
+            Rectangle {
+                width: 148; height: 44; radius: 22
+                color: libraryPointer.containsMouse ? Theme.accent : Theme.mantle
+                border.width: 0
+                Row {
+                    anchors.centerIn: parent
+                    spacing: 8
+                    Text {
+                        text: "▧"
+                        color: libraryPointer.containsMouse ? Theme.void_ : Theme.accent
+                        font.family: Theme.fontDisplay
+                        font.pixelSize: 18
+                        font.weight: Font.Bold
+                    }
+                    Text {
+                        text: "LIBRARY"
+                        color: libraryPointer.containsMouse ? Theme.void_ : Theme.moon
+                        font.family: Theme.fontMono
+                        font.pixelSize: 10
+                        font.weight: Font.Bold
+                        font.letterSpacing: 1
+                    }
+                }
+                MouseArea {
+                    id: libraryPointer
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: Environment.openWallpaperLibrary()
+                }
+                ToolTipBubble {
+                    text: "OPEN WALLPAPER LIBRARY"
+                    shown: libraryPointer.containsMouse
+                }
+            }
         }
 
         Column {

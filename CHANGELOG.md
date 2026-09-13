@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.1 - 2026-09-05
+
+SMOOTHER PARALLAX HANDOFF
+
+- Open wallpaper paths through the configured file manager.
+- Restore the orbiting Parallax library presentation and keep it bound to the
+  wallpaper catalog.
+
 ## 1.0.0 - 2026-09-05
 
 WELCOME TO TONANTZINTLA 1.0.
