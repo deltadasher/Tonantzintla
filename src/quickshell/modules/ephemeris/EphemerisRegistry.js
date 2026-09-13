@@ -1,94 +1,97 @@
 .pragma library
 
-function clamp(value, minimum, maximum) {
-    return Math.max(minimum, Math.min(maximum, value));
+// Widget contract v1: the host and command palette share this local catalog.
+var apiVersion = 1;
+var catalog = [
+    {id: "apps", title: "Blackhole command palette", code: "APP", width: 680, height: 760, placement: "left", source: "widgets/catalog/LauncherWidget.qml", setting: "showTabApps"},
+    {id: "walls", title: "Parallax library", code: "WAL", width: 1480, height: 860, placement: "horizon", source: "widgets/desktop/WallpaperWidget.qml", setting: "showTabWalls"},
+    {id: "clipboard", title: "Clipboard core", code: "CLP", width: 820, height: 670, source: "widgets/productivity/ClipboardWidget.qml", setting: "showTabClipboard"},
+    {id: "notifications", title: "Transit signals", code: "SIG", width: 470, height: 760, placement: "right", source: "widgets/productivity/NotificationsWidget.qml"},
+    {id: "settings", title: "Observatory settings", code: "CFG", width: 1050, height: 720, source: "widgets/system/SettingsWidget.qml"},
+    {id: "calendar", title: "Celestial calendar", code: "CAL", width: 1480, height: 740, source: "widgets/productivity/CalendarWidget.qml", setting: "showTabCalendar"},
+    {id: "capture", title: "Optics bay", code: "OPT", width: 1080, height: 650, source: "widgets/desktop/CaptureWidget.qml", setting: "showTabCapture"},
+    {id: "media", title: "Resonance console", code: "MPR", width: 1040, height: 680, placement: "left", source: "widgets/media/MediaWidget.qml", setting: "showTabMedia"},
+    {id: "network", title: "Link array", code: "NET", width: 820, height: 650, placement: "right", source: "widgets/system/NetworkWidget.qml"},
+    {id: "audio", title: "Acoustic routing", code: "AUD", width: 920, height: 700, placement: "right", source: "widgets/system/AudioWidget.qml"},
+    {id: "workspaces", title: "Workspace constellation", code: "NIR", width: 1120, height: 690, source: "widgets/desktop/WorkspaceWidget.qml"},
+    {id: "battery", title: "Reactor telemetry", code: "PWR", width: 780, height: 590, placement: "right", source: "widgets/system/BatteryWidget.qml"},
+    {id: "focus", title: "Focus orbit", code: "FCS", width: 900, height: 650, source: "widgets/productivity/FocusWidget.qml"},
+    {id: "system", title: "Observatory telemetry", code: "SYS", width: 1060, height: 660, source: "widgets/system/SystemWidget.qml"},
+    {id: "guide", title: "Tonantzintla flight manual", code: "GDE", width: 720, height: 900, placement: "left", source: "widgets/catalog/GuideWidget.qml"},
+    {id: "quickstats", title: "Local constellation", code: "TEL", width: 680, height: 620, source: "../quickactions/TelemetryAction.qml"}
+];
+
+function widgets(enabledSettings) {
+    if (!enabledSettings) return catalog.slice();
+    return catalog.filter(function(spec) {
+        if (spec.setting && enabledSettings[spec.setting] === false) return false;
+        return true;
+    });
 }
+function entry(name) {
+    for (var i = 0; i < catalog.length; ++i)
+        if (catalog[i].id === name) return catalog[i];
+    return catalog[0];
+}
+function normalize(name) { return entry(name).id; }
+function sourceFor(name) { return entry(name).source; }
+function clamp(value, minimum, maximum) {
+    return Math.max(Math.min(minimum, maximum), Math.min(maximum, value));
+}
+function getLayout(name, screenWidth, screenHeight, topClearance, bottomClearance, leftClearance, rightClearance, style) {
+    var spec = entry(name);
+    var margin = Math.min(16, Math.max(0, screenWidth / 8));
+    var topPad = Math.max(margin, (topClearance !== undefined ? topClearance : 72));
+    var btmPad = Math.max(margin, (bottomClearance !== undefined ? bottomClearance : margin));
+    var leftPad = Math.max(margin, (leftClearance !== undefined ? leftClearance : margin));
+    var rightPad = Math.max(margin, (rightClearance !== undefined ? rightClearance : margin));
 
-function getLayout(name, screenWidth, screenHeight, topClearance) {
-    const margin = 16;
-    const usableTop = Math.max(margin, topClearance || 72);
-    const usableHeight = Math.max(360, screenHeight - usableTop - margin);
-    let width = 780;
-    let height = 640;
-    let placement = "center";
-    let title = "Ephemeris";
-    let code = "EPH/00";
+    var usableTop = Math.min(topPad, Math.max(0, screenHeight - 1));
+    var usableHeight = Math.max(1, screenHeight - usableTop - btmPad);
+    var usableWidth = Math.max(1, screenWidth - leftPad - rightPad);
 
-    if (name === "apps") {
-        width = Math.min(520, screenWidth - margin * 2);
-        height = usableHeight; placement = "left";
-        title = "Application catalog"; code = "EPH/APP";
-    } else if (name === "tools") {
-        width = 900; height = Math.min(860, usableHeight); title = "Field tools"; code = "EPH/FLD";
-    } else if (name === "walls") {
-        width = screenWidth;
-        height = screenHeight;
-        placement = "horizon";
-        title = "Parallax orbit"; code = "EPH/WAL";
-    } else if (name === "clipboard") {
-        width = 820; height = 670; title = "Clipboard orbit"; code = "EPH/CLP";
-    } else if (name === "notifications") {
-        width = 470; height = Math.min(760, usableHeight); placement = "right";
-        title = "Transit signals"; code = "EPH/SIG";
-    } else if (name === "settings") {
-        width = Math.min(1050, screenWidth - margin * 2); height = Math.min(720, usableHeight);
-        title = "Observatory settings"; code = "EPH/CFG";
-    } else if (name === "calendar") {
-        width = Math.min(1480, screenWidth - margin * 2); height = Math.min(680, usableHeight);
-        title = "Celestial calendar"; code = "EPH/CAL";
-    } else if (name === "capture") {
-        width = Math.min(1080, screenWidth - margin * 2); height = Math.min(650, usableHeight);
-        title = "Optics bay"; code = "EPH/OPT";
-    } else if (name === "media") {
-        width = Math.min(1040, screenWidth - margin * 2);
-        height = Math.min(680, usableHeight); placement = "left";
-        title = "Resonance console"; code = "EPH/MPR";
-    } else if (name === "network") {
-        width = 820; height = Math.min(650, usableHeight); placement = "right";
-        title = "Link array"; code = "EPH/NET";
-    } else if (name === "audio") {
-        width = 760; height = Math.min(650, usableHeight); placement = "right";
-        title = "Acoustic array"; code = "EPH/AUD";
-    } else if (name === "workspaces") {
-        width = Math.min(1120, screenWidth - margin * 2); height = Math.min(690, usableHeight);
-        title = "Parallax navigator"; code = "EPH/NIR";
-    } else if (name === "battery") {
-        width = Math.min(780, screenWidth - margin * 2); height = Math.min(590, usableHeight); placement = "right";
-        title = "Reactor telemetry"; code = "EPH/PWR";
-    } else if (name === "focus") {
-        width = Math.min(900, screenWidth - margin * 2); height = Math.min(650, usableHeight);
-        title = "Focus orbit"; code = "EPH/FCS";
-    } else if (name === "system") {
-        width = Math.min(1060, screenWidth - margin * 2); height = Math.min(660, usableHeight);
-        title = "Observatory telemetry"; code = "EPH/SYS";
-    } else if (name === "guide") {
-        width = Math.min(720, screenWidth - margin * 2);
-        height = usableHeight; placement = "left";
-        title = "Tonantzintla flight manual"; code = "EPH/GDE";
-    } else if (name === "timer") {
-        width = 680; height = Math.min(610, usableHeight);
-        title = "Chronos array"; code = "EPH/TMR";
-    } else if (name === "quickstats") {
-        width = 680; height = Math.min(620, usableHeight);
-        title = "Local constellation"; code = "EPH/TEL";
+    var width = Math.min(spec.width, usableWidth);
+    var height = Math.min(spec.height, usableHeight);
+    var placement = spec.placement || "center";
+
+    if (style === "spotlight" && placement !== "horizon") {
+        placement = "center";
+        if (spec.id === "apps" || spec.id === "clipboard") {
+            width = Math.min(700, usableWidth);
+            height = Math.min(540, usableHeight);
+        }
+    } else if (style === "compact" && placement !== "horizon") {
+        width = Math.min(Math.round(spec.width * 0.88), usableWidth);
+        height = Math.min(Math.round(spec.height * 0.88), usableHeight);
     }
 
-    width = clamp(width, 360, screenWidth - margin * 2);
-    height = clamp(height, 320, usableHeight);
+    if (placement === "horizon") {
+        width = usableWidth;
+        height = usableHeight;
+    }
 
-    let x = Math.round((screenWidth - width) / 2);
-    let y = usableTop + Math.round((usableHeight - height) / 2);
+    var x = leftPad + Math.round((usableWidth - width) / 2);
+    var y = usableTop + Math.round((usableHeight - height) / 2);
+
     if (placement === "left") {
-        x = margin;
+        x = leftPad;
         y = usableTop;
     } else if (placement === "right") {
-        x = screenWidth - width - margin;
+        x = screenWidth - rightPad - width;
         y = usableTop;
     } else if (placement === "horizon") {
-        x = margin;
+        x = leftPad;
         y = usableTop;
     }
 
-    return { "name": name, "x": x, "y": y, "width": width, "height": height,
-        "title": title, "code": code, "placement": placement };
+    return {
+        name: spec.id,
+        x: x,
+        y: y,
+        width: width,
+        height: height,
+        title: spec.title,
+        code: "EPH/" + spec.code,
+        placement: placement
+    };
 }

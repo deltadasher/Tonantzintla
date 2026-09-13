@@ -33,6 +33,35 @@ QtObject {
     readonly property var apps: Pipewire.nodes.values.filter(function(node) {
         return node.isStream && node.audio !== null;
     })
+    readonly property var graphSources: inputs.concat(apps.filter(function(node) { return !node.isSink; }))
+    readonly property var graphTargets: outputs.concat(apps.filter(function(node) { return node.isSink; }))
+    readonly property var routes: Pipewire.linkGroups.values.filter(function(link) {
+        return link.source && link.target && link.source.audio && link.target.audio;
+    })
+    property string routeStatus: ""
+    property bool routeError: false
+    readonly property bool routing: routeProcess.running
+
+    function canRoute(node) {
+        return node && node.ready && node.isStream && !node.isSink
+            && node.properties && /^\d+$/.test(String(node.properties["object.serial"] || ""));
+    }
+
+    function moveStream(node, destination) {
+        if (routing || !canRoute(node) || !containsNode(outputs, destination) || !destination.ready)
+            return;
+        const serial = String(destination.properties["object.serial"] || "");
+        if (!/^\d+$/.test(serial)) {
+            routeError = true;
+            routeStatus = "This output cannot be rerouted through PulseAudio compatibility";
+            return;
+        }
+        routeError = false;
+        routeStatus = "Moving playback…";
+        routeProcess.command = ["python3", Environment.script("audio-route.py"),
+            String(node.properties["object.serial"]), serial];
+        routeProcess.running = true;
+    }
 
     readonly property string defaultOutputName: sinkNode ? nodeTitle(sinkNode) : "Default output"
     readonly property string defaultOutputDetail: sinkNode && sinkNode.description
@@ -236,6 +265,21 @@ QtObject {
 
     property Process actionProcess: Process {
         onRunningChanged: if (!running) root.refreshLevels()
+    }
+
+    property Process routeProcess: Process {
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const result = JSON.parse(text);
+                    root.routeError = result.ok !== true;
+                    root.routeStatus = result.status || "Route unavailable";
+                } catch (error) {
+                    root.routeError = true;
+                    root.routeStatus = "Could not confirm the audio route";
+                }
+            }
+        }
     }
 
     Component.onCompleted: refreshLevels()

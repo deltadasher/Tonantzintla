@@ -13,6 +13,9 @@ Item {
     property bool playing: false
     property bool enabledControl: true
     property bool interacting: false
+    property string trackKey: ""
+    onTrackKeyChanged: interacting = false
+    onEnabledControlChanged: if (!enabledControl) interacting = false
     property real previewProgress: progress
     signal seekRequested(real progress)
 
@@ -58,6 +61,15 @@ Item {
 
             const swept = Math.max(0, Math.min(1, root.shown));
             if (swept > 0.001) {
+                if (root.playing || root.interacting) {
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, root.orbitRadius, start, start + swept * Math.PI * 2);
+                    ctx.strokeStyle = Qt.rgba(Theme.accent.r, Theme.accent.g,
+                        Theme.accent.b, 0.18);
+                    ctx.lineWidth = 11;
+                    ctx.lineCap = "round";
+                    ctx.stroke();
+                }
                 ctx.beginPath();
                 ctx.arc(cx, cy, root.orbitRadius, start, start + swept * Math.PI * 2);
                 ctx.strokeStyle = Qt.rgba(Theme.accent.r, Theme.accent.g,
@@ -131,6 +143,9 @@ Item {
                 return;
             root.previewProgress = root.progressAt(mouse.x, mouse.y);
             root.seekRequested(root.previewProgress);
+            root.interacting = false;
+        }
+        onCanceled: {
             root.interacting = false;
         }
     }

@@ -3,11 +3,21 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Io
 import "."
 import "services"
 import "modules/umbra"
 
 ShellRoot {
+
+    // Read-only inspection belongs to the isolated lock process. Never expose
+    // an IPC unlock operation or infer acquisition from process existence.
+    IpcHandler {
+        target: "lockState"
+        function status(): string {
+            return sessionLock.secure ? "secure" : sessionLock.locked ? "acquiring" : "unlocked";
+        }
+    }
 
     Component.onCompleted: stateDelay.start()
 

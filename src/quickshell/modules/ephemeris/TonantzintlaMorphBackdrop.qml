@@ -15,7 +15,7 @@ Item {
         if (tab === "calendar")
             return Math.round((width - sourceWidth) / 2);
         if (tab === "notifications" || tab === "network" || tab === "audio"
-                || tab === "battery" || tab === "settings" || tab === "tools")
+                || tab === "battery" || tab === "settings")
             return width - sourceWidth - Math.max(10, Settings.barMargin);
         if (tab === "media")
             return 248;

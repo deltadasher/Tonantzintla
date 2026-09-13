@@ -1,5 +1,7 @@
 # Architecture
 
+Agents should first read [the design and research guide](agent-design-guide.md).
+
 Tonantzintla is one Quickshell application with a small number of deliberately
 separated layers. Keep those boundaries intact: most past regressions came from
 mixing layer-shell window ownership, UI presentation, and service lifetime.
@@ -13,7 +15,7 @@ src/quickshell/shell.qml
 ├── src/quickshell/modules/aperture/: always-visible bar
 ├── src/quickshell/modules/ephemeris/: on-demand expanding instruments
 ├── src/quickshell/modules/osd/: short-lived feedback surfaces
-├── src/quickshell/modules/quickactions/: on-demand edge deck
+├── legacy quick-action commands: routed to the System instrument
 ├── src/quickshell/modules/transit/: notifications and clipboard presentation
 └── src/quickshell/modules/umbra/: preview and isolated secure lock instance
 ```
@@ -69,13 +71,43 @@ properties. Complete screens and instrument layouts belong in `src/quickshell/mo
 
 ## Modules
 
+Aperture's arrangement editor keeps selection by island ID, with separate saved
+horizontal and vertical layouts. `components/BarLayout.js` sanitizes persisted
+layouts and transfers islands without duplication. Placement and ordering apply
+immediately; Undo restores the preceding layout only while no outside edit has
+superseded it. Meta+Alt+click an island opens Settings → Bar directly.
+`BarButton.qml` animates its icon contents when its target panel opens, leaving
+the button's hit area stationary. The Bar icon-motion toggle, global motion
+switch, and instant motion profile all disable these opening animations.
+
 Modules own Wayland surfaces or complete instrument families:
 
 - **Aperture** owns the always-visible top bar.
 - **Ephemeris** owns the full-screen transparent layer-shell host and animates
   an internal deck. Do not animate the layer-shell window geometry itself.
 - **OSD** owns volume, microphone, and brightness feedback.
-- **Quick Actions** owns Chronos and compact telemetry.
+- **System** owns telemetry; legacy quick-action commands open this page instead of a separate rail. Cursor settings discover installed Xcursor themes and validate Niri configuration edits before saving a backup and applying them.
+
+Settings → Niri settings → Cursor lists installed Xcursor themes (including Bibata
+Modern variants), reads the current Niri theme and size, and applies explicit
+selections. The helper preserves other cursor options and the rest of the config,
+validates a staged file with `niri validate`, and creates a timestamped
+`config.kdl.before-cursor-*` backup beside the configuration before replacement.
+Included configs and disabled KDL nodes are reported as unsupported instead of
+being rewritten unsafely. Theme installation is separate; Refresh discovers new
+themes. Existing applications may need reopening. No compositor restart is forced.
+Cursor behavior also offers hide-while-typing and an idle-hide delay. These options
+are staged with the theme and applied together using the same validated transaction.
+
+Automatic idle locking is owned by `IdleLock` in the main shell, not by an
+installer-only Niri autostart entry. It starts an owned swayidle process after
+settings load, defaults to five minutes, and invokes the installed `blackhole lock`
+command. Lock screen settings expose enable, timeout and process/error status.
+Changing settings restarts the owned watcher; disabling stops it. Existing external
+idle daemons are not killed. swayidle's compositor idle inhibitors still apply.
+This fixes installs using `--niri keep` whose existing configuration has no idle
+hook. It does not establish suspend-before-lock readiness. The real PAM/session-lock
+and idle-inhibition behavior must still be tested on the host Wayland session.
 - **Transit** owns notification and clipboard presentation.
 - **Umbra** owns the preview plus a separate secure Quickshell lock process.
 
@@ -96,15 +128,52 @@ remain behind a feature switch until it is proven.
 
 ## Adding a widget
 
+Launcher search is local and name-first: exact names, leading prefixes, word
+prefixes, then contiguous name substrings. Metadata/aliases are a fallback only
+when no names match; scattered-letter matches are deliberately excluded. Empty
+searches and equally ranked results retain stable discovery order. A changed query
+or category selects the best available result, while background model refreshes
+preserve the selected identity. Short astronomy abbreviations do not inject facts
+into ordinary app searches; full fact queries and calculator expressions remain.
+
 1. Choose a category under `src/quickshell/modules/ephemeris/widgets/`.
 2. Add the component to that directory.
 3. Register its path in `src/quickshell/modules/ephemeris/widgets/qmldir`.
-4. Add its dimensions, placement, title, code, and icon to
-   `EphemerisRegistry.js`.
-5. Add the component routing in `EphemerisSurface.qml`.
-6. Add the entry point in Aperture, Field Tools, or another appropriate module.
+4. Add its unique id, relative source path, dimensions, placement, title, and
+   code to `EphemerisRegistry.js`. This is the local widget contract, version 1.
+5. The host loads that source asynchronously and the command palette discovers
+   the same entry. Do not add a second routing table to the host.
+6. Optionally add an entry point in Aperture or Field Tools.
 7. Run `./tools/check` and test both open and close transitions in the live
    shell.
+
+Widget roots are `Item`s, never their own layer-shell window. They may expose
+`focusPrimary()` to receive keyboard focus and `beginDeployment()` to begin an
+internal entrance. Both hooks are optional. Keep data in services; a widget must
+survive being unloaded between visits. This is a local source-level contract,
+not an installer for untrusted third-party extensions.
+
+`SurfaceTransition.qml` owns displayed-tab state separately from the requested
+tab. Content leaves before a source swap, the new component must finish loading
+before entrance, and rapid requests coalesce. Closing cancels outstanding
+entrances. Loader failures show an actionable state without taking down the bar.
+
+`InstrumentGeometry.qml` and `InstrumentBridge.qml` are isolated prototypes in
+src/quickshell/preview-instruments.qml; neither currently has a live host consumer.
+The intended contract is shared bounds for backing and rounded masking with
+fixed-size content. Integrate and validate that contract before restoring the
+experimental settings toggle. It is not a general SDF metaball renderer.
+Compact widgets may expose `preferredSurfaceHeight`; the live host clamps it to
+the registry's screen bounds. See gemini-roadmap-1.1.md for the integration gate.
+
+`output-preview.py` owns session-only Niri scaling previews. Its independent
+watchdog has a runtime-directory lock and per-preview confirmation token. It
+queries actual output scale before confirming or restoring it. No Niri config
+files are edited; persistent mode/scale changes need a separate proven recovery
+design. `OutputSettings.qml` reads display state only while its page exists.
+
+`ApertureContents.qml` is shared by the real bar and its read-only settings
+miniature. The preview must not create a second `PanelWindow` or fake telemetry.
 
 ## Safe change sequence
 

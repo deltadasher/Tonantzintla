@@ -13,9 +13,11 @@ Rectangle {
     property string accessibleLabel: code + " " + value
     signal activated()
     signal scrolled(real delta)
+    readonly property bool isVertical: root.parent && typeof root.parent.isVertical !== "undefined"
+        ? root.parent.isVertical : (Settings.barPosition === "left" || Settings.barPosition === "right")
 
-    implicitWidth: row.implicitWidth + 16
-    implicitHeight: Settings.compact ? 34 : 38
+    implicitWidth: root.isVertical ? (Settings.compact ? 36 : 40) : (layoutGrid.implicitWidth + 16)
+    implicitHeight: root.isVertical ? (layoutGrid.implicitHeight + 8) : (Settings.compact ? 34 : 38)
     radius: 9
     color: root.warning
         ? Qt.rgba(Theme.warning.r, Theme.warning.g, Theme.warning.b, 0.12)
@@ -23,27 +25,31 @@ Rectangle {
     border.width: 0
     scale: pointer.containsMouse ? 1.03 : 1
 
-    RowLayout {
-        id: row
+    GridLayout {
+        id: layoutGrid
         anchors.centerIn: parent
-        spacing: 5
+        columns: root.isVertical ? 1 : 2
+        rowSpacing: root.isVertical ? 1 : 0
+        columnSpacing: root.isVertical ? 0 : 5
 
         Text {
-            Layout.alignment: Qt.AlignVCenter
+            Layout.alignment: root.isVertical ? Qt.AlignHCenter : Qt.AlignVCenter
             text: root.code
             color: root.warning ? Theme.warning : root.active ? root.accentColor : Theme.muted
             font.family: Theme.fontText
-            font.pixelSize: 11
+            font.pixelSize: root.isVertical ? 9 : 11
             font.weight: Font.DemiBold
             font.letterSpacing: 0.45
+            horizontalAlignment: root.isVertical ? Text.AlignHCenter : Text.AlignLeft
         }
         Text {
-            Layout.alignment: Qt.AlignVCenter
+            Layout.alignment: root.isVertical ? Qt.AlignHCenter : Qt.AlignVCenter
             text: root.value
             color: root.active ? Theme.moon : Theme.muted
             font.family: Theme.fontText
-            font.pixelSize: 12
+            font.pixelSize: root.isVertical ? 10 : 12
             font.weight: Font.DemiBold
+            horizontalAlignment: root.isVertical ? Text.AlignHCenter : Text.AlignLeft
         }
     }
 

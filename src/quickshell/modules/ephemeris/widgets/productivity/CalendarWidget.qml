@@ -69,33 +69,36 @@ Item {
     readonly property real minutes: liveClock.getMinutes() + liveClock.getSeconds() / 60
         + liveClock.getMilliseconds() / 60000
     readonly property real seconds: liveClock.getSeconds() + liveClock.getMilliseconds() / 1000
-    readonly property var todayWeather: Weather.daily.length > 0 ? Weather.daily[0] : null
+    readonly property var todayWeather: Weather.daily.find(function(day) {
+        return day.solar && smoothEpoch / 1000 >= day.solar.start
+            && smoothEpoch / 1000 < day.solar.end;
+    }) || null
     readonly property bool localDaylight: userInDaylight(liveClock)
-    readonly property int localClockMinutes: liveClock.getHours() * 60 + liveClock.getMinutes()
-    readonly property int sunriseMinutes: timeMinutes(todayWeather ? todayWeather.sunrise : "")
-    readonly property int sunsetMinutes: timeMinutes(todayWeather ? todayWeather.sunset : "")
-    readonly property real daylightProgress: sunriseMinutes >= 0 && sunsetMinutes > sunriseMinutes
-        ? Math.max(0, Math.min(1, (localClockMinutes - sunriseMinutes) / (sunsetMinutes - sunriseMinutes))) : 0
-    readonly property string nextSolarLabel: localDaylight ? "SUNSET" : "SUNRISE"
-    readonly property string nextSolarTime: {
-        if (localDaylight)
-            return todayWeather ? todayWeather.sunset || "--:--" : "--:--";
-        if (localClockMinutes < sunriseMinutes)
-            return todayWeather ? todayWeather.sunrise || "--:--" : "--:--";
-        return Weather.daily.length > 1 ? Weather.daily[1].sunrise || "--:--" : "--:--";
+    readonly property real daylightProgress: {
+        if (!todayWeather || !todayWeather.solar || !todayWeather.solar.sunrise || !todayWeather.solar.sunset)
+            return 0.5;
+        const start = todayWeather.solar.sunrise.epoch;
+        const end = todayWeather.solar.sunset.epoch;
+        const now = smoothEpoch / 1000;
+        if (end <= start) return 0.5;
+        return Math.max(0, Math.min(1, (now - start) / (end - start)));
     }
-
-    // Minutes until the next sunrise or sunset, wrapped across midnight.
-    readonly property string untilNextSolar: {
-        if (sunriseMinutes < 0 || sunsetMinutes < 0)
-            return "--";
-        const target = localDaylight ? sunsetMinutes : sunriseMinutes;
-        let delta = target - localClockMinutes;
-        if (delta < 0)
-            delta += 1440;
-        const hours = Math.floor(delta / 60);
-        return hours > 0 ? hours + "H " + (delta % 60) + "M" : delta + "M";
+    readonly property var nextSolarEvent: {
+        const now = smoothEpoch / 1000;
+        const events = [];
+        for (const day of Weather.daily) {
+            if (!day.solar) continue;
+            for (const key of ["sunrise", "sunset"]) {
+                const event = day.solar[key];
+                if (event && event.epoch > now)
+                    events.push({label: key.toUpperCase(), time: event.time, epoch: event.epoch});
+            }
+        }
+        events.sort(function(a, b) { return a.epoch - b.epoch; });
+        return events.length ? events[0] : null;
     }
+    readonly property string nextSolarLabel: nextSolarEvent ? nextSolarEvent.label : ""
+    readonly property string nextSolarTime: nextSolarEvent ? nextSolarEvent.time : "—"
 
     function julianDate(value) {
         return Date.UTC(value.getFullYear(), value.getMonth(), value.getDate(), 12, 0, 0) / 86400000 + 2440587.5;
@@ -618,11 +621,13 @@ Item {
                     const ctx = getContext("2d");
                     ctx.reset();
                     ctx.clearRect(0, 0, width, height);
-                    if (!root.earthMode)
+                    if (!root.earthMode || width <= 0 || height <= 0)
                         return;
                     const cx = width / 2;
                     const cy = height / 2;
                     const radius = Math.min(width, height) / 2 - 3;
+                    if (radius <= 0)
+                        return;
                     const latitude0 = (isFinite(Weather.latitude) ? Weather.latitude : 0) * Math.PI / 180;
                     const longitude0 = (isFinite(Weather.longitude) ? Weather.longitude : 0) * Math.PI / 180;
 
@@ -812,11 +817,10 @@ Item {
                         ctx.fillStyle = Theme.moon;
                         ctx.beginPath(); ctx.arc(stop, height / 2, 3, 0, Math.PI * 2); ctx.fill();
                     }
-                    Connections {
-                        target: root
-                        function onDaylightProgressChanged() { daylightLine.requestPaint(); }
-                        function onEarthModeChanged() { daylightLine.requestPaint(); }
-                    }
+                    readonly property real progress: root.daylightProgress
+                    readonly property bool earth: root.earthMode
+                    onProgressChanged: requestPaint()
+                    onEarthChanged: requestPaint()
                     Component.onCompleted: requestPaint()
                 }
                 Text {
@@ -1020,6 +1024,8 @@ Item {
                 const ctx = getContext("2d");
                 ctx.reset();
                 ctx.clearRect(0, 0, width, height);
+                if (width <= 0 || height <= 0)
+                    return;
                 // One lane outside the zodiac ring at 0.462. The markers
                 // breathe a fraction of a pixel outward so the rim stays alive
                 // without the blades wandering off their reading.
@@ -1149,7 +1155,9 @@ Item {
                 onPaint: {
                     const ctx = getContext("2d"); ctx.reset();
                     ctx.clearRect(0, 0, width, height);
+                    if (width <= 0 || height <= 0) return;
                     const radius = width / 2;
+                    if (radius <= 0) return;
                     ctx.save();
                     ctx.beginPath(); ctx.arc(radius, radius, radius, 0, Math.PI * 2); ctx.clip();
                     ctx.fillStyle = Theme.moon; ctx.beginPath(); ctx.arc(radius, radius, radius, 0, Math.PI * 2); ctx.fill();
@@ -1239,119 +1247,21 @@ Item {
             }
         }
 
-        // The sun's path for today, filling the band the complications left
-        // empty. Sunrise and sunset are already resolved for Earth mode; the
-        // calendar never showed them.
-        Item {
+        Shared.SolarTimeline {
             x: complications.width * 0.06
-            y: complications.height * 0.72 + (1 - root.calendarSupportReveal) * 40
+            y: complications.height * 0.71 + (1 - root.calendarSupportReveal) * 40
             width: complications.width * 0.88
-            height: complications.height * 0.20
+            height: complications.height * 0.25
             opacity: root.sideThree * root.calendarSupportReveal
-            visible: opacity > 0.01 && root.sunriseMinutes >= 0
-
-            Canvas {
-                id: solarCanvas
-                anchors.fill: parent
-                anchors.topMargin: 18
-                anchors.bottomMargin: 20
-                antialiasing: true
-
-                function domeY(fraction) {
-                    return height - Math.sin(Math.max(0, Math.min(1, fraction)) * Math.PI)
-                        * (height - 8);
-                }
-
-                onPaint: {
-                    const ctx = getContext("2d");
-                    ctx.reset();
-                    const horizon = height;
-
-                    ctx.beginPath();
-                    ctx.moveTo(0, horizon);
-                    ctx.lineTo(width, horizon);
-                    ctx.strokeStyle = Qt.rgba(Theme.lineBright.r, Theme.lineBright.g,
-                        Theme.lineBright.b, 0.34);
-                    ctx.lineWidth = 1;
-                    ctx.stroke();
-
-                    // Whole arc, drawn faint, then the travelled part over it.
-                    for (let pass = 0; pass < 2; pass++) {
-                        const limit = pass === 0 ? 1 : root.daylightProgress;
-                        if (limit <= 0)
-                            continue;
-                        ctx.beginPath();
-                        for (let step = 0; step <= 72; step++) {
-                            const fraction = step / 72 * limit;
-                            const x = fraction * width;
-                            const y = domeY(fraction);
-                            if (step === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-                        }
-                        ctx.strokeStyle = pass === 0
-                            ? Qt.rgba(Theme.lineBright.r, Theme.lineBright.g,
-                                Theme.lineBright.b, 0.28)
-                            : Theme.warning;
-                        ctx.lineWidth = pass === 0 ? 1.5 : 2.4;
-                        ctx.lineCap = "round";
-                        ctx.stroke();
-                    }
-
-                    if (root.daylightProgress > 0 && root.daylightProgress < 1) {
-                        const sx = root.daylightProgress * width;
-                        const sy = domeY(root.daylightProgress);
-                        ctx.beginPath();
-                        ctx.arc(sx, sy, 11, 0, Math.PI * 2);
-                        ctx.fillStyle = Qt.rgba(Theme.warning.r, Theme.warning.g,
-                            Theme.warning.b, 0.18);
-                        ctx.fill();
-                        ctx.beginPath();
-                        ctx.arc(sx, sy, 5.5, 0, Math.PI * 2);
-                        ctx.fillStyle = Theme.warning;
-                        ctx.fill();
-                    }
-                }
-
-                onWidthChanged: requestPaint()
-                onHeightChanged: requestPaint()
-                Component.onCompleted: requestPaint()
-                Connections {
-                    target: root
-                    function onDaylightProgressChanged() { solarCanvas.requestPaint(); }
-                }
-            }
-
-            Text {
-                anchors.left: parent.left
-                anchors.top: parent.top
-                text: "SUNRISE  " + (root.todayWeather ? root.todayWeather.sunrise || "--:--" : "--:--")
-                color: Theme.muted
-                font.family: Theme.fontMono; font.pixelSize: 10
-                font.weight: Font.Bold; font.letterSpacing: 1
-            }
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.top: parent.top
-                text: root.localDaylight ? "DAYLIGHT" : "NIGHT"
-                color: root.localDaylight ? Theme.warning : Theme.accent
-                font.family: Theme.fontMono; font.pixelSize: 10
-                font.weight: Font.Black; font.letterSpacing: 1.6
-            }
-            Text {
-                anchors.right: parent.right
-                anchors.top: parent.top
-                text: "SUNSET  " + (root.todayWeather ? root.todayWeather.sunset || "--:--" : "--:--")
-                color: Theme.muted
-                font.family: Theme.fontMono; font.pixelSize: 10
-                font.weight: Font.Bold; font.letterSpacing: 1
-            }
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.bottom: parent.bottom
-                text: root.nextSolarLabel + " IN " + root.untilNextSolar
-                color: Theme.muted
-                font.family: Theme.fontMono; font.pixelSize: 10
-                font.weight: Font.Bold
-            }
+            visible: opacity > 0.01
+            solar: Settings.weatherEnabled && root.selectedForecast ? root.selectedForecast.solar || null : null
+            location: Weather.location
+            // Quantize repainting to minutes; the clock hands retain smooth motion.
+            epoch: Math.floor(root.smoothEpoch / 60000) * 60
+            unavailableText: !Settings.weatherEnabled ? "WEATHER IS DISABLED"
+                : !Settings.weatherLocation.trim() ? "SET A WEATHER LOCATION"
+                : !root.selectedForecast ? "NO SOLAR DATA FOR THIS DATE" : Weather.status
+            onConfigureRequested: ShellState.openEphemeris("settings")
         }
 
         Shared.WeatherRibbon {

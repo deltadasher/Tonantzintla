@@ -8,11 +8,11 @@ Item {
     property real presentation: 1
     readonly property color primary: Theme.moduleAccent(module)
     readonly property color secondary: Theme.moduleSecondary(module)
-    readonly property real density: Settings.atmosphereStyle === "quiet" ? 0.62
+    readonly property real density: ShellState.deepFocus ? 0.2 : Settings.atmosphereStyle === "quiet" ? 0.62
         : Settings.atmosphereStyle === "cinematic" ? 1.42 : 1
     readonly property int starCount: Settings.atmosphereStyle === "quiet" ? 5
         : Settings.atmosphereStyle === "cinematic" ? 11 : 8
-    readonly property bool live: Settings.motion && Settings.animateStars && visible
+    readonly property bool live: Settings.motion && Settings.animateStars && !ShellState.deepFocus && visible
 
     clip: true
     opacity: Settings.animateStars ? Math.min(0.72, 0.48 * density) * presentation : 0

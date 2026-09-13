@@ -17,8 +17,7 @@ PanelWindow {
         : Quickshell.screens.length > 0 && modelData === Quickshell.screens[0]
     readonly property bool leftEdge: Settings.quickActionsEdge === "left"
     readonly property int tabWidth: 52
-    readonly property string instrumentModule: ShellState.quickActionTab === "telemetry"
-        ? "quickstats" : "timer"
+    readonly property string instrumentModule: "quickstats"
     readonly property color instrumentTone: Theme.moduleAccent(instrumentModule)
 
     property bool surfaceVisible: false
@@ -157,8 +156,7 @@ PanelWindow {
                 anchors.fill: parent
                 anchors.margins: 15
                 active: root.surfaceVisible
-                sourceComponent: ShellState.quickActionTab === "telemetry"
-                    ? telemetryComponent : timerComponent
+                sourceComponent: telemetryComponent
                 opacity: root.contentPresentation
                 transform: Translate {
                     x: (1 - root.contentPresentation) * (root.leftEdge ? -10 : 10)
@@ -191,7 +189,6 @@ PanelWindow {
 
                 Repeater {
                     model: [
-                        { "name": "timer", "glyph": "◷" },
                         { "name": "telemetry", "glyph": "⌁" }
                     ]
                     Rectangle {
@@ -205,24 +202,12 @@ PanelWindow {
                         border.color: active ? root.instrumentTone : actionPointer.containsMouse ? Theme.lineBright : "transparent"
                         Column { anchors.centerIn: parent; spacing: 1
                             Text { anchors.horizontalCenter: parent.horizontalCenter; text: actionButton.modelData.glyph; color: actionButton.active ? Theme.void_ : Theme.moon; font.family: Theme.fontIcon; font.pixelSize: 15; font.weight: Font.Bold }
-                            Rectangle { anchors.horizontalCenter: parent.horizontalCenter; visible: actionButton.modelData.name === "timer" && Timekeeper.anyRunning; width: 5; height: 5; radius: 3; color: actionButton.active ? Theme.void_ : Theme.success }
                         }
                         MouseArea { id: actionPointer; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.selectAction(actionButton.modelData.name) }
                     }
                 }
 
                 Item { Layout.fillHeight: true }
-
-                Text {
-                    visible: Timekeeper.anyRunning
-                    Layout.alignment: Qt.AlignHCenter
-                    text: Timekeeper.activeCode + "\n" + Timekeeper.activeDisplay
-                    horizontalAlignment: Text.AlignHCenter
-                    color: Theme.success
-                    font.family: Theme.fontMono
-                    font.pixelSize: 10
-                    font.weight: Font.Bold
-                }
 
                 Rectangle {
                     Layout.alignment: Qt.AlignHCenter
@@ -249,6 +234,5 @@ PanelWindow {
         }
     }
 
-    Component { id: timerComponent; TimerAction { railMode: true } }
     Component { id: telemetryComponent; TelemetryAction { railMode: true } }
 }

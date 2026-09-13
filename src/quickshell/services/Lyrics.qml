@@ -16,12 +16,13 @@ QtObject {
     property bool busy: false
     property string error: ""
     property string requestedKey: ""
+    property bool forceQueued: false
     readonly property bool requested: ShellState.ephemerisVisible
         && ShellState.ephemerisTab === "media"
     readonly property bool available: lines.length > 0
     readonly property bool hasTiming: lines.length > 0 && lines[0].time >= 0
     readonly property string trackKey: Media.available
-        ? [Media.title, Media.artist, Media.album, Math.round(Media.length)].join("\u001f") : ""
+        ? [Media.trackKey, Media.album, Math.round(Media.length)].join("\u001f") : ""
     readonly property int currentIndex: {
         if (!hasTiming)
             return -1;
@@ -86,6 +87,12 @@ QtObject {
     }
 
     function refresh(forceOnline) {
+        forceQueued = forceQueued || forceOnline;
+        // Do not relabel an in-flight response with the next track's key.
+        // The completion handler schedules the latest request instead.
+        if (fetchProcess.running) return;
+        forceOnline = forceQueued;
+        forceQueued = false;
         if (!Media.available) {
             clear("idle");
             return;
@@ -108,7 +115,10 @@ QtObject {
         fetchProcess.running = true;
     }
 
-    onTrackKeyChanged: if (requested) requestTimer.restart()
+    onTrackKeyChanged: {
+        clear(Media.available ? "loading" : "idle");
+        if (requested) requestTimer.restart();
+    }
     onRequestedChanged: if (requested) requestTimer.restart()
 
     property Timer requestTimer: Timer {
@@ -132,6 +142,8 @@ QtObject {
         onRunningChanged: {
             if (!running && root.status === "loading")
                 root.busy = false;
+            if (!running && root.requested && (root.requestedKey !== root.trackKey || root.forceQueued))
+                requestTimer.restart();
         }
     }
 }

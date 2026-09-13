@@ -5,17 +5,34 @@ import Quickshell.Services.SystemTray
 import Quickshell.Widgets
 import ".."
 
-RowLayout {
-    spacing: 3
+Item {
+    id: root
+    readonly property bool isVertical: root.parent && typeof root.parent.isVertical !== "undefined" ? root.parent.isVertical : (Settings.barPosition === "left" || Settings.barPosition === "right")
+    property bool expanded: false
+    readonly property int maxCollapsed: 5
+    readonly property var allItems: SystemTray.items.values
+    readonly property bool hasOverflow: allItems.length > maxCollapsed
+    readonly property var visibleItems: (hasOverflow && !expanded) ? allItems.slice(0, maxCollapsed) : allItems
+    readonly property int displayCount: visibleItems.length + (hasOverflow ? 1 : 0)
+
+    implicitWidth: isVertical ? 28 : Math.max(28, displayCount * 28 + Math.max(0, displayCount - 1) * 3)
+    implicitHeight: isVertical ? Math.max(28, displayCount * 28 + Math.max(0, displayCount - 1) * 3) : 28
+    Behavior on implicitWidth { NumberAnimation { duration: Settings.motion ? 150 : 0 } }
+    Behavior on implicitHeight { NumberAnimation { duration: Settings.motion ? 150 : 0 } }
+
+    Grid {
+        anchors.fill: parent
+        columns: root.isVertical ? 1 : Math.max(1, root.displayCount)
+        spacing: 3
 
     Repeater {
-        model: SystemTray.items.values
+        model: root.visibleItems
 
         Rectangle {
             id: trayItem
             required property var modelData
-            Layout.preferredWidth: 27
-            Layout.preferredHeight: 27
+            width: 28
+            height: 28
             radius: 8
             color: trayPointer.containsMouse ? Theme.barNeutralHover : "transparent"
 
@@ -80,6 +97,31 @@ RowLayout {
             }
 
             Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+        }
+    }
+
+        Rectangle {
+            id: overflowPill
+            visible: root.hasOverflow
+            width: 28
+            height: 28
+            radius: 8
+            color: overflowPointer.containsMouse ? Theme.controlActive : Theme.controlRest
+            Text {
+                anchors.centerIn: parent
+                text: root.expanded ? "«" : "⋯"
+                color: overflowPointer.containsMouse ? Theme.accent : Theme.muted
+                font.family: Theme.fontMono
+                font.pixelSize: root.expanded ? 12 : 11
+                font.bold: true
+            }
+            MouseArea {
+                id: overflowPointer
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.expanded = !root.expanded
+            }
         }
     }
 }

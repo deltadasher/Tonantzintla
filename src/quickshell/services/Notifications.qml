@@ -99,7 +99,7 @@ QtObject {
             history.remove(history.count - 1);
         unreadCount++;
 
-        if (!Settings.doNotDisturb)
+        if (!Settings.doNotDisturb && (!ShellState.deepFocus || critical))
             insertOrFuse(popups, makeEntry(uid, notification.appName,
                 notification.summary, notification.body,
                 notification.image || notification.appIcon,
@@ -114,7 +114,7 @@ QtObject {
             "", false, 1, []);
         insertOrFuse(history, entry, 180000);
         unreadCount++;
-        if (!Settings.doNotDisturb)
+        if (!Settings.doNotDisturb && !ShellState.deepFocus)
             insertOrFuse(popups, makeEntry(uid, "Tonantzintla",
                 summary || "Transit link online",
                 body || "This toast is local to the active Tonantzintla shell.",

@@ -16,17 +16,38 @@ QtObject {
     property string location: Settings.weatherLocation
     property real latitude: NaN
     property real longitude: NaN
+    property string timezoneName: ""
+    property int utcOffsetSeconds: 0
     property string unitSymbol: Settings.temperatureUnit === "fahrenheit" ? "°F" : "°C"
     property string windUnit: Settings.temperatureUnit === "fahrenheit" ? "mph" : "km/h"
     property var current: ({})
     property var daily: []
+    property string requestKey: ""
+    readonly property string settingsKey: JSON.stringify([Settings.weatherEnabled,
+        Settings.weatherLocation.trim(), Settings.temperatureUnit])
+
+    function invalidate() {
+        available = false;
+        current = {};
+        daily = [];
+        latitude = NaN;
+        longitude = NaN;
+        timezoneName = "";
+        location = Settings.weatherLocation;
+        status = !Settings.weatherEnabled ? "WEATHER DISABLED"
+            : !Settings.weatherLocation.trim() ? "SET A LOCATION" : "WAITING FOR FORECAST";
+        settingsDelay.restart();
+    }
+    onSettingsKeyChanged: invalidate()
 
     function applySnapshot(data) {
         available = data.ok === true;
         status = data.status || (available ? "FORECAST SYNCHRONIZED" : "FORECAST UNAVAILABLE");
         location = data.location || Settings.weatherLocation;
-        latitude = isFinite(Number(data.latitude)) ? Number(data.latitude) : NaN;
-        longitude = isFinite(Number(data.longitude)) ? Number(data.longitude) : NaN;
+        latitude = typeof data.latitude === "number" && isFinite(data.latitude) ? data.latitude : NaN;
+        longitude = typeof data.longitude === "number" && isFinite(data.longitude) ? data.longitude : NaN;
+        timezoneName = data.timezone_name || "";
+        utcOffsetSeconds = Number(data.utc_offset_seconds) || 0;
         unitSymbol = data.unit_symbol || unitSymbol;
         windUnit = data.wind_unit || windUnit;
         current = data.current || {};
@@ -46,6 +67,7 @@ QtObject {
         if (weatherProcess.running)
             return;
         loading = true;
+        requestKey = settingsKey;
         weatherProcess.command = ["python3", helperPath,
             Settings.weatherLocation.trim(), Settings.temperatureUnit];
         weatherProcess.running = true;
@@ -54,6 +76,8 @@ QtObject {
     property Process weatherProcess: Process {
         stdout: StdioCollector {
             onStreamFinished: {
+                // An old location's response must never populate a new location.
+                if (root.requestKey !== root.settingsKey) return;
                 try {
                     root.applySnapshot(JSON.parse(text));
                 } catch (error) {
@@ -64,8 +88,10 @@ QtObject {
             }
         }
         onRunningChanged: {
-            if (!running)
+            if (!running) {
                 root.loading = false;
+                if (root.requestKey !== root.settingsKey) root.settingsDelay.restart();
+            }
         }
     }
 

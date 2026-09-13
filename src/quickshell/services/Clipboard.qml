@@ -35,6 +35,11 @@ QtObject {
             "cliphist decode \"$1\" | wl-copy", "tonantzintla", String(entryId)]);
     }
 
+    function setText(text) {
+        Quickshell.execDetached(["sh", "-c",
+            "printf %s \"$1\" | wl-copy", "tonantzintla", String(text)]);
+    }
+
     function clear() {
         if (!available || wipeProcess.running)
             return;

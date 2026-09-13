@@ -2,6 +2,11 @@
 
 set -euo pipefail
 
+# Some distributions leave Qt 5 tools on PATH alongside Quickshell's Qt 6.
+if [[ -x /usr/lib/qt6/bin/qmllint ]]; then
+    export PATH="/usr/lib/qt6/bin:$PATH"
+fi
+
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 project_root="$(cd -- "$script_dir/.." && pwd)"
 python_cache="${TMPDIR:-/tmp}/tonantzintla-check-pycache"
@@ -61,6 +66,11 @@ fi
 
 PYTHONPYCACHEPREFIX="$python_cache" python3 -m compileall -q src/libexec
 PYTHONPYCACHEPREFIX="$python_cache" python3 -m unittest discover -s tests -q
+if has_tool qmltestrunner; then
+    QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software qmltestrunner -input tests/qml -o -,txt
+else
+    printf 'SKIP qmltestrunner is unavailable; transition tests were not run.\n'
+fi
 bash tests/test_cli.sh
 bash -n bin/blackhole tools/check \
     src/libexec/tonantzintla-profile src/libexec/snipping-tool src/libexec/umbra-greeter \

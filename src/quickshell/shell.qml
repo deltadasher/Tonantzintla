@@ -14,12 +14,23 @@ import "services"
 
 ShellRoot {
     id: root
+    // Instantiate the idle watcher even when the settings panel is closed.
+    readonly property string idleLockStatus: IdleLock.status
 
     property bool ephemerisResident: ShellState.ephemerisVisible
-    property bool quickActionsResident: ShellState.quickActionsVisible
     property bool umbraPreviewResident: Umbra.previewActive
     property bool umbraRevealResident: false
     readonly property bool sessionIngress: Quickshell.env("TONANTZINTLA_SESSION_INGRESS") === "1"
+
+    Connections {
+        target: Settings
+        function onBarPositionChanged() {
+            // Edge changes are global. Drop stale per-output placements so a
+            // widget left on the old edge cannot survive on one monitor.
+            Settings.barOutputOverrides = "";
+            Settings.barIslandPlacements = "";
+        }
+    }
     readonly property var focusedScreens: {
         const screens = Quickshell.screens;
         if (screens.length === 0)
@@ -33,6 +44,21 @@ ShellRoot {
         return [screens[0]];
     }
 
+    // Ephemeris remembers the output that launched it. Commands from outside
+    // a bar fall back to the compositor focus.
+    readonly property var ephemerisScreens: {
+        const screens = Quickshell.screens;
+        if (screens.length === 0)
+            return [];
+        const requested = ShellState.ephemerisOutput || Compositor.focusedOutput;
+        if (requested) {
+            for (let index = 0; index < screens.length; index++) {
+                if (screens[index].name === requested)
+                    return [screens[index]];
+            }
+        }
+        return [screens[0]];
+    }
     Connections {
         target: ShellState
 
@@ -42,15 +68,6 @@ ShellRoot {
                 root.ephemerisResident = true;
             } else {
                 ephemerisUnload.restart();
-            }
-        }
-
-        function onQuickActionsVisibleChanged() {
-            if (ShellState.quickActionsVisible) {
-                quickActionsUnload.stop();
-                root.quickActionsResident = true;
-            } else {
-                quickActionsUnload.restart();
             }
         }
 
@@ -75,7 +92,7 @@ ShellRoot {
 
     Timer {
         id: ephemerisUnload
-        interval: Settings.motion ? 220 : 1
+        interval: Settings.motion ? 220 : 130
         onTriggered: root.ephemerisResident = false
     }
 
@@ -84,12 +101,6 @@ ShellRoot {
             root.umbraRevealResident = true;
             Qt.callLater(ShellState.startUmbraReveal);
         }
-    }
-
-    Timer {
-        id: quickActionsUnload
-        interval: Settings.motion ? 210 : 1
-        onTriggered: root.quickActionsResident = false
     }
 
     Timer {
@@ -112,6 +123,12 @@ ShellRoot {
         }
 
         function open(tab: string): void {
+            ShellState.openEphemeris(tab);
+        }
+
+        function openSection(tab: string, section: string): void {
+            if (section && section.length > 0)
+                ShellState.settingsSection = section;
             ShellState.openEphemeris(tab);
         }
 
@@ -168,24 +185,70 @@ ShellRoot {
         }
     }
 
-    Variants {
-        model: Quickshell.screens
-        ApertureBar {}
+    IpcHandler {
+        target: "aperture"
+
+        function edit(): void {
+            ShellState.enterBarEditMode();
+        }
+
+        function closeEdit(): void {
+            ShellState.exitBarEditMode();
+        }
+
+        function toggleEdit(): void {
+            ShellState.toggleBarEditMode();
+        }
+
+        function openIsland(islandId: string): void {
+            ShellState.openIslandSettings(islandId, null, 960, 0, 100, 48);
+        }
+
+        function closeIsland(): void {
+            ShellState.closeIslandSettings();
+        }
+
+        function startDrag(islandId: string, zone: string): void {
+            ShellState.startIslandDrag(islandId, null, zone);
+        }
+
+        function updateDrag(gx: real, gy: real): void {
+            ShellState.updateIslandDrag(gx, gy, 1920, 1080, false);
+        }
+
+        function finishDrag(): void {
+            ShellState.finishIslandDrag(false);
+        }
     }
 
     Variants {
-        model: root.ephemerisResident ? root.focusedScreens : []
+        model: Quickshell.screens
+        ApertureOutput {}
+    }
+
+    Variants {
+        model: ShellState.islandSettingsVisible ? root.focusedScreens : []
+        IslandQuickSettings {}
+    }
+
+    Variants {
+        model: ShellState.widgetSettingsVisible ? root.focusedScreens : []
+        WidgetQuickSettings {}
+    }
+
+    Variants {
+        model: ShellState.barEditMode ? root.focusedScreens : []
+        BarEditStudio {}
+    }
+
+    Variants {
+        model: root.ephemerisResident ? root.ephemerisScreens : []
         EphemerisSurface {}
     }
 
     Variants {
         model: Osd.visible ? root.focusedScreens : []
         OsdPopup {}
-    }
-
-    Variants {
-        model: root.quickActionsResident ? root.focusedScreens : []
-        QuickActionsRail {}
     }
 
     Variants {

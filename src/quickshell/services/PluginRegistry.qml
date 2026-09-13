@@ -33,11 +33,7 @@ QtObject {
             "detail": "Screenshots, editing, and recording", "enabled": true,
             "available": Environment.canCaptureRegion,
             "status": Environment.recording ? "RECORDING"
-                : Environment.canRecord ? "PHOTO + VIDEO" : Environment.canCaptureRegion ? "PHOTO" : "MISSING" },
-        { "id": "quickactions", "code": "QCK", "name": "Quick actions",
-            "detail": "Timers and performance stats",
-            "enabled": Settings.quickActionsEnabled, "available": true,
-            "status": Timekeeper.anyRunning ? Timekeeper.activeDisplay : "READY" }
+                : Environment.canRecord ? "PHOTO + VIDEO" : Environment.canCaptureRegion ? "PHOTO" : "MISSING" }
     ]
 
     function toggle(id) {
@@ -54,10 +50,5 @@ QtObject {
             Settings.showSystemStats = !Settings.showSystemStats;
         else if (id === "relay")
             Settings.showTray = !Settings.showTray;
-        else if (id === "quickactions") {
-            Settings.quickActionsEnabled = !Settings.quickActionsEnabled;
-            if (!Settings.quickActionsEnabled)
-                ShellState.hideQuickActions();
-        }
     }
 }
