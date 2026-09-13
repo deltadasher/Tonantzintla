@@ -88,7 +88,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: 28
-        color: Qt.rgba(Theme.elevated.r, Theme.elevated.g, Theme.elevated.b, 0.32)
+        color: Theme.controlRest
     }
 
     Canvas {

@@ -1,5 +1,4 @@
 LauncherWidget 1.0 catalog/LauncherWidget.qml
-ToolsWidget 1.0 catalog/ToolsWidget.qml
 GuideWidget 1.0 catalog/GuideWidget.qml
 
 WallpaperWidget 1.0 desktop/WallpaperWidget.qml
@@ -11,6 +10,7 @@ MediaWidget 1.0 media/MediaWidget.qml
 CalendarWidget 1.0 productivity/CalendarWidget.qml
 CalendarModeControls 1.0 productivity/CalendarModeControls.qml
 WeatherRibbon 1.0 shared/WeatherRibbon.qml
+SolarTimeline 1.0 shared/SolarTimeline.qml
 WifiRadar 1.0 shared/WifiRadar.qml
 ClipboardWidget 1.0 productivity/ClipboardWidget.qml
 NotificationsWidget 1.0 productivity/NotificationsWidget.qml

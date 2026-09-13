@@ -8,7 +8,7 @@ import "../../../../services"
 Item {
     id: root
 
-    property string activeTab: "outputs"
+    property string activeTab: "routes"
     readonly property var activeNodes: activeTab === "outputs" ? Audio.outputs
         : activeTab === "inputs" ? Audio.inputs : Audio.apps
     readonly property color activeColor: activeTab === "outputs" ? Theme.cyan
@@ -177,6 +177,7 @@ Item {
             spacing: 7
             Repeater {
                 model: [
+                    { "id": "routes", "label": "ROUTES", "count": Audio.routes.length },
                     { "id": "outputs", "label": "OUTPUTS", "count": Audio.outputs.length },
                     { "id": "inputs", "label": "INPUTS", "count": Audio.inputs.length },
                     { "id": "apps", "label": "APPLICATIONS", "count": Audio.apps.length }
@@ -197,8 +198,15 @@ Item {
             }
         }
 
+        Shared.AudioRoutingGraph {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            visible: root.activeTab === "routes"
+        }
+
         ListView {
             id: nodeList
+            visible: root.activeTab !== "routes"
             Layout.fillWidth: true; Layout.fillHeight: true
             model: root.activeNodes
             spacing: 8; clip: true

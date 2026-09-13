@@ -1,11 +1,14 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
+import Quickshell.Widgets
 import ".."
 import "../services"
 
-Rectangle {
+ClippingRectangle {
 
     property bool embedded: false
+    property string outputName: ""
     implicitWidth: Media.available ? (Settings.compact ? 320 : 400) : 0
     implicitHeight: Settings.compact ? 36 : 42
     radius: embedded ? 9 : height / 2
@@ -30,7 +33,7 @@ Rectangle {
             else if (mouse.button === Qt.RightButton)
                 Media.raise();
             else
-                ShellState.toggleEphemeris("media");
+                ShellState.toggleEphemeris("media", outputName);
         }
         onWheel: function(event) {
             if (event.angleDelta.y > 0)
@@ -47,7 +50,7 @@ Rectangle {
         anchors.rightMargin: embedded ? 0 : 6
         spacing: 8
 
-        Rectangle {
+        ClippingRectangle {
             Layout.preferredWidth: Settings.compact ? 30 : 36
             Layout.preferredHeight: Layout.preferredWidth
             radius: Settings.compact ? 8 : 9
@@ -56,11 +59,12 @@ Rectangle {
             clip: true
 
             Image {
+                id: thumbnail
                 anchors.fill: parent
                 source: Media.artUrl
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
-                visible: Media.artUrl.length > 0
+                visible: status === Image.Ready
             }
             Rectangle {
                 anchors.fill: parent
@@ -69,7 +73,7 @@ Rectangle {
             }
             Text {
                 anchors.centerIn: parent
-                visible: Media.artUrl.length === 0
+                visible: thumbnail.status !== Image.Ready
                 text: Media.mediaKind === "VIDEO" ? "▻" : "♪"
                 color: Theme.accent
                 font.family: Theme.fontMono
@@ -84,12 +88,6 @@ Rectangle {
                 radius: 4
                 color: Media.playing ? Theme.success : Theme.warning
 
-                SequentialAnimation on opacity {
-                    running: Media.playing && Settings.motion
-                    loops: Animation.Infinite
-                    NumberAnimation { to: 0.35; duration: 850; easing.type: Easing.InOutSine }
-                    NumberAnimation { to: 1; duration: 850; easing.type: Easing.InOutSine }
-                }
             }
         }
 
@@ -109,7 +107,8 @@ Rectangle {
 
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 0
+                spacing: 6
+
                 Text {
                     Layout.fillWidth: true
                     text: Settings.showMediaTime && Media.length > 0
@@ -120,6 +119,7 @@ Rectangle {
                     font.weight: Font.Bold
                     elide: Text.ElideRight
                 }
+
             }
 
             Rectangle {
@@ -151,24 +151,48 @@ Rectangle {
 
             Repeater {
                 model: [
-                    { "glyph": "‹", "action": "previous" },
-                    { "glyph": Media.playing ? "Ⅱ" : "▶", "action": "toggle" },
-                    { "glyph": "›", "action": "next" }
+                    { "glyph": "‹", "action": "previous", "label": "Previous track" },
+                    { "glyph": Media.playing ? "Ⅱ" : "▶", "action": "toggle", "label": Media.playing ? "Pause" : "Play" },
+                    { "glyph": "›", "action": "next", "label": "Next track" }
                 ]
 
                 Rectangle {
                     id: control
                     required property var modelData
                     Layout.preferredWidth: control.modelData.action === "toggle" ? 36 : 30
-                    Layout.preferredHeight: 36
+                    Layout.preferredHeight: Settings.compact ? 30 : 36
                     radius: 10
-                    color: controlPointer.containsMouse ? Theme.accentVeil : "transparent"
-                    scale: controlPointer.containsMouse ? 1.10 : 1
+                    readonly property bool supported: Media.available && (modelData.action === "previous"
+                        ? Media.player.canGoPrevious : modelData.action === "next"
+                        ? Media.player.canGoNext : Media.player.canTogglePlaying)
+                    color: controlPointer.containsMouse || activeFocus ? Theme.accentVeil : "transparent"
+                    opacity: supported ? 1 : 0.35
+                    activeFocusOnTab: supported
+                    Accessible.role: Accessible.Button
+                    Accessible.name: control.modelData.label
+                    Accessible.onPressAction: activate()
+                    Keys.onReturnPressed: activate()
+                    Keys.onSpacePressed: activate()
+
+                    function activate() {
+                        if (!supported) return;
+                        if (control.modelData.action === "previous") Media.previous();
+                        else if (control.modelData.action === "next") Media.next();
+                        else Media.toggle();
+                    }
+
+                    ToolTip {
+                        visible: controlPointer.containsMouse || control.activeFocus
+                        delay: 500
+                        text: control.modelData.label
+                        background: Rectangle { color: Theme.mantle; radius: Theme.radiusSmall; border.color: Theme.accentLine }
+                        contentItem: Text { text: control.modelData.label; color: Theme.moon; font.family: Theme.fontText; font.pixelSize: 11 }
+                    }
 
                     Text {
                         anchors.centerIn: parent
                         text: control.modelData.glyph
-                        color: controlPointer.containsMouse
+                        color: controlPointer.containsMouse || control.activeFocus
                             ? (control.modelData.action === "toggle" ? Theme.success : Theme.accent)
                             : Theme.muted
                         font.family: Theme.fontMono
@@ -177,17 +201,16 @@ Rectangle {
                     }
                     MouseArea {
                         id: controlPointer
+                        enabled: control.supported
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            if (control.modelData.action === "previous") Media.previous();
-                            else if (control.modelData.action === "next") Media.next();
-                            else Media.toggle();
+                            control.forceActiveFocus();
+                            control.activate();
                         }
                     }
                     Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                    Behavior on scale { NumberAnimation { duration: Settings.motion ? 170 : 0; easing.type: Easing.OutBack } }
                 }
             }
         }

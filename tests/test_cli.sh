@@ -63,6 +63,10 @@ QS_CAPTURE="$test_root/notify-call" PATH="$fake_bin:$PATH" \
     "$project_root/bin/blackhole" notify "Hello" "World"
 [[ "$(<"$test_root/notify-call")" == "-p $project_root/src/quickshell ipc call transit preview Hello World" ]]
 
+QS_CAPTURE="$test_root/lock-status-call" PATH="$fake_bin:$PATH" \
+    "$project_root/bin/blackhole" lock-status
+[[ "$(<"$test_root/lock-status-call")" == "-p $project_root/src/quickshell/umbra-lock.qml ipc call lockState status" ]]
+
 cat >"$fake_bin/xdg-terminal-exec" <<'EOF'
 #!/usr/bin/env bash
 printf 'terminal\n' >"$LAUNCH_CAPTURE"
@@ -87,6 +91,21 @@ LAUNCH_CAPTURE="$test_root/files-launch" HOME="$test_root/home" \
 XDG_CONFIG_HOME="$test_root/config" PATH="$fake_bin:$PATH" \
     "$project_root/bin/blackhole" files
 [[ "$(<"$test_root/files-launch")" == "$test_root/home" ]]
+
+mkdir -p "$test_root/config/tonantzintla"
+cat >"$test_root/config/tonantzintla/settings.json" <<'EOF'
+{"fileManager":"configured-file-manager"}
+EOF
+cat >"$fake_bin/configured-file-manager" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$1" >"$LAUNCH_CAPTURE"
+EOF
+chmod +x "$fake_bin/configured-file-manager"
+
+LAUNCH_CAPTURE="$test_root/configured-files-launch" HOME="$test_root/home" \
+XDG_CONFIG_HOME="$test_root/config" PATH="$fake_bin:$PATH" \
+    "$project_root/bin/blackhole" files "$test_root/wallpapers"
+[[ "$(<"$test_root/configured-files-launch")" == "$test_root/wallpapers" ]]
 
 cat >"$fake_bin/dbus-update-activation-environment" <<'EOF'
 #!/usr/bin/env bash

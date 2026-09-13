@@ -15,6 +15,6 @@ singleton Osd 1.0 Osd.qml
 singleton PluginRegistry 1.0 PluginRegistry.qml
 singleton SysStats 1.0 SysStats.qml
 singleton Spectrum 1.0 Spectrum.qml
-singleton Timekeeper 1.0 Timekeeper.qml
 singleton Umbra 1.0 Umbra.qml
+singleton IdleLock 1.0 IdleLock.qml
 singleton Weather 1.0 Weather.qml

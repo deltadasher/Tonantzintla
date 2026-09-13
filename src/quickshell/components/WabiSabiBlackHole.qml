@@ -2,7 +2,7 @@
 // a displaced void. Runtime surfaces import this exact silhouette so the logo
 // does not drift into a generic ringed black hole.
 import QtQuick
-import "../.."
+import ".."
 
 Item {
     id: root

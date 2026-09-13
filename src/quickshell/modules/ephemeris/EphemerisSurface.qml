@@ -1,37 +1,42 @@
 import QtQuick
 import Quickshell
+import Quickshell.Widgets
 import Quickshell.Wayland
 import "../.."
 import "../../services"
 import "../../components"
-import "widgets"
-import "../quickactions"
 import "EphemerisRegistry.js" as Registry
 
 PanelWindow {
     id: root
-
     required property var modelData
     screen: modelData
     readonly property string outputName: modelData.name
-    readonly property bool targetScreen: Compositor.focusedOutput.length > 0
-        ? Compositor.focusedOutput === outputName
-        : Quickshell.screens.length > 0 && modelData === Quickshell.screens[0]
-    readonly property int topClearance: (Settings.compact ? 38 : Theme.barHeight)
+    readonly property bool targetScreen: ShellState.ephemerisOutput.length > 0
+        ? ShellState.ephemerisOutput === outputName
+        : Compositor.focusedOutput.length > 0
+            ? Compositor.focusedOutput === outputName
+            : Quickshell.screens.length > 0 && modelData === Quickshell.screens[0]
+    readonly property int barClearance: (Settings.compact ? 38 : Theme.barHeight)
         + (Settings.barMode === "docked" ? 10 : Settings.barMargin * 2 + 8)
-    readonly property var widgetLayout: Registry.getLayout(
-        ShellState.ephemerisTab, width, height, topClearance)
-    readonly property color moduleTone: Theme.moduleAccent(ShellState.ephemerisTab)
-    readonly property bool immersiveWidget: ShellState.ephemerisTab === "walls"
+    readonly property int topClearance: Settings.edgeHasIslands(outputName, "top") ? barClearance : 16
+    readonly property int bottomClearance: Settings.edgeHasIslands(outputName, "bottom") ? barClearance : 16
+    readonly property int leftClearance: Settings.edgeHasIslands(outputName, "left") ? barClearance : 16
+    readonly property int rightClearance: Settings.edgeHasIslands(outputName, "right") ? barClearance : 16
+    readonly property var widgetLayout: {
+        const layout = Registry.getLayout(transition.activeTab, width, height,
+            topClearance, bottomClearance, leftClearance, rightClearance,
+            Settings.ephemerisStyle);
+        if (widgetLoader.status === Loader.Ready && widgetLoader.item
+                && widgetLoader.item.preferredSurfaceHeight !== undefined)
+            layout.height = Math.min(layout.height,
+                Math.max(240, widgetLoader.item.preferredSurfaceHeight));
+        return layout;
+    }
+    readonly property color moduleTone: Theme.moduleAccent(transition.activeTab)
+    readonly property bool immersiveWidget: transition.activeTab === "walls"
 
-    property bool surfaceVisible: false
-    property real presentation: 0
-    property real deckScale: 0.94
-    property real widgetPresentation: 1
-    property bool opening: false
-    property bool widgetDeploymentPending: false
-
-    visible: surfaceVisible && targetScreen
+    visible: transition.mounted && targetScreen
     color: "transparent"
     exclusionMode: ExclusionMode.Ignore
     focusable: true
@@ -40,276 +45,175 @@ PanelWindow {
     WlrLayershell.namespace: "tonantzintla-ephemeris-host"
     anchors { top: true; right: true; bottom: true; left: true }
 
-    function close() {
-        ShellState.closeEphemeris();
-    }
-
+    function close() { ShellState.closeEphemeris(); }
     function focusWidget() {
-        if (widgetLoader.item && widgetLoader.item.focusPrimary)
-            widgetLoader.item.focusPrimary();
-        else
-            keyCatcher.forceActiveFocus();
+        if (!transition.interactive) return;
+        if (widgetLoader.item && widgetLoader.item.focusPrimary) widgetLoader.item.focusPrimary();
+        else keyCatcher.forceActiveFocus();
     }
 
-    function deployWidget() {
-        if (!widgetDeploymentPending || !widgetLoader.item)
-            return;
-        if (widgetLoader.item.beginDeployment)
-            widgetLoader.item.beginDeployment();
-        widgetDeploymentPending = false;
-    }
-
-    function beginOpen() {
-        closeAnimation.stop();
-        widgetSwitch.stop();
-        opening = true;
-        widgetDeploymentPending = true;
-        surfaceVisible = true;
-        presentation = 0;
-        deckScale = 0.92;
-        widgetPresentation = 0;
-        openDelay.restart();
-    }
-
-    function beginClose() {
-        opening = false;
-        openDelay.stop();
-        openAnimation.stop();
-        closeAnimation.restart();
-    }
-
-    Connections {
-        target: ShellState
-        function onEphemerisVisibleChanged() {
-            if (ShellState.ephemerisVisible && root.targetScreen)
-                root.beginOpen();
-            else if (root.surfaceVisible)
-                root.beginClose();
+    SurfaceTransition {
+        id: transition
+        requestedVisible: ShellState.ephemerisVisible && root.targetScreen
+        requestedTab: Registry.normalize(ShellState.ephemerisTab)
+        motionEnabled: Settings.motion
+        contentReady: widgetLoader.status === Loader.Ready || widgetLoader.status === Loader.Error
+        onDeploying: {
+            if (widgetLoader.item && widgetLoader.item.beginDeployment) widgetLoader.item.beginDeployment();
         }
-        function onEphemerisTabChanged() {
-            if (!ShellState.ephemerisVisible || !root.surfaceVisible || root.opening)
-                return;
-            root.widgetDeploymentPending = true;
-            root.widgetPresentation = 0;
-            widgetSwitch.restart();
-        }
+        onSettled: root.focusWidget()
     }
 
-    onTargetScreenChanged: {
-        if (targetScreen && ShellState.ephemerisVisible)
-            beginOpen();
-        else if (!targetScreen && surfaceVisible)
-            surfaceVisible = false;
-    }
+    readonly property rect originRect: {
+        const barPos = Settings.barPosition;
+        const barThick = Settings.compact ? 34 : Theme.barHeight;
+        const barPad = Settings.barMode === "docked" ? 2 : Math.max(4, Settings.barMargin);
+        const tab = transition.activeTab;
 
-    Component.onCompleted: {
-        if (ShellState.ephemerisVisible && targetScreen)
-            beginOpen();
-    }
+        let ox = 0, oy = 0, ow = 48, oh = 40;
 
-    Timer {
-        id: openDelay
-        interval: 24
-        onTriggered: {
-            // The popup and its widget choreography share one launch pulse.
-            root.deployWidget();
-            openAnimation.restart();
-        }
-    }
-
-    ParallelAnimation {
-        id: openAnimation
-        NumberAnimation { target: root; property: "presentation"; to: 1; duration: Settings.motion ? 260 : 0; easing.type: Easing.OutQuint }
-        NumberAnimation { target: root; property: "deckScale"; to: 1; duration: Settings.motion ? 430 : 0; easing.type: Easing.OutBack }
-        SequentialAnimation {
-            PauseAnimation { duration: Settings.motion ? 90 : 0 }
-            NumberAnimation { target: root; property: "widgetPresentation"; to: 1; duration: Settings.motion ? 250 : 0; easing.type: Easing.OutCubic }
-            ScriptAction {
-                script: {
-                    root.opening = false;
-                    root.deployWidget();
-                    root.focusWidget();
-                }
+        if (barPos === "left" || barPos === "right") {
+            ox = barPos === "left" ? barPad : (root.width - barThick - barPad);
+            ow = barThick;
+            oh = tab === "calendar" ? 72 : (tab === "workspaces" ? 80 : 40);
+            if (tab === "calendar") {
+                oy = Math.round((root.height - oh) / 2);
+            } else if (tab === "notifications" || tab === "settings" || tab === "audio" || tab === "network" || tab === "battery") {
+                oy = Math.max(0, root.height - barPad - 160);
+            } else if (tab === "workspaces") {
+                oy = barPad + 60;
+            } else {
+                oy = barPad + 12;
+            }
+        } else {
+            oy = barPos === "bottom" ? (root.height - barThick - barPad) : barPad;
+            oh = barThick;
+            ow = tab === "calendar" ? 140 : (tab === "media" ? 160 : (tab === "workspaces" ? 90 : 48));
+            if (tab === "calendar") {
+                ox = Math.round((root.width - ow) / 2);
+            } else if (tab === "notifications" || tab === "settings" || tab === "audio" || tab === "network" || tab === "battery") {
+                ox = Math.max(0, root.width - barPad - 200);
+            } else if (tab === "workspaces") {
+                ox = barPad + 70;
+            } else if (tab === "media") {
+                ox = barPad + 170;
+            } else {
+                ox = barPad + 16;
             }
         }
+        return Qt.rect(ox, oy, ow, oh);
     }
 
-    SequentialAnimation {
-        id: closeAnimation
-        ParallelAnimation {
-            NumberAnimation { target: root; property: "widgetPresentation"; to: 0; duration: Settings.motion ? 100 : 0; easing.type: Easing.InCubic }
-            NumberAnimation { target: root; property: "presentation"; to: 0; duration: Settings.motion ? 180 : 0; easing.type: Easing.InQuint }
-            NumberAnimation { target: root; property: "deckScale"; to: 0.96; duration: Settings.motion ? 180 : 0; easing.type: Easing.InCubic }
-        }
-        ScriptAction { script: root.surfaceVisible = false }
-    }
-
-    SequentialAnimation {
-        id: widgetSwitch
-        PauseAnimation { duration: Settings.motion ? 55 : 0 }
-        NumberAnimation { target: root; property: "widgetPresentation"; to: 1; duration: Settings.motion ? 220 : 0; easing.type: Easing.OutCubic }
-        ScriptAction {
-            script: {
-                root.deployWidget();
-                root.focusWidget();
-            }
-        }
+    InstrumentGeometry {
+        id: surfaceGeometry
+        origin: root.originRect
+        destination: Qt.rect(root.widgetLayout.x, root.widgetLayout.y, root.widgetLayout.width, root.widgetLayout.height)
+        progress: transition.contentProgress
+        motion: Settings.motion
     }
 
     Rectangle {
-        id: veil
         anchors.fill: parent
-        color: Qt.rgba(Theme.void_.r, Theme.void_.g, Theme.void_.b,
-            root.immersiveWidget ? 0.24 : 0.16)
-        opacity: root.presentation
+        color: Qt.rgba(Theme.void_.r, Theme.void_.g, Theme.void_.b, ShellState.deepFocus ? 0.45 : 0.18)
+        opacity: transition.revealProgress
+        MouseArea { anchors.fill: parent; onClicked: root.close() }
 
-        MouseArea {
+        InstrumentBridge {
             anchors.fill: parent
-            onClicked: root.close()
+            geometry: surfaceGeometry
+            visible: Settings.joinedSurfaces && surfaceGeometry.motion && surfaceGeometry.amount > 0.01 && surfaceGeometry.amount < 0.99 && !root.immersiveWidget
         }
 
-        Loader {
-            anchors.fill: parent
-            active: root.surfaceVisible
-            source: active ? "TonantzintlaMorphBackdrop.qml" : ""
-
-            property var layout: root.widgetLayout
-            property real reveal: root.presentation
-            property color tone: root.moduleTone
-            property string tab: ShellState.ephemerisTab
-            property int clearance: root.topClearance
-        }
-
-        Rectangle {
-            x: root.widgetLayout.x
-            y: root.widgetLayout.y
-            width: root.widgetLayout.width
-            height: root.widgetLayout.height
-            radius: 0
-            color: "transparent"
-            border.width: 0
-            opacity: root.presentation
-            scale: 1
-            transformOrigin: Item.Center
-            // The veil is deliberately inert. Every decorative signal belongs
-            // to the popup and is clipped at this boundary.
+        ClippingRectangle {
+            id: deck
+            x: surfaceGeometry.x; y: surfaceGeometry.y
+            width: surfaceGeometry.width; height: surfaceGeometry.height
+            // The geometry expands into the solid instrument backing and rounded mask.
+            // Parallax stays open; Resonance and other panels own rounded, clipped containment.
+            radius: surfaceGeometry.radius
+            color: root.immersiveWidget ? "transparent" : Theme.mantle
             clip: true
-
-            // Hidden surfaces snap to their next layout. Geometry only morphs
-            // while an already-open Ephemeris changes modules; otherwise the
-            // previous widget's boundary can flash for a frame during launch.
-            Behavior on x {
-                enabled: ShellState.ephemerisVisible && root.surfaceVisible
-                    && !root.opening && root.presentation > 0.99
-                NumberAnimation { duration: Settings.motion ? 270 : 0; easing.type: Easing.OutCubic }
-            }
-            Behavior on y {
-                enabled: ShellState.ephemerisVisible && root.surfaceVisible
-                    && !root.opening && root.presentation > 0.99
-                NumberAnimation { duration: Settings.motion ? 270 : 0; easing.type: Easing.OutCubic }
-            }
-            Behavior on width {
-                enabled: ShellState.ephemerisVisible && root.surfaceVisible
-                    && !root.opening && root.presentation > 0.99
-                NumberAnimation { duration: Settings.motion ? 300 : 0; easing.type: Easing.OutCubic }
-            }
-            Behavior on height {
-                enabled: ShellState.ephemerisVisible && root.surfaceVisible
-                    && !root.opening && root.presentation > 0.99
-                NumberAnimation { duration: Settings.motion ? 300 : 0; easing.type: Easing.OutCubic }
-            }
-
-            MouseArea {
-                anchors.fill: parent
-                // Parallax deliberately has no enclosing card, so its empty
-                // field is the natural dismissal target. Interactive bodies
-                // and controls sit above this catcher and retain their clicks.
-                onClicked: if (root.immersiveWidget) root.close()
-            }
-
-            EccentricPlate {
-                anchors.fill: parent
-                visible: false
-                fillColor: Theme.glass
-                lineColor: "transparent"
-                tone: root.moduleTone
-                cut: Settings.atmosphereStyle === "cinematic" ? 28 : 20
-                energy: root.widgetPresentation
-            }
-
-            EphemerisAtmosphere {
-                anchors.fill: parent
-                anchors.topMargin: 0
-                visible: !root.immersiveWidget
-                module: ShellState.ephemerisTab
-                presentation: root.widgetPresentation
-            }
+            opacity: Settings.motion ? 0.80 + 0.20 * transition.contentProgress : 1
+            scale: Settings.motion && Settings.motionStyle !== "rise"
+                ? 0.96 + 0.04 * transition.contentProgress : 1
 
             Item {
-                id: keyCatcher
-                anchors.fill: parent
-                anchors.topMargin: 0
-                focus: true
-                Keys.onPressed: function(event) {
-                    if (event.key === Qt.Key_Escape) {
-                        root.close();
-                        event.accepted = true;
+                id: fixedContent
+                x: root.widgetLayout.x - surfaceGeometry.x
+                y: root.widgetLayout.y - surfaceGeometry.y
+                width: root.widgetLayout.width
+                height: root.widgetLayout.height
+
+                MouseArea { anchors.fill: parent; onClicked: if (root.immersiveWidget) root.close() }
+
+                // Super+Alt anywhere on an open widget opens that widget's own
+                // settings, matching the gesture the bar islands answer to.
+                // Sits above the widget so it wins the press, and declines
+                // every other click so normal interaction is untouched.
+                MouseArea {
+                    anchors.fill: parent
+                    z: 9999
+                    acceptedButtons: Qt.LeftButton
+                    onPressed: function(mouse) {
+                        const hasMeta = Boolean(mouse.modifiers & Qt.MetaModifier);
+                        const hasAlt = Boolean(mouse.modifiers & Qt.AltModifier);
+                        if (!(hasMeta && hasAlt)) {
+                            mouse.accepted = false;
+                            return;
+                        }
+                        mouse.accepted = true;
+                        const origin = mapToItem(null, 0, 0);
+                        ShellState.openWidgetSettings(transition.activeTab,
+                            origin.x, origin.y, width, height);
                     }
                 }
-
-                Loader {
-                    id: widgetLoader
+                EphemerisAtmosphere {
                     anchors.fill: parent
-                    anchors.margins: root.immersiveWidget ? 8 : 20
-                    active: root.surfaceVisible
-                    opacity: root.widgetPresentation
-                    transform: Translate { y: (1 - root.widgetPresentation) * 14 }
-                    sourceComponent: ShellState.ephemerisTab === "tools" ? toolsComponent
-                        : ShellState.ephemerisTab === "walls" ? wallpaperComponent
-                        : ShellState.ephemerisTab === "clipboard" ? clipboardComponent
-                        : ShellState.ephemerisTab === "notifications" ? notificationsComponent
-                        : ShellState.ephemerisTab === "settings" ? settingsComponent
-                        : ShellState.ephemerisTab === "calendar" ? calendarComponent
-                        : ShellState.ephemerisTab === "capture" ? captureComponent
-                        : ShellState.ephemerisTab === "media" ? mediaComponent
-                        : ShellState.ephemerisTab === "network" ? networkComponent
-                        : ShellState.ephemerisTab === "audio" ? audioComponent
-                        : ShellState.ephemerisTab === "workspaces" ? workspacesComponent
-                        : ShellState.ephemerisTab === "battery" ? batteryComponent
-                        : ShellState.ephemerisTab === "focus" ? focusComponent
-                        : ShellState.ephemerisTab === "system" ? systemComponent
-                        : ShellState.ephemerisTab === "guide" ? guideComponent
-                        : ShellState.ephemerisTab === "timer" ? timerComponent
-                        : ShellState.ephemerisTab === "quickstats" ? quickStatsComponent
-                        : launcherComponent
-                    onLoaded: {
-                        Qt.callLater(root.deployWidget);
-                        Qt.callLater(root.focusWidget);
+                    visible: !root.immersiveWidget
+                    module: transition.activeTab
+                    presentation: transition.contentProgress
+                }
+                WabiSabiBlackHole {
+                    anchors.centerIn: parent
+                    width: Math.min(150, parent.width * 0.3); height: width * 0.7
+                    visible: Settings.motion && transition.phase !== "open" && transition.phase !== "closing"
+                    opacity: 0.35 * (1 - transition.contentProgress)
+                    diskColor: root.moduleTone; horizonColor: Theme.mantle
+                }
+                Item {
+                    id: keyCatcher
+                    anchors.fill: parent
+                    focus: true
+                    Keys.onPressed: function(event) {
+                        if (event.key === Qt.Key_Escape) { root.close(); event.accepted = true; }
+                    }
+                    Loader {
+                        id: widgetLoader
+                        anchors.fill: parent
+                        anchors.margins: root.immersiveWidget ? 8 : 20
+                        active: transition.mounted
+                        asynchronous: true
+                        focus: true
+                        enabled: transition.interactive
+                        visible: status === Loader.Ready
+                        opacity: transition.contentProgress
+                        transform: Translate { y: Settings.motion && Settings.motionStyle === "rise" ? (1 - transition.contentProgress) * 18 : 0 }
+                        source: Qt.resolvedUrl(Registry.sourceFor(transition.activeTab))
+                    }
+                    StatusMessage {
+                        anchors.centerIn: parent
+                        width: Math.min(parent.width - 40, 400)
+                        visible: widgetLoader.status === Loader.Error
+                        title: "This instrument couldn’t open"
+                        detail: root.widgetLayout.title + ". Try again, or use Escape to return to your desktop."
+                        actionText: "Try again"
+                        onActivated: {
+                            widgetLoader.source = "";
+                            widgetLoader.source = Qt.binding(function() { return Qt.resolvedUrl(Registry.sourceFor(transition.activeTab)); });
+                        }
                     }
                 }
             }
-
         }
     }
-
-    Component { id: launcherComponent; LauncherWidget {} }
-    Component { id: toolsComponent; ToolsWidget {} }
-    Component { id: wallpaperComponent; WallpaperWidget {} }
-    Component { id: clipboardComponent; ClipboardWidget {} }
-    Component { id: notificationsComponent; NotificationsWidget {} }
-    Component { id: settingsComponent; SettingsWidget {} }
-    Component { id: calendarComponent; CalendarWidget {} }
-    Component { id: captureComponent; CaptureWidget {} }
-    Component { id: mediaComponent; MediaWidget {} }
-    Component { id: networkComponent; NetworkWidget {} }
-    Component { id: audioComponent; AudioWidget {} }
-    Component { id: workspacesComponent; WorkspaceWidget {} }
-    Component { id: batteryComponent; BatteryWidget {} }
-    // Dedicated behavioral widgets remain independently loadable and morph in place.
-    Component { id: focusComponent; FocusWidget {} }
-    // Observatory telemetry and the full mixer share the same morphing host.
-    Component { id: systemComponent; SystemWidget {} }
-    Component { id: guideComponent; GuideWidget {} }
-    Component { id: timerComponent; TimerAction {} }
-    Component { id: quickStatsComponent; TelemetryAction {} }
 }

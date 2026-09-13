@@ -23,6 +23,9 @@ Rectangle {
     property bool failed: false
     property bool succeeded: false
     property bool loginQueued: false
+    // Authentication is submitted only after the visible capture reaches its
+    // terminal frame. SDDM starts the session as soon as it accepts login.
+    property bool handoffReady: false
     property real intro: 0
     property real capture: 0
     property real shock: 0
@@ -71,6 +74,7 @@ Rectangle {
         failed = false;
         authenticating = true;
         loginQueued = true;
+        handoffReady = false;
         preAuthSequence.restart();
     }
 
@@ -96,6 +100,7 @@ Rectangle {
         function onLoginFailed() {
             root.authenticating = false;
             root.loginQueued = false;
+            root.handoffReady = false;
             root.failed = true;
             root.succeeded = false;
             passwordField.text = "";
@@ -108,7 +113,9 @@ Rectangle {
             root.authenticating = false;
             root.succeeded = true;
             root.loginQueued = false;
-            successSequence.restart();
+            // The capture already completed before sddm.login was called.
+            // Keep this terminal frame visible until SDDM hands off the
+            // session; a post-success animation cannot reliably be seen.
         }
 
         function onInformationMessage(message) {
@@ -146,14 +153,15 @@ Rectangle {
         NumberAnimation {
             target: root
             property: "capture"
-            to: 0.82
-            duration: 760
+            to: 1
+            duration: 1120
             easing.type: Easing.InCubic
         }
         ScriptAction {
             script: {
-                if (!root.loginQueued)
+                if (!root.loginQueued || root.handoffReady)
                     return;
+                root.handoffReady = true;
                 sddm.login(root.currentUserName, passwordField.text,
                     root.currentSessionIndex);
             }
@@ -182,24 +190,6 @@ Rectangle {
         }
         PauseAnimation { duration: 900 }
         ScriptAction { script: root.failed = false }
-    }
-
-    SequentialAnimation {
-        id: successSequence
-        NumberAnimation {
-            target: root
-            property: "capture"
-            to: 0.94
-            duration: 120
-            easing.type: Easing.OutCubic
-        }
-        NumberAnimation {
-            target: root
-            property: "capture"
-            to: 1
-            duration: 260
-            easing.type: Easing.InCubic
-        }
     }
 
     SequentialAnimation {

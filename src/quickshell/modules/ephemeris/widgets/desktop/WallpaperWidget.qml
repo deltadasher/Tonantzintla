@@ -36,6 +36,13 @@ Item {
     property real entrance: 1
     property real deployProgress: 1
     property real orbitPhase: 0
+    property real ambientPhase: 0
+    property real shuffleExit: 0
+    property real shuffleArrival: 1
+    property bool shuffleRunning: false
+    property int shuffleStage: 0
+    property real shuffleStartPhase: 0
+    property int pendingOrbitOffset: 0
 
     readonly property var filters: [
         { "label": "EVERYTHING", "value": "All", "glyph": "✦", "tone": Theme.accent },
@@ -63,6 +70,19 @@ Item {
         return entry.preview.indexOf("://") >= 0 ? entry.preview : "file://" + entry.preview;
     }
 
+    function positiveAngle(value) {
+        const turn = Math.PI * 2;
+        return ((value % turn) + turn) % turn;
+    }
+
+    function cubicPoint(start, controlOne, controlTwo, end, progress) {
+        const inverse = 1 - progress;
+        return inverse * inverse * inverse * start
+            + 3 * inverse * inverse * progress * controlOne
+            + 3 * inverse * progress * progress * controlTwo
+            + progress * progress * progress * end;
+    }
+
     function orbitEntry(slot) {
         if (!filteredWallpapers.length) return null;
         const index = ((orbitOffset + slot) % filteredWallpapers.length + filteredWallpapers.length)
@@ -72,8 +92,28 @@ Item {
 
     function rotateTo(slot) { orbitOffset += slot; }
     function shuffleOrbit() {
-        if (filteredWallpapers.length > 1)
-            orbitOffset = Math.floor(Math.random() * filteredWallpapers.length);
+        if (filteredWallpapers.length <= 1 || shuffleRunning)
+            return;
+
+        let nextOffset = orbitOffset;
+        while (((nextOffset % filteredWallpapers.length) + filteredWallpapers.length)
+                % filteredWallpapers.length
+                === ((orbitOffset % filteredWallpapers.length) + filteredWallpapers.length)
+                % filteredWallpapers.length)
+            nextOffset = Math.floor(Math.random() * filteredWallpapers.length);
+
+        pendingOrbitOffset = nextOffset;
+        if (!Settings.motion) {
+            orbitOffset = pendingOrbitOffset;
+            return;
+        }
+
+        shuffleStartPhase = positiveAngle(orbitPhase + ambientPhase);
+        shuffleRunning = true;
+        shuffleStage = 1;
+        shuffleExit = 0;
+        shuffleArrival = 1;
+        shuffleSequence.restart();
     }
     function runSearch() {
         if (!query.trim().length) return;
@@ -139,12 +179,51 @@ Item {
         easing.type: Easing.OutCubic
     }
 
-    NumberAnimation on orbitPhase {
+    NumberAnimation on ambientPhase {
         from: 0
         to: Math.PI * 2
         duration: 28000
         loops: Animation.Infinite
-        running: root.visible
+        running: root.visible && !root.shuffleRunning
+    }
+
+    SequentialAnimation {
+        id: shuffleSequence
+
+        NumberAnimation {
+            target: root
+            property: "shuffleExit"
+            from: 0
+            to: 1
+            duration: 950
+            easing.type: Easing.InCubic
+        }
+        ScriptAction {
+            script: {
+                root.shuffleStage = 2;
+                root.orbitOffset = root.pendingOrbitOffset;
+                root.shuffleExit = 0;
+                root.shuffleArrival = 0;
+            }
+        }
+        NumberAnimation {
+            target: root
+            property: "shuffleArrival"
+            from: 0
+            to: 1
+            duration: 1350
+            easing.type: Easing.InOutQuad
+        }
+        ScriptAction {
+            script: {
+                const count = Math.max(1, Math.min(7, root.filteredWallpapers.length));
+                const step = Math.PI * 2 / count;
+                root.orbitPhase = root.positiveAngle(Math.PI + step);
+                root.ambientPhase = 0;
+                root.shuffleStage = 0;
+                root.shuffleRunning = false;
+            }
+        }
     }
 
     Item {
@@ -168,28 +247,174 @@ Item {
                 id: satellite
                 required property int index
                 readonly property var entry: root.orbitEntry(index + 1)
-                readonly property real angle: -Math.PI / 2
-                    + index * (Math.PI * 2 / Math.max(1, Math.min(7, root.filteredWallpapers.length)))
-                    + root.orbitPhase
-                    + Math.sin(root.orbitPhase * 3 + index) * 0.025
+                readonly property int orbitCount: Math.max(1, Math.min(7, root.filteredWallpapers.length))
+                readonly property real orbitStep: Math.PI * 2 / orbitCount
+                readonly property real baseAngle: -Math.PI / 2 + index * orbitStep
+                readonly property real restingAngle: baseAngle + root.orbitPhase + root.ambientPhase
+                    + Math.sin((root.orbitPhase + root.ambientPhase) * 3 + index) * 0.025
+                readonly property real releaseAngle: Math.PI / 2
+                readonly property real exitTravel: root.shuffleExit * (Math.PI * 2 + 1.1)
+                readonly property real angleToRelease: root.positiveAngle(releaseAngle
+                    - (baseAngle + root.shuffleStartPhase))
+                readonly property real releasedTravel: Math.max(0, exitTravel - angleToRelease)
+                readonly property real exitOrbitAngle: baseAngle + root.shuffleStartPhase
+                    + Math.min(exitTravel, angleToRelease)
+                readonly property real queueGap: 0.27
+                readonly property int queueOrder: orbitCount - 1 - index
+                readonly property real trainHead: root.shuffleArrival * (1 + orbitCount * queueGap)
+                readonly property real incomingDistance: Math.max(0, trainHead - queueOrder * queueGap)
+                readonly property real incomingCurve: Math.min(1, incomingDistance)
+                readonly property real capturedTravel: Math.max(0, incomingDistance - 1)
+                readonly property real capturedAngle: releaseAngle
+                    + capturedTravel * orbitStep / queueGap
+                readonly property real angle: root.shuffleStage === 1
+                    ? exitOrbitAngle : root.shuffleStage === 2 ? capturedAngle : restingAngle
                 readonly property real depth: (Math.sin(angle) + 1) / 2
                 readonly property real deploymentDelay: index * 0.065
                 readonly property real deployment: Math.max(0, Math.min(1,
                     (root.deployProgress - deploymentDelay) / Math.max(0.01, 1 - deploymentDelay)))
+                readonly property real orbitX: stage.width / 2 + Math.cos(angle) * outerOrbit.width * 0.48 * deployment - width / 2
+                readonly property real orbitY: stage.height / 2 + 14 + Math.sin(angle) * outerOrbit.height * 0.48 * deployment - height / 2
+                readonly property real captureCenterX: stage.width / 2
+                readonly property real captureCenterY: stage.height / 2 + 14 + outerOrbit.height * 0.48 * deployment
+                // This Bezier reaches the bottom of the orbit travelling left,
+                // matching the ellipse tangent so capture never pauses or fans out.
+
+                function exitXAt(travel) {
+                    const released = Math.max(0, travel - angleToRelease);
+                    if (released > 0)
+                        return captureCenterX - width / 2 - released * stage.width * 0.72;
+                    const sampledAngle = baseAngle + root.shuffleStartPhase
+                        + Math.min(travel, angleToRelease);
+                    return stage.width / 2 + Math.cos(sampledAngle)
+                        * outerOrbit.width * 0.48 * deployment - width / 2;
+                }
+
+                function exitYAt(travel) {
+                    const released = Math.max(0, travel - angleToRelease);
+                    if (released > 0)
+                        return captureCenterY - height / 2
+                            + released * released * stage.height * 0.025;
+                    const sampledAngle = baseAngle + root.shuffleStartPhase
+                        + Math.min(travel, angleToRelease);
+                    return stage.height / 2 + 14 + Math.sin(sampledAngle)
+                        * outerOrbit.height * 0.48 * deployment - height / 2;
+                }
+
+                function intakeXAt(distance) {
+                    if (distance < 1) {
+                        const progress = Math.max(0, distance);
+                        return root.cubicPoint(-stage.width * 0.08,
+                            stage.width * 0.45,
+                            captureCenterX + outerOrbit.width * 0.48
+                                * (orbitStep / queueGap) / 3,
+                            captureCenterX, progress) - width / 2;
+                    }
+                    const sampledAngle = releaseAngle
+                        + (distance - 1) * orbitStep / queueGap;
+                    return stage.width / 2 + Math.cos(sampledAngle)
+                        * outerOrbit.width * 0.48 * deployment - width / 2;
+                }
+
+                function intakeYAt(distance) {
+                    if (distance < 1) {
+                        const progress = Math.max(0, distance);
+                        return root.cubicPoint(stage.height * 0.28,
+                            stage.height * 0.02, captureCenterY,
+                            captureCenterY, progress) - height / 2;
+                    }
+                    const sampledAngle = releaseAngle
+                        + (distance - 1) * orbitStep / queueGap;
+                    return stage.height / 2 + 14 + Math.sin(sampledAngle)
+                        * outerOrbit.height * 0.48 * deployment - height / 2;
+                }
 
                 width: 96 + depth * 48
                 height: width
-                x: stage.width / 2 + Math.cos(angle) * outerOrbit.width * 0.48 * deployment - width / 2
-                y: stage.height / 2 + 14 + Math.sin(angle) * outerOrbit.height * 0.48 * deployment - height / 2
+                x: root.shuffleStage === 1 ? exitXAt(exitTravel)
+                    : root.shuffleStage === 2 ? intakeXAt(incomingDistance) : orbitX
+                y: root.shuffleStage === 1 ? exitYAt(exitTravel)
+                    : root.shuffleStage === 2 ? intakeYAt(incomingDistance) : orbitY
                 // Deployment controls position and scale, never translucency.
                 // A satellite appears solid as soon as its stagger begins.
                 visible: deployment > 0.001
+                    && (root.shuffleStage !== 2 || incomingDistance > 0.001)
                 opacity: 1
                 scale: (0.35 + deployment * 0.65) * (0.84 + depth * 0.18)
+                    * (root.shuffleStage === 2 ? 0.82 + Math.min(1, incomingDistance) * 0.18 : 1)
                     * (satellitePointer.containsMouse ? 1.1 : 1)
+                rotation: root.shuffleStage === 1 ? -releasedTravel * 14 : 0
                 z: satellitePointer.containsMouse ? 20 : Math.round(depth * 10)
 
+                Loader {
+                    anchors.fill: parent
+                    active: root.shuffleRunning
+                    z: -1
+
+                    sourceComponent: Component {
+                        Item {
+                            anchors.fill: parent
+
+                            Repeater {
+                                model: 3
+
+                                Item {
+                                    required property int index
+                                    readonly property real sampleLag: root.shuffleStage === 1
+                                        ? (index + 1) * 0.055 : (index + 1) * 0.032
+                                    readonly property real sampleProgress: root.shuffleStage === 1
+                                        ? Math.max(0, satellite.exitTravel - sampleLag)
+                                        : Math.max(0, satellite.incomingDistance - sampleLag)
+                                    readonly property real sampleX: root.shuffleStage === 1
+                                        ? satellite.exitXAt(sampleProgress)
+                                        : satellite.intakeXAt(sampleProgress)
+                                    readonly property real sampleY: root.shuffleStage === 1
+                                        ? satellite.exitYAt(sampleProgress)
+                                        : satellite.intakeYAt(sampleProgress)
+                                    readonly property real travelled: root.shuffleStage === 1
+                                        ? satellite.exitTravel : satellite.incomingDistance
+                                    readonly property real captureFade: root.shuffleStage === 2
+                                        ? Math.max(0, 1 - satellite.capturedTravel
+                                            / (satellite.queueGap * 0.9)) : 1
+
+                                    width: satellite.width
+                                    height: satellite.height
+                                    x: sampleX - satellite.x
+                                    y: sampleY - satellite.y
+                                    visible: root.shuffleStage !== 0
+                                        && travelled > sampleLag * 0.35 && captureFade > 0.001
+                                    opacity: Math.max(0, 0.32 - index * 0.08)
+                                        * Math.min(1, travelled / Math.max(0.001, sampleLag))
+                                        * captureFade
+                                    scale: 0.95 - index * 0.055
+
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        radius: width / 2
+                                        color: Theme.mantle
+                                        clip: true
+                                        ShaderEffectSource {
+                                            anchors.fill: parent
+                                            sourceItem: satelliteBody
+                                            live: true
+                                            recursive: true
+                                            opacity: 0.78
+                                        }
+                                        Rectangle {
+                                            anchors.fill: parent
+                                            radius: width / 2
+                                            color: Theme.accent
+                                            opacity: 0.18
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Rectangle {
+                    id: satelliteBody
                     anchors.fill: parent
                     radius: width / 2
                     color: Theme.mantle
@@ -223,6 +448,7 @@ Item {
                 MouseArea {
                     id: satellitePointer
                     anchors.fill: parent
+                    enabled: !root.shuffleRunning
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: root.rotateTo(satellite.index + 1)
@@ -292,9 +518,18 @@ Item {
             width: 58; height: 58; radius: 29; z: 10
             color: shufflePointer.containsMouse ? Theme.cyan : Theme.accent
             border.width: 0
-            Text { anchors.centerIn: parent; text: "↻"; color: Theme.void_; font.family: Theme.fontDisplay; font.pixelSize: 24; font.weight: Font.Bold }
-            MouseArea { id: shufflePointer; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.shuffleOrbit() }
-            ToolTipBubble { text: "SHUFFLE"; shown: shufflePointer.containsMouse }
+            Text {
+                anchors.centerIn: parent
+                text: "↻"
+                color: Theme.void_
+                font.family: Theme.fontDisplay
+                font.pixelSize: 24
+                font.weight: Font.Bold
+                rotation: root.shuffleRunning ? 300 : 0
+                Behavior on rotation { NumberAnimation { duration: Settings.motion ? 920 : 0; easing.type: Easing.OutCubic } }
+            }
+            MouseArea { id: shufflePointer; anchors.fill: parent; enabled: !root.shuffleRunning; hoverEnabled: true; cursorShape: enabled ? Qt.PointingHandCursor : Qt.BusyCursor; onClicked: root.shuffleOrbit() }
+            ToolTipBubble { text: root.shuffleRunning ? "RESHUFFLING" : "SHUFFLE"; shown: shufflePointer.containsMouse }
         }
 
         Column {

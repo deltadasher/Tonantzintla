@@ -7,9 +7,11 @@ Rectangle {
 
     signal activated()
     readonly property bool unread: Notifications.unreadCount > 0
+    readonly property bool isVertical: root.parent && typeof root.parent.isVertical !== "undefined"
+        ? root.parent.isVertical : (Settings.barPosition === "left" || Settings.barPosition === "right")
 
-    implicitWidth: Settings.compact ? 36 : 40
-    implicitHeight: Settings.compact ? 36 : 40
+    implicitWidth: isVertical ? (Settings.compact ? 32 : 36) : (Settings.compact ? 36 : 40)
+    implicitHeight: isVertical ? (Settings.compact ? 32 : 36) : (Settings.compact ? 36 : 40)
     radius: 11
     color: unread ? Theme.barAccentVeil
         : pointer.containsMouse ? Theme.barNeutralHover : "transparent"

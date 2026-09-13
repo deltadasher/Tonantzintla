@@ -1,12 +1,29 @@
 # Changelog
 
-## 1.0.1 - 2026-09-05
+## 1.1 - 2026-09-12
 
-SMOOTHER PARALLAX HANDOFF
+LOOKS OVERHAUL
 
-- Open wallpaper paths through the configured file manager.
-- Restore the orbiting Parallax library presentation and keep it bound to the
-  wallpaper catalog.
+- Edited bar settings to be interactive; try it out with Mod+Alt+MB1, or open it in settings!
+- Parallax's library has been increased tenfold
+- Parallax animation overhaul
+- Aperture customization increased
+- Bar opacity error fixed
+- Niri config edits to properly recognize the user's monitor setup
+- Obarun compatibility fixes
+- Transition to *mostly* init-agnostic
+- Aperture presets added
+- Widgets are now completely independent; you can put each part anywhere freely.
+- Ephemeris launcher search fixed after prior search engine bugs
+- Parallax search API enhanced for speed and better results (now AI-less)
+- Flight manual reinterpretation underway
+- Calendar animations fixed
+- Tool widget removed
+- Increased compatibility with other WMs other than Niri (still highly experimental. absolutely not recommended for anyone other than active contributors.)
+- Memory overhead reduced by ~450 MiB. If you are running the whole Tonantzintla suite, expect to see about 750 MiB total idle usage when configured properly.
+- Some python tests removed because they were no longer needed.
+- Command fixing, shell prefix is now 'blackhole' instead of 'astralith' or 'tonantzintla'.
+- Potential X11 support is being considered.
 
 ## 1.0.0 - 2026-09-05
 

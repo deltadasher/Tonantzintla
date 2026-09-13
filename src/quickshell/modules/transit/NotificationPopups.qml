@@ -9,12 +9,23 @@ pragma ComponentBehavior: Bound
 
 PanelWindow {
 
-    anchors { top: true; right: true }
+    readonly property bool isBottom: Settings.notificationPosition.startsWith("bottom")
+    readonly property bool isLeft: Settings.notificationPosition.endsWith("left")
+    readonly property int barClearance: (Settings.compact ? 38 : Theme.barHeight)
+        + (Settings.barMode === "docked" ? 8 : Settings.barMargin * 2 + 7)
+
+    anchors {
+        top: !isBottom
+        bottom: isBottom
+        left: isLeft
+        right: !isLeft
+    }
     // qmllint disable unqualified
     // qmllint disable unresolved-type
     margins {
-        top: (Settings.compact ? 38 : Theme.barHeight)
-            + (Settings.barMode === "docked" ? 8 : Settings.barMargin * 2 + 7)
+        top: !isBottom && Settings.barPosition !== "bottom" ? barClearance : 14
+        bottom: isBottom && Settings.barPosition === "bottom" ? barClearance : 14
+        left: 14
         right: 14
     }
     // qmllint enable unresolved-type

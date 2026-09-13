@@ -23,6 +23,7 @@ settings.json
 *.part
 *.pid
 *.tonantzintla-backup-*
+bin/tonantzintla-installer
 
 # Local environment files
 .env

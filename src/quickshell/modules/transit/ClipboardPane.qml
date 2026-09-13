@@ -8,8 +8,28 @@ Item {
 
     property string query: ""
     property var hoveredEntry: null
-    readonly property var currentEntry: hoveredEntry
-        || (Clipboard.entries.length > 0 ? Clipboard.entries[0] : null)
+    property string selectedId: ""
+    readonly property var matchesList: Clipboard.entries.filter(function(entry) { return root.matches(entry); })
+    readonly property var currentEntry: hoveredEntry && matches(hoveredEntry) ? hoveredEntry
+        : matchesList.find(function(entry) { return String(entry.id) === root.selectedId; })
+            || (matchesList.length > 0 ? matchesList[0] : null)
+    readonly property real preferredSurfaceHeight: Math.min(670, 380 + matchesList.length * 20)
+    onMatchesListChanged: {
+        if (!matchesList.some(function(entry) { return String(entry.id) === root.selectedId; }))
+            selectedId = matchesList.length ? String(matchesList[0].id) : "";
+        hoveredEntry = null;
+    }
+    function moveSelection(delta) {
+        if (!matchesList.length) return;
+        const index = matchesList.findIndex(function(entry) { return String(entry.id) === root.selectedId; });
+        selectedId = String(matchesList[Math.max(0, Math.min(matchesList.length - 1, index + delta))].id);
+        hoveredEntry = null;
+    }
+    function restoreSelection() {
+        if (!currentEntry) return;
+        Clipboard.copy(currentEntry.id);
+        ShellState.closeEphemeris();
+    }
 
     function focusSearch() {
         searchInput.forceActiveFocus();
@@ -51,6 +71,8 @@ Item {
         const needle = query.trim().toLowerCase();
         return needle.length === 0 || String(entry.search || "").indexOf(needle) >= 0;
     }
+
+    readonly property bool inputAtBottom: Settings.barPosition === "bottom"
 
     ColumnLayout {
         anchors.fill: parent
@@ -96,35 +118,11 @@ Item {
             }
         }
 
-        Rectangle {
+        Item {
+            id: topSearchSlot
             Layout.fillWidth: true
-            Layout.preferredHeight: 44
-            radius: Theme.radiusMedium
-            color: Theme.mantle
-            TextInput {
-                id: searchInput
-                anchors.fill: parent
-                anchors.leftMargin: 14
-                anchors.rightMargin: 14
-                verticalAlignment: TextInput.AlignVCenter
-                text: root.query
-                color: Theme.moon
-                selectionColor: Theme.accent
-                selectedTextColor: Theme.void_
-                font.family: Theme.fontMono
-                font.pixelSize: 11
-                onTextChanged: root.query = text
-            }
-            Text {
-                anchors.left: parent.left
-                anchors.leftMargin: 14
-                anchors.verticalCenter: parent.verticalCenter
-                visible: searchInput.text.length === 0
-                text: "Search; non-matching layers collapse…"
-                color: Theme.lineBright
-                font.family: Theme.fontMono
-                font.pixelSize: 10
-            }
+            implicitHeight: searchContainer.implicitHeight
+            visible: !root.inputAtBottom
         }
 
         RowLayout {
@@ -194,7 +192,7 @@ Item {
                             height: parent.height
                             radius: Math.min(3, height / 2)
                             color: root.kindTone(layer.kind)
-                            opacity: layerPointer.containsMouse ? 1 : 0.72
+                            opacity: layerPointer.containsMouse || String(layer.modelData.id) === root.selectedId ? 1 : 0.72
                             scale: layerPointer.containsMouse ? 1.035 : 1
                             Behavior on scale {
                                 NumberAnimation { duration: Settings.motion ? 140 : 0 }
@@ -311,6 +309,53 @@ Item {
                         }
                     }
                 }
+            }
+        }
+
+        Item {
+            id: bottomSearchSlot
+            Layout.fillWidth: true
+            implicitHeight: searchContainer.implicitHeight
+            visible: root.inputAtBottom
+        }
+
+        Rectangle {
+            id: searchContainer
+            parent: root.inputAtBottom ? bottomSearchSlot : topSearchSlot
+            anchors.fill: parent
+            implicitHeight: 44
+            radius: Theme.radiusMedium
+            color: Theme.mantle
+            TextInput {
+                id: searchInput
+                anchors.fill: parent
+                anchors.leftMargin: 14
+                anchors.rightMargin: 14
+                verticalAlignment: TextInput.AlignVCenter
+                text: root.query
+                color: Theme.moon
+                selectionColor: Theme.accent
+                selectedTextColor: Theme.void_
+                font.family: Theme.fontMono
+                font.pixelSize: 11
+                onTextChanged: root.query = text
+                Keys.onPressed: function(event) {
+                    if (event.key === Qt.Key_Down || event.key === Qt.Key_Up) {
+                        root.moveSelection(event.key === Qt.Key_Down ? 1 : -1); event.accepted = true;
+                    } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                        root.restoreSelection(); event.accepted = true;
+                    }
+                }
+            }
+            Text {
+                anchors.left: parent.left
+                anchors.leftMargin: 14
+                anchors.verticalCenter: parent.verticalCenter
+                visible: searchInput.text.length === 0
+                text: "Search; non-matching layers collapse…"
+                color: Theme.lineBright
+                font.family: Theme.fontMono
+                font.pixelSize: 10
             }
         }
     }

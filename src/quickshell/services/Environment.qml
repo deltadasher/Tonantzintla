@@ -28,6 +28,10 @@ QtObject {
     property bool onlineBusy: false
     property bool libraryLoading: true
     property string libraryError: ""
+    property bool libraryRefreshPending: false
+    property string wallpaperMessage: ""
+    property bool wallpaperMessageError: false
+    readonly property bool libraryOperationBusy: libraryOperation.running
     property var localWallpapers: []
     property var onlineWallpapers: []
     readonly property var wallpapers: (localWallpapers.length > 0
@@ -179,19 +183,49 @@ QtObject {
 
     function openWallpaperLibrary() {
         Quickshell.execDetached(["sh", "-c",
-            "mkdir -p -- \"$1\" && exec xdg-open \"$1\"", "blackhole",
-            wallpaperLibraryPath]);
+            "mkdir -p -- \"$1\" && exec \"$2\" files \"$1\"",
+            "blackhole", wallpaperLibraryPath, controlPath]);
+    }
+
+    function wallpaperFeedback(message, failed) {
+        wallpaperMessage = message;
+        wallpaperMessageError = !!failed;
+    }
+
+    function importWallpapers(urls) {
+        if (libraryOperation.running) return;
+        const files = [];
+        for (const url of urls) files.push(String(url));
+        if (!files.length) return;
+        wallpaperFeedback("Importing " + files.length + " file(s)…", false);
+        libraryOperation.command = ["python3", libraryHelper, "--import-json", JSON.stringify(files)];
+        libraryOperation.running = true;
+    }
+
+    function toggleWallpaperFavorite(entry) {
+        if (!entry || libraryOperation.running) return;
+        if (entry.remoteUrl) {
+            wallpaperFeedback("Apply the online wallpaper to download it before saving a favorite.", false);
+            return;
+        }
+        libraryOperation.command = ["python3", libraryHelper, "--favorite", entry.path,
+            "--enabled", entry.favorite ? "false" : "true"];
+        libraryOperation.running = true;
     }
 
     function applyWallpaper(path, kind) {
-        if (!path || !canSetWallpaper)
+        if (!path || !canSetWallpaper) {
+            wallpaperFeedback("No wallpaper backend is available. Install awww or swaybg.", true);
             return;
+        }
         const resolvedKind = kind || kindFor(path);
         if (resolvedKind === "video" && !hasMpvpaper) {
+            wallpaperFeedback("Install mpvpaper to apply a video wallpaper.", true);
             console.warn("[Tonantzintla/Wallpaper] mpvpaper is required for video wallpaper");
             return;
         }
         wallpaperBusy = true;
+        wallpaperFeedback("Applying to " + (Settings.wallpaperOutputs === "all" ? "all displays" : Settings.wallpaperOutputs) + "…", false);
         if (resolvedKind === "video" || hasAwww) {
             applyProcess.command = ["bash", applyHelper, resolvedKind, path,
                 Settings.wallpaperOutputs, Settings.wallpaperTransition];
@@ -233,6 +267,10 @@ QtObject {
     }
 
     function refreshWallpapers() {
+        if (libraryProcess.running) {
+            libraryRefreshPending = true;
+            return;
+        }
         if (!libraryProcess.running) {
             libraryLoading = true;
             libraryError = "";
@@ -261,10 +299,40 @@ QtObject {
     property Process wallpaperBackend: Process {}
 
     property Process applyProcess: Process {
+        onExited: (exitCode, exitStatus) => root.wallpaperFeedback(
+            exitCode === 0 ? "Wallpaper applied." : "Wallpaper could not be applied. Check the selected display and backend.",
+            exitCode !== 0)
         onRunningChanged: {
             if (!running) {
                 root.wallpaperBusy = false;
                 AdaptivePalette.refresh();
+            }
+        }
+    }
+
+    property Process libraryOperation: Process {
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const payload = JSON.parse(text);
+                    if (payload.action === "import") {
+                        const count = (payload.imported || []).length;
+                        const errors = payload.errors || [];
+                        root.wallpaperFeedback(count + " file(s) ready in the library."
+                            + (errors.length ? " " + errors.length + " failed: " + errors[0].error : ""), errors.length > 0);
+                        if (count) root.refreshWallpapers();
+                    } else if (payload.ok && payload.action === "favorite") {
+                        root.localWallpapers = root.localWallpapers.map(function(entry) {
+                            if (entry.path !== payload.path) return entry;
+                            return Object.assign({}, entry, {favorite: payload.favorite});
+                        });
+                        root.wallpaperFeedback(payload.favorite ? "Saved to favorites." : "Removed from favorites.", false);
+                    } else {
+                        root.wallpaperFeedback(payload.error || "Library action failed.", true);
+                    }
+                } catch (error) {
+                    root.wallpaperFeedback("Library action failed: " + String(error), true);
+                }
             }
         }
     }
@@ -277,7 +345,7 @@ QtObject {
                 try {
                     const payload = JSON.parse(text);
                     if (!Array.isArray(payload))
-                        throw new Error("Wallpaper index was not an array");
+                        throw new Error(payload.error || "Wallpaper index was not an array");
                     root.localWallpapers = payload;
                     root.libraryError = "";
                 } catch (error) {
@@ -295,7 +363,15 @@ QtObject {
                 }
             }
         }
-        onRunningChanged: if (!running) root.libraryLoading = false
+        onRunningChanged: {
+            if (!running) {
+                root.libraryLoading = false;
+                if (root.libraryRefreshPending) {
+                    root.libraryRefreshPending = false;
+                    Qt.callLater(root.refreshWallpapers);
+                }
+            }
+        }
     }
 
     property Process onlineSearchProcess: Process {

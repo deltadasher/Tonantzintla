@@ -4,17 +4,19 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import sys
 import time
 import urllib.parse
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 CACHE_PATH = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "tonantzintla" / "weather.json"
-CACHE_SCHEMA = 2
+CACHE_SCHEMA = 3
 USER_AGENT = "Tonantzintla/0.9 (Quickshell weather widget)"
 
 
@@ -61,12 +63,82 @@ def load_cache(location: str, unit: str, max_age: int = 600) -> dict | None:
 def any_cache(location: str, unit: str) -> dict | None:
     try:
         data = json.loads(CACHE_PATH.read_text())
-        if data.get("query") == location and data.get("unit") == unit:
+        if data.get("schema") == CACHE_SCHEMA and data.get("query") == location and data.get("unit") == unit:
             data["status"] = "CACHED FORECAST"
             return data
     except (OSError, ValueError, TypeError):
         pass
     return None
+
+
+def solar_day(date_text: str, latitude: float, longitude: float,
+              zone_name: str, offset_seconds: int, sunrise: str, sunset: str) -> dict:
+    """Use provider rise/set times, with estimated civil twilight and solar noon.
+
+    The supplementary estimates use NOAA's fractional-year equations:
+    https://gml.noaa.gov/grad/solcalc/solareqns.PDF
+    Epochs preserve the location's timezone, including 23/25-hour DST days.
+    Missing polar crossings stay null rather than becoming midnight events.
+    """
+    try:
+        zone = ZoneInfo(zone_name)
+    except (ZoneInfoNotFoundError, ValueError):
+        zone = timezone(timedelta(seconds=offset_seconds))
+    day = datetime.strptime(date_text, "%Y-%m-%d").replace(tzinfo=zone)
+    end = day + timedelta(days=1)
+    noon = day.replace(hour=12)
+    year_days = (datetime(day.year + 1, 1, 1) - datetime(day.year, 1, 1)).days
+    gamma = 2 * math.pi / year_days * (day.timetuple().tm_yday - 1)
+    equation = 229.18 * (0.000075 + 0.001868 * math.cos(gamma)
+        - 0.032077 * math.sin(gamma) - 0.014615 * math.cos(2 * gamma)
+        - 0.040849 * math.sin(2 * gamma))
+    declination = (0.006918 - 0.399912 * math.cos(gamma) + 0.070257 * math.sin(gamma)
+        - 0.006758 * math.cos(2 * gamma) + 0.000907 * math.sin(2 * gamma)
+        - 0.002697 * math.cos(3 * gamma) + 0.00148 * math.sin(3 * gamma))
+    local_noon_minutes = 720 - 4 * longitude - equation + noon.utcoffset().total_seconds() / 60
+    # Pick the solar transit on this civil date, also for date-line zones.
+    local_noon_minutes %= 1440
+    transit = day + timedelta(minutes=local_noon_minutes)
+    lat = math.radians(latitude)
+
+    def event(value: datetime | None, estimate: bool = False) -> dict | None:
+        if value is None or not day.timestamp() <= value.timestamp() < end.timestamp():
+            return None
+        return {"epoch": round(value.timestamp()), "time": value.strftime("%H:%M"), "estimated": estimate}
+
+    def provider(value: str) -> dict | None:
+        try:
+            parsed = datetime.fromisoformat(value)
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=zone)
+            return event(parsed.astimezone(zone))
+        except (ValueError, TypeError):
+            return None
+
+    def hour_angle(elevation: float) -> float | None:
+        denominator = math.cos(lat) * math.cos(declination)
+        if abs(denominator) < 1e-12:
+            return None
+        cosine = (math.sin(math.radians(elevation)) - math.sin(lat) * math.sin(declination)) / denominator
+        return math.degrees(math.acos(cosine)) if -1 <= cosine <= 1 else None
+
+    twilight = hour_angle(-6)
+    rise = provider(sunrise)
+    setting = provider(sunset)
+    maximum = 90 - abs(latitude - math.degrees(declination))
+    minimum_sine = math.sin(lat) * math.sin(declination) - math.cos(lat) * math.cos(declination)
+    minimum = math.degrees(math.asin(max(-1, min(1, minimum_sine))))
+    polar_state = "polar-day" if minimum > -0.833 else "polar-night" if maximum < -0.833 else "normal"
+    if polar_state != "normal":
+        rise = setting = None
+    return {
+        "start": round(day.timestamp()), "end": round(end.timestamp()),
+        "date": date_text, "timezone": zone_name, "zone_label": noon.tzname(),
+        "dawn": event(transit - timedelta(minutes=4 * twilight), True) if twilight is not None else None,
+        "sunrise": rise, "noon": event(transit, True), "sunset": setting,
+        "dusk": event(transit + timedelta(minutes=4 * twilight), True) if twilight is not None else None,
+        "state": polar_state,
+    }
 
 
 def build_forecast(location: str, unit: str) -> dict:
@@ -116,14 +188,19 @@ def build_forecast(location: str, unit: str) -> dict:
     day_times = daily.get("time") or []
     sunrise_times = daily.get("sunrise") or []
     sunset_times = daily.get("sunset") or []
+    zone_name = str(forecast.get("timezone") or place.get("timezone") or "")
+    offset_seconds = int(forecast.get("utc_offset_seconds") or 0)
     daily_rows = []
     for index, date_text in enumerate(day_times[:5]):
         code = int((daily.get("weather_code") or [-1] * len(day_times))[index])
         row_label, row_icon = condition(code, True)
         date = datetime.strptime(date_text, "%Y-%m-%d")
+        sunrise = sunrise_times[index] if index < len(sunrise_times) else None
+        sunset = sunset_times[index] if index < len(sunset_times) else None
         daily_rows.append({
             "day": date.strftime("%a").upper(),
             "date": date.strftime("%d %b").upper(),
+            "date_iso": date_text,
             "max": round(float((daily.get("temperature_2m_max") or [0] * len(day_times))[index])),
             "min": round(float((daily.get("temperature_2m_min") or [0] * len(day_times))[index])),
             "precipitation": int((daily.get("precipitation_probability_max") or [0] * len(day_times))[index] or 0),
@@ -132,6 +209,8 @@ def build_forecast(location: str, unit: str) -> dict:
             "icon": row_icon,
             "sunrise": str(sunrise_times[index])[11:16] if index < len(sunrise_times) else "--:--",
             "sunset": str(sunset_times[index])[11:16] if index < len(sunset_times) else "--:--",
+            "solar": solar_day(date_text, float(place["latitude"]), float(place["longitude"]),
+                               zone_name, offset_seconds, sunrise, sunset),
         })
 
     display_location = place.get("name", location)
@@ -153,6 +232,8 @@ def build_forecast(location: str, unit: str) -> dict:
         "latitude": float(place["latitude"]),
         "longitude": float(place["longitude"]),
         "timezone": forecast.get("timezone_abbreviation", ""),
+        "timezone_name": zone_name,
+        "utc_offset_seconds": offset_seconds,
         "updated": now_text[11:16],
         "fetched_at": int(time.time()),
         "current": {
