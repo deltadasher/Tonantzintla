@@ -74,6 +74,7 @@ QtObject {
     readonly property string libraryHelper: script("wallpaper-library.py")
     readonly property string onlineHelper: script("wallpaper-online.py")
     readonly property string applyHelper: script("wallpaper-apply")
+    readonly property string wallpaperLibraryPath: Quickshell.env("HOME") + "/Pictures/Wallpapers"
     readonly property bool canCaptureRegion: hasGrim && hasSlurp && hasWlCopy
     readonly property bool canCaptureScreen: hasGrim
     readonly property bool canEditCapture: hasGrim && hasSlurp && hasWlCopy && hasSatty
@@ -174,6 +175,12 @@ QtObject {
 
     function openRecordingFolder() {
         Quickshell.execDetached([snippingTool, "--open-recordings"]);
+    }
+
+    function openWallpaperLibrary() {
+        Quickshell.execDetached(["sh", "-c",
+            "mkdir -p -- \"$1\" && exec xdg-open \"$1\"", "blackhole",
+            wallpaperLibraryPath]);
     }
 
     function applyWallpaper(path, kind) {
