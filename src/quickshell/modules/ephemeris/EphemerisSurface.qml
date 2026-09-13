@@ -68,9 +68,10 @@ PanelWindow {
     readonly property bool immersiveWidget: transition.activeTab === "walls"
     readonly property real apertureSurfaceOpacity: Settings.barMode === "capsules"
         ? Math.min(0.82, Settings.barOpacity * 0.78)
-        : Math.min(0.86, Settings.barOpacity * 0.82)
-    readonly property color instrumentColor: Qt.rgba(Theme.mantle.r,
-        Theme.mantle.g, Theme.mantle.b, apertureSurfaceOpacity)
+        : Math.min(0.88, Settings.barOpacity * 0.86)
+    // Colour stays opaque inside the Canvas. The aperture-derived alpha is
+    // applied once to the complete union, avoiding darker overlap at the lip.
+    readonly property color instrumentColor: Theme.void_
 
     visible: transition.mounted && targetScreen
     color: "transparent"
@@ -172,9 +173,10 @@ PanelWindow {
             geometry: surfaceGeometry
             edge: root.anchorEdge
             fillColor: root.instrumentColor
-            visible: root.anchoredInstrument && !root.immersiveWidget
+            attached: root.anchoredInstrument
+            visible: !root.immersiveWidget
                 && transition.revealProgress > 0.01
-            opacity: transition.revealProgress
+            opacity: root.apertureSurfaceOpacity
         }
 
         ClippingRectangle {
@@ -184,7 +186,7 @@ PanelWindow {
             // The geometry expands into the solid instrument backing and rounded mask.
             // Parallax stays open; Resonance and other panels own rounded, clipped containment.
             radius: surfaceGeometry.radius
-            color: root.immersiveWidget ? "transparent" : root.instrumentColor
+            color: "transparent"
             clip: true
             opacity: Settings.motion ? 0.80 + 0.20 * transition.contentProgress : 1
             scale: Settings.motion && Settings.motionStyle !== "rise"
