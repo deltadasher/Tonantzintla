@@ -6,6 +6,7 @@ import "../services"
 Rectangle {
     id: root
     property string outputName: ""
+    property var anchorHost: null
     implicitWidth: row.implicitWidth + 18
     implicitHeight: Settings.compact ? 34 : 38
     radius: 9
@@ -55,7 +56,11 @@ Rectangle {
                         font.weight: Font.DemiBold
                     }
                 }
-                TapHandler { onTapped: ShellState.toggleEphemeris("system", outputName) }
+                TapHandler {
+                    onTapped: root.anchorHost
+                        ? root.anchorHost.toggleEphemeris("system", statHitbox)
+                        : ShellState.toggleEphemeris("system", root.outputName)
+                }
             }
         }
 
@@ -67,6 +72,7 @@ Rectangle {
         }
 
         Item {
+            id: audioHitbox
             visible: Settings.showAudio
             Layout.preferredWidth: audioReadout.implicitWidth
             Layout.preferredHeight: root.implicitHeight
@@ -93,7 +99,11 @@ Rectangle {
                     font.weight: Font.DemiBold
                 }
             }
-            TapHandler { onTapped: ShellState.toggleEphemeris("audio", outputName) }
+            TapHandler {
+                onTapped: root.anchorHost
+                    ? root.anchorHost.toggleEphemeris("audio", audioHitbox)
+                    : ShellState.toggleEphemeris("audio", root.outputName)
+            }
         }
     }
 

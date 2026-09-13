@@ -12,17 +12,20 @@ BarIsland {
     luminous: false
 
     MediaPill {
+        id: mediaPill
         visible: !root.isVertical
         embedded: true
         outputName: root.barWindow ? root.barWindow.outputName : ""
+        anchorHost: root
     }
 
     BarButton {
+        id: mediaControl
         visible: root.isVertical
         glyph: "◉"
         accessibleLabel: "Open Resonance"
         targetPanel: "media"
         motionKind: "pulse"
-        onActivated: root.toggleEphemeris("media")
+        onActivated: root.toggleEphemeris("media", mediaControl)
     }
 }

@@ -91,6 +91,6 @@ BarIsland {
     }
 
     TapHandler {
-        onTapped: root.toggleEphemeris("calendar")
+        onTapped: root.toggleEphemeris("calendar", root)
     }
 }

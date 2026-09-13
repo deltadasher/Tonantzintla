@@ -9,6 +9,15 @@ QtObject {
     // Output that launched the current Ephemeris widget. Empty means use the
     // compositor focus for commands that did not originate from a bar.
     property string ephemerisOutput: ""
+    // Screen-local bounds of the bar control that launched Ephemeris. Keeping
+    // this as data lets the fullscreen host stay stable while its instrument
+    // remains visually attached to the real, rearrangeable island.
+    property bool ephemerisAnchorValid: false
+    property real ephemerisAnchorX: 0
+    property real ephemerisAnchorY: 0
+    property real ephemerisAnchorWidth: 0
+    property real ephemerisAnchorHeight: 0
+    property string ephemerisAnchorEdge: "top"
     property string settingsSection: "appearance"
     property bool quickActionsVisible: false
     property string quickActionTab: "telemetry"
@@ -31,12 +40,29 @@ QtObject {
         return Registry.normalize(widget);
     }
 
-    function openEphemeris(tab, outputName) {
+    function setEphemerisAnchor(x, y, width, height, edge) {
+        ephemerisAnchorX = Number(x || 0);
+        ephemerisAnchorY = Number(y || 0);
+        ephemerisAnchorWidth = Number(width || 0);
+        ephemerisAnchorHeight = Number(height || 0);
+        ephemerisAnchorEdge = String(edge || "top");
+        ephemerisAnchorValid = ephemerisAnchorWidth > 0 && ephemerisAnchorHeight > 0;
+    }
+
+    function clearEphemerisAnchor() {
+        ephemerisAnchorValid = false;
+    }
+
+    function openEphemeris(tab, outputName, anchorX, anchorY, anchorWidth, anchorHeight, anchorEdge) {
         ephemerisTab = normalizeWidget(tab);
         if (outputName && String(outputName).length > 0)
             ephemerisOutput = String(outputName);
-        else if (!ephemerisVisible)
+        else if (!ephemerisVisible) {
             ephemerisOutput = "";
+            clearEphemerisAnchor();
+        }
+        if (anchorWidth !== undefined && anchorHeight !== undefined)
+            setEphemerisAnchor(anchorX, anchorY, anchorWidth, anchorHeight, anchorEdge);
         ephemerisVisible = true;
     }
 
@@ -48,7 +74,7 @@ QtObject {
         closeWidgetSettings();
     }
 
-    function toggleEphemeris(tab, outputName) {
+    function toggleEphemeris(tab, outputName, anchorX, anchorY, anchorWidth, anchorHeight, anchorEdge) {
         const target = normalizeWidget(tab);
         const requestedOutput = outputName && String(outputName).length > 0
             ? String(outputName) : "";
@@ -56,7 +82,8 @@ QtObject {
                 && (!requestedOutput || requestedOutput === ephemerisOutput))
             closeEphemeris();
         else
-            openEphemeris(target, requestedOutput);
+            openEphemeris(target, requestedOutput, anchorX, anchorY,
+                anchorWidth, anchorHeight, anchorEdge);
     }
 
     function openQuickActions(tab) {

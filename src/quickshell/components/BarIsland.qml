@@ -19,8 +19,17 @@ Rectangle {
 
     readonly property var currentLayout: barWindow ? barWindow.activeLayout
         : (isVertical ? Settings.activeLayoutVertical : Settings.activeLayoutHorizontal)
-    function toggleEphemeris(tab) {
-        ShellState.toggleEphemeris(tab, barWindow ? barWindow.outputName : "");
+    function toggleEphemeris(tab, sourceItem) {
+        const source = sourceItem || root;
+        let point;
+        if (barWindow) {
+            const local = source.mapToItem(barWindow, 0, 0);
+            point = barWindow.barPointToScreen(local.x, local.y);
+        } else {
+            point = source.mapToItem(null, 0, 0);
+        }
+        ShellState.toggleEphemeris(tab, barWindow ? barWindow.outputName : "",
+            point.x, point.y, source.width, source.height, effectivePosition);
     }
 
     readonly property var myLocation: islandId ? BarLayout.locate(currentLayout, islandId) : null

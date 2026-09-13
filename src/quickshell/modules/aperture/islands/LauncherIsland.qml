@@ -10,11 +10,12 @@ BarIsland {
     luminous: false
 
     BarButton {
+        id: guideControl
         glyph: ""
         accessibleLabel: "Open Tonantzintla manual"
         targetPanel: "guide"
         motionKind: "orbit"
-        onActivated: root.toggleEphemeris("guide")
+        onActivated: root.toggleEphemeris("guide", guideControl)
         WabiSabiBlackHole {
             anchors.centerIn: parent
             width: root.isVertical ? 24 : 28
@@ -25,19 +26,21 @@ BarIsland {
     }
 
     BarButton {
+        id: launcherControl
         visible: Settings.showLauncherButton
         glyph: "⌕"
         accessibleLabel: "Open application launcher"
         targetPanel: Settings.defaultLaunchTab || "apps"
         motionKind: "lens"
-        onActivated: root.toggleEphemeris(Settings.defaultLaunchTab || "apps")
+        onActivated: root.toggleEphemeris(Settings.defaultLaunchTab || "apps", launcherControl)
     }
 
     BarButton {
+        id: wallpaperControl
         glyph: "✦"
         accessibleLabel: "Open wallpaper observatory"
         targetPanel: "walls"
         motionKind: "star"
-        onActivated: root.toggleEphemeris("walls")
+        onActivated: root.toggleEphemeris("walls", wallpaperControl)
     }
 }
