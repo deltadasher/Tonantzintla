@@ -67,7 +67,6 @@ PanelWindow {
         { id: "window_title", name: "Window Title", glyph: "▭", desc: "Active focused application" },
         { id: "clock",        name: "Clock & Date", glyph: "◷", desc: "Clock and calendar" },
         { id: "system_stats", name: "System Stats", glyph: "▤", desc: "Processor, memory, and temperature" },
-        { id: "volume",      name: "Volume",      glyph: "VOL", desc: "PipeWire output volume and mute" },
         { id: "status",       name: "Status Array", glyph: "◉", desc: "Battery, network, Bluetooth, brightness" },
         { id: "tray",         name: "System Tray",  glyph: "⋯", desc: "StatusNotifier tray icons" },
         { id: "controls",     name: "Controls",     glyph: "⚙", desc: "Quick actions and lock" }
@@ -762,7 +761,7 @@ PanelWindow {
                                     desc: "Apps, music, system stats, and the clock, evenly weighted.",
                                     start: ["launcher", "workspaces"],
                                     center: ["clock", "media"],
-                                    end: ["system_stats", "volume", "status", "controls"]
+                                    end: ["system_stats", "status", "controls"]
                                 },
                                 {
                                     name: "Minimalist Zen",
@@ -783,7 +782,7 @@ PanelWindow {
                                     desc: "Every widget turned on at once.",
                                     start: ["launcher", "workspaces", "window_title"],
                                     center: ["media"],
-                                    end: ["system_stats", "volume", "status", "clock", "tray", "controls"]
+                                    end: ["system_stats", "status", "clock", "tray", "controls"]
                                 }
                             ]
 

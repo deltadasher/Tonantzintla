@@ -41,4 +41,12 @@ BarIsland {
         onActivated: root.toggleEphemeris("system")
     }
 
+    StatusPill {
+        visible: root.isVertical && Settings.showAudio
+        code: Audio.muted ? "MUT" : "VOL"
+        value: Audio.percent + "%"
+        warning: Audio.muted
+        onActivated: root.toggleEphemeris("audio")
+        onScrolled: function(delta) { Audio.change(delta > 0 ? 5 : -5); }
+    }
 }

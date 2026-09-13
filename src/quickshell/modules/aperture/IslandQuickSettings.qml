@@ -41,7 +41,6 @@ PanelWindow {
         window_title: "▭",
         clock: "◷",
         system_stats: "▤",
-        volume: "VOL",
         status: "◉",
         tray: "⋯",
         controls: "⚙"
@@ -54,7 +53,6 @@ PanelWindow {
         window_title: "Focused window",
         clock: "Clock and calendar",
         system_stats: "System stats",
-        volume: "Volume",
         status: "Status and controls",
         tray: "System tray",
         controls: "Quick controls"
@@ -569,34 +567,6 @@ PanelWindow {
                 }
             }
 
-            // VOLUME SPECIFIC SETTINGS
-            ColumnLayout {
-                visible: ShellState.activeIslandSettingsId === "volume"
-                Layout.fillWidth: true
-                spacing: 8
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    Text { Layout.fillWidth: true; text: "Show volume in bar"; color: Theme.moon; font.pixelSize: 12 }
-                    Rectangle {
-                        implicitWidth: 44; implicitHeight: 22; radius: 11
-                        color: Settings.showAudio ? Theme.accent : Theme.controlRest
-                        Rectangle {
-                            x: Settings.showAudio ? 24 : 2; y: 2; width: 18; height: 18; radius: 9
-                            color: Settings.showAudio ? Theme.void_ : Theme.muted
-                            Behavior on x { NumberAnimation { duration: Settings.motion ? 150 : 0 } }
-                        }
-                        MouseArea { anchors.fill: parent; onClicked: Settings.showAudio = !Settings.showAudio }
-                    }
-                }
-                Rectangle {
-                    Layout.fillWidth: true; implicitHeight: 30; radius: 7
-                    color: volumeOpenBtn.containsMouse ? Theme.controlActive : Theme.controlRest
-                    Text { anchors.centerIn: parent; text: "Open acoustic routing"; color: Theme.accent; font.pixelSize: 11; font.bold: true }
-                    MouseArea { id: volumeOpenBtn; anchors.fill: parent; hoverEnabled: true; onClicked: { ShellState.closeIslandSettings(); ShellState.openEphemeris("audio"); } }
-                }
-            }
-
             // 4. WORKSPACES SPECIFIC SETTINGS
             ColumnLayout {
                 visible: ShellState.activeIslandSettingsId === "workspaces"
@@ -617,7 +587,7 @@ PanelWindow {
 
             // 5. OTHER ISLANDS (Generic Launchers)
             ColumnLayout {
-                visible: ["clock", "status", "media", "volume", "workspaces"].indexOf(ShellState.activeIslandSettingsId) === -1
+                visible: ["clock", "status", "media", "workspaces"].indexOf(ShellState.activeIslandSettingsId) === -1
                 Layout.fillWidth: true
                 spacing: 6
                 Text {
