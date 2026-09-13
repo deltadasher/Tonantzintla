@@ -35,13 +35,15 @@ PanelWindow {
 
     function captureRequestedAnchor() {
         displayedAnchorValid = ShellState.ephemerisAnchorValid
-            && ShellState.ephemerisOutput === outputName;
+            && (ShellState.ephemerisOutput.length === 0
+                || ShellState.ephemerisOutput === outputName);
         displayedAnchorX = ShellState.ephemerisAnchorX;
         displayedAnchorY = ShellState.ephemerisAnchorY;
         displayedAnchorWidth = ShellState.ephemerisAnchorWidth;
         displayedAnchorHeight = ShellState.ephemerisAnchorHeight;
         displayedAnchorEdge = ShellState.ephemerisAnchorEdge;
     }
+    Component.onCompleted: captureRequestedAnchor()
     readonly property var widgetLayout: {
         const layout = Registry.getLayout(transition.activeTab, width, height,
             topClearance, bottomClearance, leftClearance, rightClearance,
