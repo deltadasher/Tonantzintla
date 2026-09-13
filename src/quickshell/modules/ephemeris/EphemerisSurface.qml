@@ -66,6 +66,11 @@ PanelWindow {
     }
     readonly property color moduleTone: Theme.moduleAccent(transition.activeTab)
     readonly property bool immersiveWidget: transition.activeTab === "walls"
+    readonly property real apertureSurfaceOpacity: Settings.barMode === "capsules"
+        ? Math.min(0.82, Settings.barOpacity * 0.78)
+        : Math.min(0.86, Settings.barOpacity * 0.82)
+    readonly property color instrumentColor: Qt.rgba(Theme.mantle.r,
+        Theme.mantle.g, Theme.mantle.b, apertureSurfaceOpacity)
 
     visible: transition.mounted && targetScreen
     color: "transparent"
@@ -166,6 +171,7 @@ PanelWindow {
             anchors.fill: parent
             geometry: surfaceGeometry
             edge: root.anchorEdge
+            fillColor: root.instrumentColor
             visible: root.anchoredInstrument && !root.immersiveWidget
                 && transition.revealProgress > 0.01
             opacity: transition.revealProgress
@@ -178,7 +184,7 @@ PanelWindow {
             // The geometry expands into the solid instrument backing and rounded mask.
             // Parallax stays open; Resonance and other panels own rounded, clipped containment.
             radius: surfaceGeometry.radius
-            color: root.immersiveWidget ? "transparent" : Theme.mantle
+            color: root.immersiveWidget ? "transparent" : root.instrumentColor
             clip: true
             opacity: Settings.motion ? 0.80 + 0.20 * transition.contentProgress : 1
             scale: Settings.motion && Settings.motionStyle !== "rise"

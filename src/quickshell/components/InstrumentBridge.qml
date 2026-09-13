@@ -7,12 +7,14 @@ Canvas {
     id: root
     required property var geometry
     property string edge: "top"
+    property color fillColor: Theme.mantle
 
     antialiasing: true
     onVisibleChanged: requestPaint()
     onWidthChanged: requestPaint()
     onHeightChanged: requestPaint()
     onEdgeChanged: requestPaint()
+    onFillColorChanged: requestPaint()
 
     Connections {
         target: root.geometry
@@ -69,34 +71,35 @@ Canvas {
         const g = geometry;
         const source = g.origin;
         const amount = g.amount;
-        const sourceHalf = Math.max(4, Math.min(11,
-            (edge === "top" || edge === "bottom" ? source.width : source.height) * 0.22));
-        const landingHalf = 7 + amount * 9;
+        const sourceHalf = Math.max(6, Math.min(20,
+            (edge === "top" || edge === "bottom" ? source.width : source.height) * 0.34));
+        const landingHalf = sourceHalf + 5 + amount * 7;
+        const overlap = 2;
 
         ctx.beginPath();
         if (edge === "bottom") {
             const sx = source.x + source.width / 2;
-            const sy = source.y;
+            const sy = source.y + overlap;
             const dx = clamp(sx, g.x + g.radius, g.x + g.width - g.radius);
-            verticalNeck(ctx, sx, sy, dx, g.y + g.height, sourceHalf, landingHalf);
+            verticalNeck(ctx, sx, sy, dx, g.y + g.height - overlap, sourceHalf, landingHalf);
         } else if (edge === "left") {
-            const sx = source.x + source.width;
+            const sx = source.x + source.width - overlap;
             const sy = source.y + source.height / 2;
             const dy = clamp(sy, g.y + g.radius, g.y + g.height - g.radius);
-            horizontalNeck(ctx, sx, sy, g.x, dy, sourceHalf, landingHalf);
+            horizontalNeck(ctx, sx, sy, g.x + overlap, dy, sourceHalf, landingHalf);
         } else if (edge === "right") {
-            const sx = source.x;
+            const sx = source.x + overlap;
             const sy = source.y + source.height / 2;
             const dy = clamp(sy, g.y + g.radius, g.y + g.height - g.radius);
-            horizontalNeck(ctx, sx, sy, g.x + g.width, dy, sourceHalf, landingHalf);
+            horizontalNeck(ctx, sx, sy, g.x + g.width - overlap, dy, sourceHalf, landingHalf);
         } else {
             const sx = source.x + source.width / 2;
-            const sy = source.y + source.height;
+            const sy = source.y + source.height - overlap;
             const dx = clamp(sx, g.x + g.radius, g.x + g.width - g.radius);
-            verticalNeck(ctx, sx, sy, dx, g.y, sourceHalf, landingHalf);
+            verticalNeck(ctx, sx, sy, dx, g.y + overlap, sourceHalf, landingHalf);
         }
         ctx.closePath();
-        ctx.fillStyle = Theme.mantle;
+        ctx.fillStyle = fillColor;
         ctx.fill();
     }
 }

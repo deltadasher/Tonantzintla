@@ -128,11 +128,19 @@ TestCase {
             const layout = Registry.getLayout("settings", width, height,
                 clearance, clearance, clearance, clearance);
             Registry.attachLayout(layout, anchors[edge], edge, width, height,
-                clearance, clearance, clearance, clearance);
-            verify(layout.x >= clearance);
-            verify(layout.y >= clearance);
-            verify(layout.x + layout.width <= width - clearance);
-            verify(layout.y + layout.height <= height - clearance);
+                clearance, clearance, clearance, clearance, 6);
+            verify(layout.x >= 0);
+            verify(layout.y >= 0);
+            verify(layout.x + layout.width <= width);
+            verify(layout.y + layout.height <= height);
+            if (edge === "top")
+                compare(layout.y, anchors.top.y + anchors.top.height + 6);
+            else if (edge === "bottom")
+                compare(layout.y + layout.height, anchors.bottom.y - 6);
+            else if (edge === "left")
+                compare(layout.x, anchors.left.x + anchors.left.width + 6);
+            else
+                compare(layout.x + layout.width, anchors.right.x - 6);
         }
     }
 }
