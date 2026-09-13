@@ -39,7 +39,7 @@ function clamp(value, minimum, maximum) {
     return Math.max(Math.min(minimum, maximum), Math.min(maximum, value));
 }
 function attachLayout(layout, anchor, edge, screenWidth, screenHeight,
-        topClearance, bottomClearance, leftClearance, rightClearance) {
+        topClearance, bottomClearance, leftClearance, rightClearance, attachmentGap) {
     if (!layout || !anchor || layout.placement === "horizon")
         return layout;
 
@@ -49,18 +49,21 @@ function attachLayout(layout, anchor, edge, screenWidth, screenHeight,
     var maxX = screenWidth - rightClearance - layout.width;
     var minY = topClearance;
     var maxY = screenHeight - bottomClearance - layout.height;
+    var gap = attachmentGap === undefined ? 6 : Math.max(0, attachmentGap);
 
     if (edge === "top") {
         layout.x = clamp(centerX - layout.width / 2, minX, maxX);
-        layout.y = clamp(Math.max(minY, anchor.y + anchor.height), minY, maxY);
+        layout.y = clamp(anchor.y + anchor.height + gap, 0, maxY);
     } else if (edge === "bottom") {
         layout.x = clamp(centerX - layout.width / 2, minX, maxX);
-        layout.y = clamp(Math.min(maxY, anchor.y - layout.height), minY, maxY);
+        layout.y = clamp(anchor.y - gap - layout.height, minY,
+            screenHeight - layout.height);
     } else if (edge === "left") {
-        layout.x = clamp(Math.max(minX, anchor.x + anchor.width), minX, maxX);
+        layout.x = clamp(anchor.x + anchor.width + gap, 0, maxX);
         layout.y = clamp(centerY - layout.height / 2, minY, maxY);
     } else if (edge === "right") {
-        layout.x = clamp(Math.min(maxX, anchor.x - layout.width), minX, maxX);
+        layout.x = clamp(anchor.x - gap - layout.width, minX,
+            screenWidth - layout.width);
         layout.y = clamp(centerY - layout.height / 2, minY, maxY);
     }
     return layout;
