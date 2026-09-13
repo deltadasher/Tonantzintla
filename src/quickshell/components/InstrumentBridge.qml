@@ -1,19 +1,22 @@
 import QtQuick
 import ".."
 
-// A bounded visual neck between a real bar control and its instrument. The
-// fullscreen host remains fixed; only this canvas and the internal deck move.
+// One backing surface for an instrument and its attachment lip. Keeping both
+// shapes in a single Canvas fill prevents translucent overlap seams: alpha is
+// applied once to the complete silhouette, as it would be in an SDF blob group.
 Canvas {
     id: root
     required property var geometry
     property string edge: "top"
     property color fillColor: Theme.mantle
+    property bool attached: true
 
     antialiasing: true
     onVisibleChanged: requestPaint()
     onWidthChanged: requestPaint()
     onHeightChanged: requestPaint()
     onEdgeChanged: requestPaint()
+    onAttachedChanged: requestPaint()
     onFillColorChanged: requestPaint()
 
     Connections {
@@ -28,13 +31,27 @@ Canvas {
         return Math.max(minimum, Math.min(maximum, value));
     }
 
-    function verticalNeck(ctx, sourceX, sourceY, landingX, landingY,
+    function roundedRect(ctx, x, y, width, height, radius) {
+        const r = Math.max(0, Math.min(radius, width / 2, height / 2));
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + width - r, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+        ctx.lineTo(x + width, y + height - r);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+        ctx.lineTo(x + r, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+    }
+
+    function verticalLip(ctx, sourceX, sourceY, landingX, landingY,
             sourceHalf, landingHalf) {
         const distance = landingY - sourceY;
         if (Math.abs(distance) < 0.5)
             return;
-        const controlOne = sourceY + distance * 0.38;
-        const controlTwo = sourceY + distance * 0.72;
+        const controlOne = sourceY + distance * 0.22;
+        const controlTwo = sourceY + distance * 0.70;
         ctx.moveTo(sourceX - sourceHalf, sourceY);
         ctx.bezierCurveTo(sourceX - sourceHalf, controlOne,
             landingX - landingHalf, controlTwo, landingX - landingHalf, landingY);
@@ -45,13 +62,13 @@ Canvas {
             sourceX - sourceHalf, sourceY);
     }
 
-    function horizontalNeck(ctx, sourceX, sourceY, landingX, landingY,
+    function horizontalLip(ctx, sourceX, sourceY, landingX, landingY,
             sourceHalf, landingHalf) {
         const distance = landingX - sourceX;
         if (Math.abs(distance) < 0.5)
             return;
-        const controlOne = sourceX + distance * 0.38;
-        const controlTwo = sourceX + distance * 0.72;
+        const controlOne = sourceX + distance * 0.22;
+        const controlTwo = sourceX + distance * 0.70;
         ctx.moveTo(sourceX, sourceY - sourceHalf);
         ctx.bezierCurveTo(controlOne, sourceY - sourceHalf,
             controlTwo, landingY - landingHalf, landingX, landingY - landingHalf);
@@ -71,34 +88,41 @@ Canvas {
         const g = geometry;
         const source = g.origin;
         const amount = g.amount;
-        const sourceHalf = Math.max(6, Math.min(20,
-            (edge === "top" || edge === "bottom" ? source.width : source.height) * 0.34));
-        const landingHalf = sourceHalf + 5 + amount * 7;
-        const overlap = 2;
+        const sourceHalf = Math.max(8, Math.min(28,
+            (edge === "top" || edge === "bottom" ? source.width : source.height) * 0.42));
+        const landingHalf = sourceHalf + 10 + amount * 10;
+        const overlap = 6;
 
         ctx.beginPath();
+        roundedRect(ctx, g.x, g.y, g.width, g.height, g.radius);
+
+        if (!attached) {
+            ctx.fillStyle = fillColor;
+            ctx.fill();
+            return;
+        }
+
         if (edge === "bottom") {
             const sx = source.x + source.width / 2;
             const sy = source.y + overlap;
             const dx = clamp(sx, g.x + g.radius, g.x + g.width - g.radius);
-            verticalNeck(ctx, sx, sy, dx, g.y + g.height - overlap, sourceHalf, landingHalf);
+            verticalLip(ctx, sx, sy, dx, g.y + g.height - overlap, sourceHalf, landingHalf);
         } else if (edge === "left") {
             const sx = source.x + source.width - overlap;
             const sy = source.y + source.height / 2;
             const dy = clamp(sy, g.y + g.radius, g.y + g.height - g.radius);
-            horizontalNeck(ctx, sx, sy, g.x + overlap, dy, sourceHalf, landingHalf);
+            horizontalLip(ctx, sx, sy, g.x + overlap, dy, sourceHalf, landingHalf);
         } else if (edge === "right") {
             const sx = source.x + overlap;
             const sy = source.y + source.height / 2;
             const dy = clamp(sy, g.y + g.radius, g.y + g.height - g.radius);
-            horizontalNeck(ctx, sx, sy, g.x + g.width - overlap, dy, sourceHalf, landingHalf);
+            horizontalLip(ctx, sx, sy, g.x + g.width - overlap, dy, sourceHalf, landingHalf);
         } else {
             const sx = source.x + source.width / 2;
             const sy = source.y + source.height - overlap;
             const dx = clamp(sx, g.x + g.radius, g.x + g.width - g.radius);
-            verticalNeck(ctx, sx, sy, dx, g.y + overlap, sourceHalf, landingHalf);
+            verticalLip(ctx, sx, sy, dx, g.y + overlap, sourceHalf, landingHalf);
         }
-        ctx.closePath();
         ctx.fillStyle = fillColor;
         ctx.fill();
     }
