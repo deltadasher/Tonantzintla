@@ -14,6 +14,16 @@ to come home to. Eccentricity belongs on the desktop.
 **Parallax** is your wallpaper library. **Resonance** handles media, lyrics,
 audio and pitch. **Optics** captures the screen. **Umbra** locks the session.
 
+### Explore the suite
+
+Use the five public entry points to see what each part does and find its source:
+
+[Aperture](https://deltadasher.github.io/Tonantzintla/suite/aperture.html) ·
+[Ephemeris](https://deltadasher.github.io/Tonantzintla/suite/ephemeris.html) ·
+[Parallax](https://deltadasher.github.io/Tonantzintla/suite/parallax.html) ·
+[Resonance](https://deltadasher.github.io/Tonantzintla/suite/resonance.html) ·
+[Umbra](https://deltadasher.github.io/Tonantzintla/suite/umbra.html)
+
 ### Install
 
 ```bash
