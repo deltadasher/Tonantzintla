@@ -87,7 +87,7 @@
     .threshold-curtain.top { top:0; transform-origin:left bottom; }
     .threshold-curtain.bottom { bottom:0; transform-origin:left top; background:linear-gradient(65deg,#07080c,#0d0e16 63%,#13111a); }
     .threshold-seam { position:absolute; z-index:2; top:50%; left:50%; width:0; height:1px; opacity:0; background:linear-gradient(90deg,rgba(233,184,114,.05),var(--amber),#fff4d8); box-shadow:0 0 10px 2px rgba(233,184,114,.72),0 0 34px 8px rgba(233,184,114,.25); transform-origin:left center; }
-    .threshold-hole { position:relative; width:min(52vw,520px); border:0; padding:0; color:var(--ink); background:none; cursor:pointer; transform:translateX(-110vw) rotate(-14deg); animation:threshold-arrive 1.35s cubic-bezier(.16,.78,.22,1) .12s forwards; filter:drop-shadow(0 25px 45px rgba(0,0,0,.7)); }
+    .threshold-hole { position:relative; z-index:3; width:min(52vw,520px); border:0; padding:0; color:var(--ink); background:none; cursor:pointer; transform:translateX(-110vw) rotate(-14deg); animation:threshold-arrive 1.35s cubic-bezier(.16,.78,.22,1) .12s forwards; filter:drop-shadow(0 25px 45px rgba(0,0,0,.7)); }
     .threshold-hole img { display:block; width:100%; pointer-events:none; transform:scale(1) rotate(0); transform-origin:50% 46%; transition:transform .55s cubic-bezier(.16,1,.3,1),filter .55s ease; }
     .threshold-hole:hover img { transform:scale(1.065) rotate(-2.5deg); filter:drop-shadow(0 0 22px rgba(233,184,114,.32)); }
     .threshold-hole:focus-visible { outline:1px solid var(--amber); outline-offset:14px; border-radius:50%; }
