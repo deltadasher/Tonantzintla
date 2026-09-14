@@ -22,8 +22,8 @@
     a { color:inherit; }
     .wrap { width:min(calc(100% - 44px),var(--max)); margin:auto; }
     nav { height:82px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); }
-    .brand { display:flex; align-items:center; gap:12px; letter-spacing:.2em; font-size:12px; font-weight:750; text-decoration:none; }
-    .brand-mark { width:26px; height:26px; display:grid; place-items:center; border-radius:50%; color:#090a0f; background:var(--amber); box-shadow:0 0 32px rgba(233,184,114,.38); font-size:13px; }
+    .brand { display:flex; align-items:center; gap:10px; letter-spacing:.2em; font-size:12px; font-weight:750; text-decoration:none; }
+    .brand-mark { width:32px; height:27px; display:block; object-fit:contain; filter:drop-shadow(0 0 12px rgba(233,184,114,.38)); }
     .nav-meta { color:var(--muted); font:11px ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.14em; }
     .hero { min-height:650px; display:grid; grid-template-columns:1.05fr .95fr; align-items:center; gap:44px; padding:72px 0 82px; }
     .eyebrow { color:var(--amber); font:11px ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.2em; text-transform:uppercase; }
@@ -41,8 +41,6 @@
     .orbital img { position:relative; width:min(100%,600px); filter:drop-shadow(0 24px 42px rgba(0,0,0,.65)); animation:float 8s ease-in-out infinite; }
     .orbital-label { position:absolute; right:0; bottom:5%; color:var(--muted); font:10px ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.16em; }
     @keyframes float { 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-9px) rotate(1deg)} }
-    .signal { display:flex; flex-wrap:wrap; gap:24px; padding:16px 0 25px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); color:var(--muted); font:11px ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.08em; text-transform:uppercase; }
-    .signal b { color:var(--ink); font-weight:600; }
     section { padding:100px 0; }
     .section-intro { display:flex; justify-content:space-between; align-items:end; gap:30px; margin-bottom:34px; }
     h2 { margin:10px 0 0; font-size:clamp(30px,4vw,50px); line-height:1.05; letter-spacing:-.05em; font-weight:600; }
@@ -79,7 +77,7 @@
 <body>
   <header class="wrap">
     <nav aria-label="Primary navigation">
-      <a class="brand" href="./" aria-label="Tonantzintla home"><span class="brand-mark">✦</span><span>TONANTZINTLA</span></a>
+      <a class="brand" href="./" aria-label="Tonantzintla home"><img class="brand-mark" src="wabi-sabi-black-hole-mark.svg" alt=""><span>TONANTZINTLA</span></a>
       <span class="nav-meta">NIRI / QUICKSHELL / ARCH</span>
     </nav>
   </header>
@@ -89,11 +87,10 @@
         <div class="eyebrow">Use Tonantzintla 1.1</div>
         <h1>Make your desktop feel like yours.</h1>
         <p class="lede">Tonantzintla is a configurable Linux desktop shell for Niri and Quickshell. Arrange a useful bar, open tools when you need them, and give the whole desktop a bit more character.</p>
-        <div class="actions"><a class="button primary" href="https://github.com/deltadasher/Tonantzintla">Open the source <span aria-hidden="true">↗</span></a><a class="button secondary" href="#instruments">Explore the observatory <span aria-hidden="true">↓</span></a></div>
+        <div class="actions"><a class="button primary" href="https://github.com/deltadasher/Tonantzintla">Open the source <span aria-hidden="true">↗</span></a></div>
       </div>
       <div class="orbital" aria-label="Tonantzintla Wabi-Sabi Black Hole illustration"><img src="wabi-sabi-black-hole.svg" alt="Amber accretion stream around a dark center"><span class="orbital-label">WABI-SABI / TONANTZINTLA 1.1</span></div>
     </section>
-    <div class="wrap signal" aria-label="Project facts"><span><b>01</b> built for Niri</span><span><b>02</b> Quickshell native</span><span><b>03</b> Arch first</span><span><b>04</b> GPL-3.0-or-later</span></div>
     <section id="instruments" class="wrap">
       <div class="section-intro"><div><div class="eyebrow">Use the instrument deck</div><h2>Pick the tools you need.</h2></div><p>Keep the bar close for everyday controls. Open the larger tools when you need more room, then arrange everything to suit your workflow.</p></div>
       <div class="instruments"><article class="instrument"><div class="instrument-icon">⌁</div><h3>Aperture</h3><p>Keep workspaces, media, time, tray items, and system readings in one bar.</p></article><article class="instrument"><div class="instrument-icon">◌</div><h3>Ephemeris</h3><p>Open search, settings, audio, power, network, screenshots, and weather when you need them.</p></article><article class="instrument"><div class="instrument-icon">♫</div><h3>Resonance</h3><p>Control your music, read lyrics, watch the spectrum, and shape the sound.</p></article><article class="instrument"><div class="instrument-icon">◒</div><h3>Parallax</h3><p>Browse wallpapers and let the background change with the way you use the desktop.</p></article><article class="instrument"><div class="instrument-icon">✦</div><h3>Umbra</h3><p>Lock, preview, and manage your session across every connected display.</p></article></div>
