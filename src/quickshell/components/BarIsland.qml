@@ -47,9 +47,9 @@ Rectangle {
     color: separate && !(ShellState.barEditMode && barWindow)
         ? surfaceHover.hovered && reactive
             ? Qt.rgba(Theme.mantle.r, Theme.mantle.g, Theme.mantle.b,
-                Math.min(0.88, Settings.barOpacity * 0.86))
+                Settings.barSurfaceOpacity)
             : Qt.rgba(Theme.void_.r, Theme.void_.g, Theme.void_.b,
-                Math.min(0.82, Settings.barOpacity * 0.78))
+                Settings.barSurfaceOpacity)
         : "transparent"
     // Studio mode keeps the bar surface transparent so the desktop remains
     // visible; retain a real outline around each live island so it does not

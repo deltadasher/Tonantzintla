@@ -66,9 +66,7 @@ PanelWindow {
     }
     readonly property color moduleTone: Theme.moduleAccent(transition.activeTab)
     readonly property bool immersiveWidget: transition.activeTab === "walls"
-    readonly property real apertureSurfaceOpacity: Settings.barMode === "capsules"
-        ? Math.min(0.82, Settings.barOpacity * 0.78)
-        : Math.min(0.86, Settings.barOpacity * 0.82)
+    readonly property real apertureSurfaceOpacity: Settings.barSurfaceOpacity
     // Colour stays opaque inside the Canvas. The aperture-derived alpha is
     // applied once to the complete union, avoiding darker overlap at the lip.
     readonly property color instrumentColor: Theme.void_

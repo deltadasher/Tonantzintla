@@ -119,7 +119,7 @@ Item {
         height: window.isVertical ? (window.height - window.shellMargin * 2) : window.bodyThickness
         radius: window.docked ? 0 : 14
         color: ShellState.barEditMode ? "transparent" : Qt.rgba(Theme.void_.r, Theme.void_.g, Theme.void_.b,
-            Math.min(0.86, Settings.barOpacity * 0.82))
+            Settings.barSurfaceOpacity)
         border.width: 0
     }
 

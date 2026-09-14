@@ -38,6 +38,10 @@ QtObject {
     property alias barMode: settingsAdapter.barMode
     property alias barMargin: settingsAdapter.barMargin
     property alias barOpacity: settingsAdapter.barOpacity
+    // The UI exposes this value as a literal percentage. Keep one canonical,
+    // bounded render value so 100% means fully opaque in every bar-connected
+    // surface instead of being silently capped by individual components.
+    readonly property real barSurfaceOpacity: Math.max(0, Math.min(1, barOpacity))
     property alias quickActionsEnabled: settingsAdapter.quickActionsEnabled
     property alias quickActionsEdge: settingsAdapter.quickActionsEdge
     property alias umbraMotion: settingsAdapter.umbraMotion
