@@ -49,8 +49,8 @@ function attachLayout(layout, anchor, edge, screenWidth, screenHeight,
     var maxX = screenWidth - rightClearance - layout.width;
     var minY = topClearance;
     var maxY = screenHeight - bottomClearance - layout.height;
-    // Sink the growing body slightly into its source. This produces a direct
-    // boolean-union silhouette instead of a panel suspended from a neck.
+    // Sink the body beneath Aperture's source capsule. Aperture remains the
+    // visible cap, hiding the seam without a separately drawn connector.
     var gap = attachmentGap === undefined ? -6 : Math.max(-8, attachmentGap);
 
     if (edge === "top") {
