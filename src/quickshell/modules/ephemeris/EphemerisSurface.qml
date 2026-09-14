@@ -66,7 +66,9 @@ PanelWindow {
     }
     readonly property color moduleTone: Theme.moduleAccent(transition.activeTab)
     readonly property bool immersiveWidget: transition.activeTab === "walls"
-    readonly property real apertureSurfaceOpacity: Settings.barSurfaceOpacity
+    // Ephemeris is a reading surface. It remains opaque even when Aperture is
+    // configured as glass so wallpaper detail cannot compete with its content.
+    readonly property real instrumentSurfaceOpacity: 1.0
     // Colour stays opaque inside the Canvas. The aperture-derived alpha is
     // applied once to the complete union, avoiding darker overlap at the lip.
     readonly property color instrumentColor: Theme.void_
@@ -175,10 +177,9 @@ PanelWindow {
             geometry: surfaceGeometry
             edge: root.anchorEdge
             fillColor: root.instrumentColor
-            attached: root.anchoredInstrument
             visible: !root.immersiveWidget
                 && transition.revealProgress > 0.01
-            opacity: root.apertureSurfaceOpacity
+            opacity: root.instrumentSurfaceOpacity
         }
 
         ClippingRectangle {

@@ -1,22 +1,20 @@
 import QtQuick
 import ".."
 
-// One backing surface for an instrument and its attachment lip. Keeping both
-// shapes in a single Canvas fill prevents translucent overlap seams: alpha is
-// applied once to the complete silhouette, as it would be in an SDF blob group.
+// One backing surface that grows directly from an instrument's source bounds.
+// The animated rounded rectangle is the blob; there is deliberately no second
+// connector shape, neck, or inward-curving bridge to expose the wallpaper.
 Canvas {
     id: root
     required property var geometry
     property string edge: "top"
     property color fillColor: Theme.mantle
-    property bool attached: true
 
     antialiasing: true
     onVisibleChanged: requestPaint()
     onWidthChanged: requestPaint()
     onHeightChanged: requestPaint()
     onEdgeChanged: requestPaint()
-    onAttachedChanged: requestPaint()
     onFillColorChanged: requestPaint()
 
     Connections {
@@ -45,40 +43,6 @@ Canvas {
         ctx.closePath();
     }
 
-    function verticalLip(ctx, sourceX, sourceY, landingX, landingY,
-            sourceHalf, landingHalf) {
-        const distance = landingY - sourceY;
-        if (Math.abs(distance) < 0.5)
-            return;
-        const controlOne = sourceY + distance * 0.22;
-        const controlTwo = sourceY + distance * 0.70;
-        ctx.moveTo(sourceX - sourceHalf, sourceY);
-        ctx.bezierCurveTo(sourceX - sourceHalf, controlOne,
-            landingX - landingHalf, controlTwo, landingX - landingHalf, landingY);
-        ctx.lineTo(landingX + landingHalf, landingY);
-        ctx.bezierCurveTo(landingX + landingHalf, controlTwo,
-            sourceX + sourceHalf, controlOne, sourceX + sourceHalf, sourceY);
-        ctx.quadraticCurveTo(sourceX, sourceY - Math.sign(distance) * sourceHalf * 0.35,
-            sourceX - sourceHalf, sourceY);
-    }
-
-    function horizontalLip(ctx, sourceX, sourceY, landingX, landingY,
-            sourceHalf, landingHalf) {
-        const distance = landingX - sourceX;
-        if (Math.abs(distance) < 0.5)
-            return;
-        const controlOne = sourceX + distance * 0.22;
-        const controlTwo = sourceX + distance * 0.70;
-        ctx.moveTo(sourceX, sourceY - sourceHalf);
-        ctx.bezierCurveTo(controlOne, sourceY - sourceHalf,
-            controlTwo, landingY - landingHalf, landingX, landingY - landingHalf);
-        ctx.lineTo(landingX, landingY + landingHalf);
-        ctx.bezierCurveTo(controlTwo, landingY + landingHalf,
-            controlOne, sourceY + sourceHalf, sourceX, sourceY + sourceHalf);
-        ctx.quadraticCurveTo(sourceX - Math.sign(distance) * sourceHalf * 0.35,
-            sourceY, sourceX, sourceY - sourceHalf);
-    }
-
     onPaint: {
         const ctx = getContext("2d");
         ctx.reset();
@@ -86,43 +50,8 @@ Canvas {
             return;
 
         const g = geometry;
-        const source = g.origin;
-        const amount = g.amount;
-        const sourceHalf = Math.max(8, Math.min(28,
-            (edge === "top" || edge === "bottom" ? source.width : source.height) * 0.42));
-        const landingHalf = sourceHalf + 10 + amount * 10;
-        const landingInset = 8;
-
         ctx.beginPath();
         roundedRect(ctx, g.x, g.y, g.width, g.height, g.radius);
-
-        if (!attached) {
-            ctx.fillStyle = fillColor;
-            ctx.fill();
-            return;
-        }
-
-        if (edge === "bottom") {
-            const sx = source.x + source.width / 2;
-            const sy = source.y;
-            const dx = clamp(sx, g.x + g.radius, g.x + g.width - g.radius);
-            verticalLip(ctx, sx, sy, dx, g.y + g.height - landingInset, sourceHalf, landingHalf);
-        } else if (edge === "left") {
-            const sx = source.x + source.width;
-            const sy = source.y + source.height / 2;
-            const dy = clamp(sy, g.y + g.radius, g.y + g.height - g.radius);
-            horizontalLip(ctx, sx, sy, g.x + landingInset, dy, sourceHalf, landingHalf);
-        } else if (edge === "right") {
-            const sx = source.x;
-            const sy = source.y + source.height / 2;
-            const dy = clamp(sy, g.y + g.radius, g.y + g.height - g.radius);
-            horizontalLip(ctx, sx, sy, g.x + g.width - landingInset, dy, sourceHalf, landingHalf);
-        } else {
-            const sx = source.x + source.width / 2;
-            const sy = source.y + source.height;
-            const dx = clamp(sx, g.x + g.radius, g.x + g.width - g.radius);
-            verticalLip(ctx, sx, sy, dx, g.y + landingInset, sourceHalf, landingHalf);
-        }
         ctx.fillStyle = fillColor;
         ctx.fill();
     }

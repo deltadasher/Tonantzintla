@@ -49,9 +49,9 @@ function attachLayout(layout, anchor, edge, screenWidth, screenHeight,
     var maxX = screenWidth - rightClearance - layout.width;
     var minY = topClearance;
     var maxY = screenHeight - bottomClearance - layout.height;
-    // The backing lip occupies this shared edge, so the panel body should meet
-    // the source rather than hanging from a visible bridge.
-    var gap = attachmentGap === undefined ? 0 : Math.max(-8, attachmentGap);
+    // Sink the growing body slightly into its source. This produces a direct
+    // boolean-union silhouette instead of a panel suspended from a neck.
+    var gap = attachmentGap === undefined ? -6 : Math.max(-8, attachmentGap);
 
     if (edge === "top") {
         layout.x = clamp(centerX - layout.width / 2, minX, maxX);
