@@ -10,7 +10,8 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://deltadasher.github.io/Tonantzintla/">
   <meta property="og:image" content="https://raw.githubusercontent.com/deltadasher/Tonantzintla/main/docs/wabi-sabi-black-hole.svg">
-  <title>Tonantzintla — fluid Linux desktop shell</title>
+  <link rel="icon" type="image/svg+xml" href="wabi-sabi-black-hole-mark.svg?v=1">
+  <title>Tonantzintla</title>
   <style>
     :root { color-scheme: dark; --void:#090a0f; --ink:#f3f0e9; --muted:#aaa9b0; --line:rgba(225,214,196,.14); --amber:#e9b872; --lilac:#b7b8e8; --panel:rgba(21,22,30,.76); --max:1180px; }
     * { box-sizing:border-box; }
@@ -80,22 +81,25 @@
     footer { padding:30px 0 48px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; }
     footer .wrap { display:flex; justify-content:space-between; gap:20px; }
     footer a { color:var(--ink); text-underline-offset:4px; }
-    .threshold { position:fixed; inset:0; z-index:1000; display:grid; place-items:center; overflow:hidden; background:#08090e; perspective:1200px; transition:visibility 0s 1.45s; }
+    .threshold { position:fixed; inset:0; z-index:1000; display:grid; place-items:center; overflow:hidden; background:transparent; perspective:1200px; transition:visibility 0s 1.45s; }
     .threshold[hidden] { display:none; }
-    .threshold::before { content:""; position:absolute; inset:0; opacity:.55; background:radial-gradient(circle at 50% 50%,rgba(78,69,105,.28),transparent 31%),radial-gradient(circle at 20% 25%,rgba(233,184,114,.06),transparent 25%); }
-    .threshold-curtain { position:absolute; inset:0; background:linear-gradient(115deg,#07080c,#0d0e16 63%,#13111a); transform-origin:right center; will-change:transform,clip-path; }
-    .threshold-curtain::after { content:""; position:absolute; top:0; bottom:0; left:50%; width:1px; opacity:0; background:linear-gradient(transparent,var(--amber),transparent); box-shadow:0 0 24px 5px rgba(233,184,114,.45); }
+    .threshold-curtain { position:absolute; left:0; width:100%; height:50.1%; background:linear-gradient(115deg,#07080c,#0d0e16 63%,#13111a); will-change:transform,clip-path; }
+    .threshold-curtain.top { top:0; transform-origin:left bottom; }
+    .threshold-curtain.bottom { bottom:0; transform-origin:left top; background:linear-gradient(65deg,#07080c,#0d0e16 63%,#13111a); }
+    .threshold-seam { position:absolute; z-index:2; top:50%; left:50%; width:0; height:1px; opacity:0; background:linear-gradient(90deg,rgba(233,184,114,.05),var(--amber),#fff4d8); box-shadow:0 0 10px 2px rgba(233,184,114,.72),0 0 34px 8px rgba(233,184,114,.25); transform-origin:left center; }
     .threshold-hole { position:relative; width:min(52vw,520px); border:0; padding:0; color:var(--ink); background:none; cursor:pointer; transform:translateX(-110vw) rotate(-14deg); animation:threshold-arrive 1.35s cubic-bezier(.16,.78,.22,1) .12s forwards; filter:drop-shadow(0 25px 45px rgba(0,0,0,.7)); }
     .threshold-hole img { display:block; width:100%; pointer-events:none; transform:scale(1) rotate(0); transform-origin:50% 46%; transition:transform .55s cubic-bezier(.16,1,.3,1),filter .55s ease; }
     .threshold-hole:hover img { transform:scale(1.065) rotate(-2.5deg); filter:drop-shadow(0 0 22px rgba(233,184,114,.32)); }
     .threshold-hole:focus-visible { outline:1px solid var(--amber); outline-offset:14px; border-radius:50%; }
     .threshold.departing .threshold-hole { animation:threshold-depart 1.05s cubic-bezier(.55,.05,.72,.35) forwards; }
-    .threshold.departing .threshold-curtain::after { animation:cut-flare .5s ease .48s both; }
-    .threshold.departing .threshold-curtain { animation:peel-curtain .82s cubic-bezier(.65,.05,.36,1) .68s forwards; }
+    .threshold.departing .threshold-seam { animation:unzip-seam .68s cubic-bezier(.45,.05,.25,1) .4s forwards; }
+    .threshold.departing .threshold-curtain.top { animation:peel-top 1s cubic-bezier(.7,.03,.2,1) .43s forwards; }
+    .threshold.departing .threshold-curtain.bottom { animation:peel-bottom 1s cubic-bezier(.7,.03,.2,1) .43s forwards; }
     @keyframes threshold-arrive { 0%{transform:translateX(-110vw) rotate(-22deg)} 72%{transform:translateX(4vw) rotate(3deg)} 100%{transform:translateX(0) rotate(0)} }
     @keyframes threshold-depart { 0%{transform:translateX(0) rotate(0)} 34%{transform:translateX(0) rotate(400deg) scale(1.06)} 100%{transform:translateX(115vw) rotate(920deg) scale(.78)} }
-    @keyframes cut-flare { 0%{opacity:0;transform:scaleY(.05)} 45%{opacity:1;transform:scaleY(1)} 100%{opacity:0;transform:translateX(50vw) scaleY(1)} }
-    @keyframes peel-curtain { 0%{clip-path:polygon(0 0,100% 0,100% 100%,0 100%);transform:translateX(0)} 18%{clip-path:polygon(0 0,100% 0,100% 100%,4% 100%,0 50%,4% 0)} 100%{clip-path:polygon(0 0,100% 0,100% 100%,8% 100%,0 50%,8% 0);transform:translateX(108%) rotateY(-8deg)} }
+    @keyframes unzip-seam { 0%{width:0;opacity:0} 12%{opacity:1} 78%{width:56vw;opacity:1} 100%{width:62vw;opacity:0} }
+    @keyframes peel-top { 0%{clip-path:polygon(0 0,100% 0,100% 100%,0 100%);transform:translate(0,0) rotateX(0)} 38%{clip-path:polygon(0 0,100% 0,100% 100%,72% 100%,59% 86%,42% 72%,20% 58%,0 52%);transform:translate(0,0) rotateX(0)} 68%{clip-path:polygon(0 0,100% 0,100% 100%,88% 100%,70% 76%,45% 46%,18% 24%,0 18%);transform:translate(-8%,-7%) rotateX(-8deg)} 100%{clip-path:polygon(0 0,100% 0,100% 100%,96% 100%,70% 62%,38% 25%,0 4%);transform:translate(-108%,-30%) rotateX(-24deg) rotateZ(-4deg)} }
+    @keyframes peel-bottom { 0%{clip-path:polygon(0 0,100% 0,100% 100%,0 100%);transform:translate(0,0) rotateX(0)} 38%{clip-path:polygon(0 0,20% 42%,42% 28%,59% 14%,72% 0,100% 0,100% 100%,0 100%);transform:translate(0,0) rotateX(0)} 68%{clip-path:polygon(0 82%,18% 76%,45% 54%,70% 24%,88% 0,100% 0,100% 100%,0 100%);transform:translate(-8%,7%) rotateX(8deg)} 100%{clip-path:polygon(0 96%,38% 75%,70% 38%,96% 0,100% 0,100% 100%,0 100%);transform:translate(-108%,30%) rotateX(24deg) rotateZ(4deg)} }
     .portal-flight { position:fixed; z-index:1190; border-radius:50%; border:1px solid var(--amber); background:radial-gradient(circle,#08090e 0 48%,rgba(233,184,114,.88) 50%,#0c0d14 54%,rgba(183,184,232,.5) 57%,transparent 60%); box-shadow:0 0 35px rgba(233,184,114,.55); pointer-events:none; }
     .suite-portal { position:fixed; inset:0; z-index:1200; display:grid; grid-template-rows:48px 1fr; background:#090a0f; opacity:0; visibility:hidden; transition:opacity .35s ease,visibility 0s .35s; }
     .suite-portal.open { opacity:1; visibility:visible; transition-delay:0s; }
@@ -104,12 +108,14 @@
     .suite-portal iframe { width:100%; height:100%; border:0; background:var(--void); }
     @media (max-width:800px) { .hero,.manifesto{grid-template-columns:1fr;}.hero{padding-top:54px;}.orbital{min-height:260px}.instruments{grid-template-columns:1fr 1fr}.instrument,.instrument:nth-child(4),.instrument:nth-child(5){grid-column:span 1}.section-intro{display:block}.section-intro p{margin-top:16px}.nav-meta{display:none}.principle{grid-template-columns:90px 1fr} }
     @media (max-width:520px) { .wrap{width:min(calc(100% - 30px),var(--max));}.instruments{grid-template-columns:1fr}.instrument,.instrument:nth-child(4),.instrument:nth-child(5){grid-column:span 1}.orbital-label{right:5%;bottom:-2%}footer .wrap{display:block}footer .wrap span{display:block;margin-top:10px} }
-    @media (prefers-reduced-motion:reduce) { html{scroll-behavior:auto}.orbital img,.button,.instrument,.threshold-hole,.threshold-hole img,.threshold-curtain,.threshold-curtain::after{animation:none;transition:none}.threshold-hole{transform:none} }
+    @media (prefers-reduced-motion:reduce) { html{scroll-behavior:auto}.orbital img,.button,.instrument,.threshold-hole,.threshold-hole img,.threshold-curtain,.threshold-seam{animation:none;transition:none}.threshold-hole{transform:none} }
   </style>
 </head>
 <body>
   <div class="threshold" id="threshold" aria-label="Enter Tonantzintla">
-    <div class="threshold-curtain" aria-hidden="true"></div>
+    <div class="threshold-curtain top" aria-hidden="true"></div>
+    <div class="threshold-curtain bottom" aria-hidden="true"></div>
+    <div class="threshold-seam" aria-hidden="true"></div>
     <button class="threshold-hole" type="button" aria-label="Open Tonantzintla"><img src="wabi-sabi-black-hole-mark.svg" alt=""></button>
   </div>
   <header class="wrap">
