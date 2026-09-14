@@ -49,8 +49,8 @@ function attachLayout(layout, anchor, edge, screenWidth, screenHeight,
     var maxX = screenWidth - rightClearance - layout.width;
     var minY = topClearance;
     var maxY = screenHeight - bottomClearance - layout.height;
-    // Sink the body beneath Aperture's source capsule. Aperture remains the
-    // visible cap, hiding the seam without a separately drawn connector.
+    // Negative gaps sink Calendar beneath its Aperture capsule. Positive gaps
+    // place independent satellite panels just beyond their invoking control.
     var gap = attachmentGap === undefined ? -6 : Math.max(-8, attachmentGap);
 
     if (edge === "top") {
