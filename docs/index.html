@@ -52,6 +52,13 @@
     .instrument:focus-visible { outline:2px solid var(--amber); outline-offset:4px; }
     .instrument::after { content:""; position:absolute; width:150px; height:150px; right:-60px; bottom:-70px; border:1px solid rgba(233,184,114,.16); border-radius:50%; }
     .instrument-icon { color:var(--amber); font:22px ui-monospace,SFMono-Regular,Menlo,monospace; }
+    .instrument-icon { position:relative; width:46px; height:46px; display:grid; place-items:center; margin:-9px 0 -3px -9px; border-radius:50%; isolation:isolate; transition:color .28s ease,transform .4s cubic-bezier(.2,.8,.2,1); }
+    .instrument-icon::before,.instrument-icon::after { content:""; position:absolute; inset:2px; border-radius:50%; opacity:0; transform:scale(.55) rotate(-35deg); transition:opacity .25s ease,transform .5s cubic-bezier(.16,1,.3,1); pointer-events:none; }
+    .instrument-icon::before { border:1px solid rgba(233,184,114,.9); box-shadow:0 0 8px rgba(233,184,114,.65),inset 0 0 12px rgba(183,184,232,.25); background:radial-gradient(circle,rgba(9,10,15,.12) 0 44%,rgba(233,184,114,.18) 46%,transparent 62%); }
+    .instrument-icon::after { inset:-3px; border:1px dashed rgba(183,184,232,.72); }
+    .instrument:hover .instrument-icon { color:transparent; transform:scale(1.18); }
+    .instrument:hover .instrument-icon::before,.instrument:hover .instrument-icon::after,.instrument:focus-visible .instrument-icon::before,.instrument:focus-visible .instrument-icon::after { opacity:1; transform:scale(1) rotate(18deg); }
+    .instrument:hover .instrument-icon::after { transform:scale(1) rotate(-42deg); }
     .instrument h3 { margin:34px 0 5px; font-size:21px; letter-spacing:-.03em; }
     .instrument p { max-width:310px; margin:0; color:var(--muted); }
     .manifesto { display:grid; grid-template-columns:.7fr 1.3fr; gap:80px; align-items:start; }
@@ -70,12 +77,39 @@
     footer { padding:30px 0 48px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; }
     footer .wrap { display:flex; justify-content:space-between; gap:20px; }
     footer a { color:var(--ink); text-underline-offset:4px; }
+    .threshold { position:fixed; inset:0; z-index:1000; display:grid; place-items:center; overflow:hidden; background:#08090e; perspective:1200px; transition:visibility 0s 1.45s; }
+    .threshold[hidden] { display:none; }
+    .threshold::before { content:""; position:absolute; inset:0; opacity:.55; background:radial-gradient(circle at 50% 50%,rgba(78,69,105,.28),transparent 31%),radial-gradient(circle at 20% 25%,rgba(233,184,114,.06),transparent 25%); }
+    .threshold-curtain { position:absolute; inset:0; background:linear-gradient(115deg,#07080c,#0d0e16 63%,#13111a); transform-origin:right center; will-change:transform,clip-path; }
+    .threshold-curtain::after { content:""; position:absolute; top:0; bottom:0; left:50%; width:1px; opacity:0; background:linear-gradient(transparent,var(--amber),transparent); box-shadow:0 0 24px 5px rgba(233,184,114,.45); }
+    .threshold-hole { position:relative; width:min(52vw,520px); border:0; padding:0; color:var(--ink); background:none; cursor:pointer; transform:translateX(-110vw) rotate(-14deg); animation:threshold-arrive 1.35s cubic-bezier(.16,.78,.22,1) .12s forwards; filter:drop-shadow(0 25px 45px rgba(0,0,0,.7)); }
+    .threshold-hole img { display:block; width:100%; pointer-events:none; }
+    .threshold-hole span { display:block; margin-top:-9%; font:10px ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.22em; opacity:0; animation:threshold-prompt .5s ease 1.35s forwards; }
+    .threshold-hole:focus-visible { outline:1px solid var(--amber); outline-offset:14px; border-radius:50%; }
+    .threshold.departing .threshold-hole { animation:threshold-depart 1.05s cubic-bezier(.55,.05,.72,.35) forwards; }
+    .threshold.departing .threshold-curtain::after { animation:cut-flare .5s ease .48s both; }
+    .threshold.departing .threshold-curtain { animation:peel-curtain .82s cubic-bezier(.65,.05,.36,1) .68s forwards; }
+    @keyframes threshold-arrive { 0%{transform:translateX(-110vw) rotate(-22deg)} 72%{transform:translateX(4vw) rotate(3deg)} 100%{transform:translateX(0) rotate(0)} }
+    @keyframes threshold-prompt { to{opacity:.68} }
+    @keyframes threshold-depart { 0%{transform:translateX(0) rotate(0)} 34%{transform:translateX(0) rotate(400deg) scale(1.06)} 100%{transform:translateX(115vw) rotate(920deg) scale(.78)} }
+    @keyframes cut-flare { 0%{opacity:0;transform:scaleY(.05)} 45%{opacity:1;transform:scaleY(1)} 100%{opacity:0;transform:translateX(50vw) scaleY(1)} }
+    @keyframes peel-curtain { 0%{clip-path:polygon(0 0,100% 0,100% 100%,0 100%);transform:translateX(0)} 18%{clip-path:polygon(0 0,100% 0,100% 100%,4% 100%,0 50%,4% 0)} 100%{clip-path:polygon(0 0,100% 0,100% 100%,8% 100%,0 50%,8% 0);transform:translateX(108%) rotateY(-8deg)} }
+    .portal-flight { position:fixed; z-index:1190; border-radius:50%; border:1px solid var(--amber); background:radial-gradient(circle,#08090e 0 48%,rgba(233,184,114,.88) 50%,#0c0d14 54%,rgba(183,184,232,.5) 57%,transparent 60%); box-shadow:0 0 35px rgba(233,184,114,.55); pointer-events:none; }
+    .suite-portal { position:fixed; inset:0; z-index:1200; display:grid; grid-template-rows:48px 1fr; background:#090a0f; opacity:0; visibility:hidden; transition:opacity .35s ease,visibility 0s .35s; }
+    .suite-portal.open { opacity:1; visibility:visible; transition-delay:0s; }
+    .suite-portal-bar { display:flex; align-items:center; justify-content:space-between; padding:0 18px; border-bottom:1px solid var(--line); background:#0d0e14; font:10px ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.14em; }
+    .suite-portal-close { border:1px solid var(--line); border-radius:999px; padding:6px 11px; color:var(--ink); background:rgba(255,255,255,.04); cursor:pointer; }
+    .suite-portal iframe { width:100%; height:100%; border:0; background:var(--void); }
     @media (max-width:800px) { .hero,.manifesto{grid-template-columns:1fr;}.hero{padding-top:54px;}.orbital{min-height:260px}.instruments{grid-template-columns:1fr 1fr}.instrument,.instrument:nth-child(4),.instrument:nth-child(5){grid-column:span 1}.section-intro{display:block}.section-intro p{margin-top:16px}.nav-meta{display:none}.principle{grid-template-columns:90px 1fr} }
     @media (max-width:520px) { .wrap{width:min(calc(100% - 30px),var(--max));}.instruments{grid-template-columns:1fr}.instrument,.instrument:nth-child(4),.instrument:nth-child(5){grid-column:span 1}.orbital-label{right:5%;bottom:-2%}footer .wrap{display:block}footer .wrap span{display:block;margin-top:10px} }
-    @media (prefers-reduced-motion:reduce) { html{scroll-behavior:auto}.orbital img,.button,.instrument{animation:none;transition:none} }
+    @media (prefers-reduced-motion:reduce) { html{scroll-behavior:auto}.orbital img,.button,.instrument,.threshold-hole,.threshold-hole span,.threshold-curtain,.threshold-curtain::after{animation:none;transition:none}.threshold-hole{transform:none}.threshold-hole span{opacity:.68} }
   </style>
 </head>
 <body>
+  <div class="threshold" id="threshold" aria-label="Enter Tonantzintla">
+    <div class="threshold-curtain" aria-hidden="true"></div>
+    <button class="threshold-hole" type="button" aria-label="Open Tonantzintla"><img src="wabi-sabi-black-hole-mark.svg" alt=""><span>TOUCH THE EVENT HORIZON</span></button>
+  </div>
   <header class="wrap">
     <nav aria-label="Primary navigation">
       <a class="brand" href="./" aria-label="Tonantzintla home"><img class="brand-mark" src="wabi-sabi-black-hole-mark.svg" alt=""><span>TONANTZINTLA</span></a>
@@ -105,5 +139,60 @@
 <span class="comment"># arrange the desktop your way</span></pre></div><div class="actions"><a class="button primary" href="https://github.com/deltadasher/Tonantzintla">Continue to GitHub <span aria-hidden="true">↗</span></a><a class="button secondary" href="https://github.com/deltadasher/Tonantzintla/releases">View releases <span aria-hidden="true">↗</span></a></div></section>
   </main>
   <footer><div class="wrap"><span>TONANTZINTLA · DEVELOPED BY DELTADASHER</span><span><a href="https://github.com/deltadasher/Tonantzintla">Source</a> · <a href="https://github.com/deltadasher/Tonantzintla/issues">Issues</a> · <a href="https://github.com/deltadasher/Tonantzintla/blob/main/LICENSE">License</a></span></div></footer>
+  <div class="suite-portal" id="suitePortal" aria-hidden="true"><div class="suite-portal-bar"><span id="suitePortalTitle">TONANTZINTLA / INSTRUMENT</span><button class="suite-portal-close" type="button">CLOSE ×</button></div><iframe title="Tonantzintla instrument repository"></iframe></div>
+  <script>
+    (() => {
+      const threshold = document.querySelector('#threshold');
+      const enter = threshold.querySelector('.threshold-hole');
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const dismissThreshold = () => {
+        if (threshold.classList.contains('departing')) return;
+        threshold.classList.add('departing');
+        sessionStorage.setItem('tonantzintla-entered', '1');
+        setTimeout(() => { threshold.hidden = true; }, reduced ? 0 : 1520);
+      };
+      if (sessionStorage.getItem('tonantzintla-entered')) threshold.hidden = true;
+      enter.addEventListener('click', dismissThreshold);
+
+      const portal = document.querySelector('#suitePortal');
+      const frame = portal.querySelector('iframe');
+      const title = document.querySelector('#suitePortalTitle');
+      const close = portal.querySelector('.suite-portal-close');
+      let returning = false;
+      const closePortal = (historyBack = true) => {
+        portal.classList.remove('open');
+        portal.setAttribute('aria-hidden', 'true');
+        setTimeout(() => { frame.removeAttribute('src'); }, 360);
+        if (historyBack && !returning && location.hash.startsWith('#instrument=')) history.back();
+      };
+      const openPortal = (card, href, push = true) => {
+        const icon = card.querySelector('.instrument-icon');
+        const rect = icon.getBoundingClientRect();
+        const flight = document.createElement('div');
+        flight.className = 'portal-flight';
+        Object.assign(flight.style,{left:`${rect.left}px`,top:`${rect.top}px`,width:`${rect.width}px`,height:`${rect.height}px`});
+        document.body.appendChild(flight);
+        const scale = Math.hypot(innerWidth,innerHeight) / Math.max(rect.width,rect.height) * 2.2;
+        requestAnimationFrame(() => flight.animate([
+          {transform:'scale(1) rotate(0deg)',opacity:1},
+          {transform:`scale(${scale}) rotate(210deg)`,opacity:1}
+        ],{duration:reduced?0:620,easing:'cubic-bezier(.7,0,.2,1)',fill:'forwards'}).finished.then(() => {
+          title.textContent = `TONANTZINTLA / ${card.querySelector('h3').textContent.toUpperCase()}`;
+          frame.src = href;
+          portal.classList.add('open');
+          portal.setAttribute('aria-hidden','false');
+          close.focus();
+          flight.remove();
+        }));
+        if (push) history.pushState({instrument:href},'',`#instrument=${href.split('/').pop().replace('.html','')}`);
+      };
+      document.querySelectorAll('.instrument').forEach(card => card.addEventListener('click', event => {
+        event.preventDefault(); openPortal(card,card.getAttribute('href'));
+      }));
+      close.addEventListener('click',() => closePortal());
+      addEventListener('keydown',event => { if(event.key === 'Escape' && portal.classList.contains('open')) closePortal(); });
+      addEventListener('popstate',() => { returning=true; closePortal(false); returning=false; });
+    })();
+  </script>
 </body>
 </html>
