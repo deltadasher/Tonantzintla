@@ -56,57 +56,57 @@ Canvas {
 
         if (edge === "bottom") {
             const seam = g.y + g.height;
-            const shoulderY = source.y + source.height - sr;
+            const shoulderY = source.y + sr;
             ctx.moveTo(source.x - spread, seam);
             ctx.bezierCurveTo(source.x - bend * 0.35, seam,
-                source.x, shoulderY + bend * 0.55, source.x, shoulderY);
+                source.x, shoulderY - bend * 0.30, source.x, shoulderY);
             ctx.lineTo(source.x, seam);
             ctx.closePath();
             ctx.moveTo(source.x + source.width + spread, seam);
             ctx.bezierCurveTo(source.x + source.width + bend * 0.35, seam,
-                source.x + source.width, shoulderY + bend * 0.55,
+                source.x + source.width, shoulderY - bend * 0.30,
                 source.x + source.width, shoulderY);
             ctx.lineTo(source.x + source.width, seam);
             ctx.closePath();
         } else if (edge === "left") {
             const seam = g.x;
-            const shoulderX = source.x + sr;
+            const shoulderX = source.x + source.width - sr;
             ctx.moveTo(seam, source.y - spread);
             ctx.bezierCurveTo(seam, source.y - bend * 0.35,
-                shoulderX + bend * 0.55, source.y, shoulderX, source.y);
+                shoulderX + bend * 0.30, source.y, shoulderX, source.y);
             ctx.lineTo(seam, source.y);
             ctx.closePath();
             ctx.moveTo(seam, source.y + source.height + spread);
             ctx.bezierCurveTo(seam, source.y + source.height + bend * 0.35,
-                shoulderX + bend * 0.55, source.y + source.height,
+                shoulderX + bend * 0.30, source.y + source.height,
                 shoulderX, source.y + source.height);
             ctx.lineTo(seam, source.y + source.height);
             ctx.closePath();
         } else if (edge === "right") {
             const seam = g.x + g.width;
-            const shoulderX = source.x + source.width - sr;
+            const shoulderX = source.x + sr;
             ctx.moveTo(seam, source.y - spread);
             ctx.bezierCurveTo(seam, source.y - bend * 0.35,
-                shoulderX - bend * 0.55, source.y, shoulderX, source.y);
+                shoulderX - bend * 0.30, source.y, shoulderX, source.y);
             ctx.lineTo(seam, source.y);
             ctx.closePath();
             ctx.moveTo(seam, source.y + source.height + spread);
             ctx.bezierCurveTo(seam, source.y + source.height + bend * 0.35,
-                shoulderX - bend * 0.55, source.y + source.height,
+                shoulderX - bend * 0.30, source.y + source.height,
                 shoulderX, source.y + source.height);
             ctx.lineTo(seam, source.y + source.height);
             ctx.closePath();
         } else {
             const seam = g.y;
-            const shoulderY = source.y + sr;
+            const shoulderY = source.y + source.height - sr;
             ctx.moveTo(source.x - spread, seam);
             ctx.bezierCurveTo(source.x - bend * 0.35, seam,
-                source.x, shoulderY - bend * 0.55, source.x, shoulderY);
+                source.x, shoulderY + bend * 0.30, source.x, shoulderY);
             ctx.lineTo(source.x, seam);
             ctx.closePath();
             ctx.moveTo(source.x + source.width + spread, seam);
             ctx.bezierCurveTo(source.x + source.width + bend * 0.35, seam,
-                source.x + source.width, shoulderY - bend * 0.55,
+                source.x + source.width, shoulderY + bend * 0.30,
                 source.x + source.width, shoulderY);
             ctx.lineTo(source.x + source.width, seam);
             ctx.closePath();
