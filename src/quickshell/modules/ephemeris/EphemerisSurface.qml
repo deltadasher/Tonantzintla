@@ -29,8 +29,13 @@ PanelWindow {
     property real displayedAnchorWidth: 0
     property real displayedAnchorHeight: 0
     property string displayedAnchorEdge: "top"
-    readonly property bool anchoredInstrument: displayedAnchorValid
-    readonly property string anchorEdge: anchoredInstrument
+    // Every bar-launched panel remembers its source for placement. Calendar is
+    // the sole instrument that physically grows from Aperture; the others dock
+    // nearby as independent satellite surfaces.
+    readonly property bool sourcePositioned: displayedAnchorValid
+    readonly property bool anchoredInstrument: sourcePositioned
+        && transition.activeTab === "calendar"
+    readonly property string anchorEdge: sourcePositioned
         ? displayedAnchorEdge : Settings.getEffectiveBarPosition(outputName)
 
     function captureRequestedAnchor() {
@@ -53,14 +58,14 @@ PanelWindow {
             layout.height = Math.min(layout.height,
                 Math.max(240, widgetLoader.item.preferredSurfaceHeight));
 
-        if (anchoredInstrument && layout.placement !== "horizon") {
+        if (sourcePositioned && layout.placement !== "horizon") {
             Registry.attachLayout(layout, {
                 x: displayedAnchorX,
                 y: displayedAnchorY,
                 width: displayedAnchorWidth,
                 height: displayedAnchorHeight
             }, anchorEdge, width, height, topClearance, bottomClearance,
-                leftClearance, rightClearance);
+                leftClearance, rightClearance, anchoredInstrument ? -6 : 10);
         }
         return layout;
     }
@@ -115,6 +120,20 @@ PanelWindow {
         if (root.anchoredInstrument)
             return Qt.rect(root.displayedAnchorX, root.displayedAnchorY,
                 root.displayedAnchorWidth, root.displayedAnchorHeight);
+
+        // Satellite panels do not inflate out of their Aperture button. They
+        // begin at full size just ten pixels toward the bar and float into the
+        // nearby resting position while their contents reveal.
+        if (root.sourcePositioned) {
+            const layout = root.widgetLayout;
+            let dx = 0, dy = 0;
+            if (root.anchorEdge === "top") dy = -10;
+            else if (root.anchorEdge === "bottom") dy = 10;
+            else if (root.anchorEdge === "left") dx = -10;
+            else if (root.anchorEdge === "right") dx = 10;
+            return Qt.rect(layout.x + dx, layout.y + dy,
+                layout.width, layout.height);
+        }
 
         const barPos = Settings.barPosition;
         const barThick = Settings.compact ? 34 : Theme.barHeight;
