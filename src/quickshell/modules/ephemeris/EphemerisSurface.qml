@@ -78,7 +78,7 @@ PanelWindow {
     color: "transparent"
     exclusionMode: ExclusionMode.Ignore
     focusable: true
-    WlrLayershell.layer: root.blobExperiment ? WlrLayer.Top : WlrLayer.Overlay
+    WlrLayershell.layer: root.anchoredInstrument ? WlrLayer.Top : WlrLayer.Overlay
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
     WlrLayershell.namespace: "tonantzintla-ephemeris-host"
     anchors { top: true; right: true; bottom: true; left: true }
@@ -189,6 +189,7 @@ PanelWindow {
             anchors.fill: parent
             geometry: surfaceGeometry
             edge: root.anchorEdge
+            attached: root.anchoredInstrument
             fillColor: root.instrumentColor
             visible: !root.immersiveWidget
                 && (!root.blobExperiment || blobBacking.status === Loader.Error)
