@@ -39,6 +39,10 @@ PanelWindow {
     readonly property real barThickness: (isVertical
         ? (Settings.compact ? 42 : 46)
         : (Settings.compact ? 36 : Theme.barHeight)) + 8
+    // The bottom drawer is part of the studio input mask. Keep it clear of the
+    // live bar when the bar is docked at the bottom; otherwise it intercepts
+    // presses before the real islands can start a drag.
+    readonly property real bottomDrawerClearance: currentEdge === "bottom" ? barThickness : 0
     readonly property var currentLayout: {
         Settings.layoutRevision;
         return Settings.getEdgeBarLayout(outputName, currentEdge);
@@ -331,7 +335,8 @@ PanelWindow {
         id: bottomDrawer
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: root.bottomDrawerRevealed ? 0 : -height
+        anchors.bottomMargin: root.bottomDrawerRevealed
+            ? root.bottomDrawerClearance : -height
         width: Math.min(1080, parent.width - (root.sideDrawerOpen ? 310 : 48))
         height: 310
 
