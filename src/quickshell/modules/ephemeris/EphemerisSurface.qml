@@ -72,12 +72,13 @@ PanelWindow {
     // Colour stays opaque inside the Canvas. The aperture-derived alpha is
     // applied once to the complete union, avoiding darker overlap at the lip.
     readonly property color instrumentColor: Theme.void_
+    readonly property bool blobExperiment: Quickshell.env("TONANTZINTLA_BLOB_EXPERIMENT") === "1"
 
     visible: transition.mounted && targetScreen
     color: "transparent"
     exclusionMode: ExclusionMode.Ignore
     focusable: true
-    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.layer: root.blobExperiment ? WlrLayer.Top : WlrLayer.Overlay
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
     WlrLayershell.namespace: "tonantzintla-ephemeris-host"
     anchors { top: true; right: true; bottom: true; left: true }
@@ -172,12 +173,25 @@ PanelWindow {
         opacity: transition.revealProgress
         MouseArea { anchors.fill: parent; onClicked: root.close() }
 
+        Loader {
+            id: blobBacking
+            anchors.fill: parent
+            active: root.blobExperiment && !root.immersiveWidget
+            source: active ? Qt.resolvedUrl("../../components/ExperimentalBlobBacking.qml") : ""
+            onLoaded: {
+                item.geometry = surfaceGeometry;
+                item.origin = root.originRect;
+                item.anchored = root.anchoredInstrument;
+            }
+        }
+
         InstrumentBridge {
             anchors.fill: parent
             geometry: surfaceGeometry
             edge: root.anchorEdge
             fillColor: root.instrumentColor
             visible: !root.immersiveWidget
+                && (!root.blobExperiment || blobBacking.status === Loader.Error)
                 && transition.revealProgress > 0.01
             opacity: root.instrumentSurfaceOpacity
         }
