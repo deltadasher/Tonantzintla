@@ -23,9 +23,8 @@ PanelWindow {
     color: "transparent"
     visible: contents.hasIslands
     exclusionMode: visible ? ExclusionMode.Auto : ExclusionMode.Ignore
-    readonly property bool blobExperiment: Quickshell.env("TONANTZINTLA_BLOB_EXPERIMENT") === "1"
     WlrLayershell.layer: ShellState.barEditMode
-        || (blobExperiment && ShellState.ephemerisVisible)
+        || (ShellState.ephemerisVisible && ShellState.ephemerisAnchorValid)
         ? WlrLayer.Overlay : WlrLayer.Top
     ApertureContents {
         id: contents
