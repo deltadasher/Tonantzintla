@@ -64,6 +64,17 @@ class OutputPreviewTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             preview.scale_of({'DP-1': {'logical': None}}, 'DP-1')
 
+    def test_inspect_uses_a_stable_connector_order(self):
+        items = {
+            'HDMI-A-1': {'logical': {'scale': 1, 'width': 1920, 'height': 1080}},
+            'DP-1': {'logical': {'scale': 1.5, 'width': 2560, 'height': 1440}},
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(preview, 'runtime', return_value=Path(directory)), \
+                    patch.object(preview, 'outputs', return_value=items):
+                report = preview.inspect()
+        self.assertEqual([item['name'] for item in report['outputs']], ['DP-1', 'HDMI-A-1'])
+
     def test_invalid_scale_never_dispatches(self):
         with patch.object(preview, 'command') as command:
             for scale in (0, -1, float('nan'), 10):

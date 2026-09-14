@@ -116,7 +116,11 @@ def keep(token):
 def inspect():
     items = outputs()
     result = []
-    for name, item in items.items():
+    # Niri returns outputs as an object, whose member order is not a display
+    # order contract. The settings page polls this every second, so preserve a
+    # stable connector order instead of letting identical rows jump around.
+    for name in sorted(items):
+        item = items[name]
         logical = item.get('logical')
         if logical:
             result.append(dict(name=name, scale=logical.get('scale'),
