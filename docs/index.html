@@ -22,8 +22,11 @@
     a { color:inherit; }
     .wrap { width:min(calc(100% - 44px),var(--max)); margin:auto; }
     nav { height:82px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); }
-    .brand { display:flex; align-items:center; gap:10px; letter-spacing:.2em; font-size:12px; font-weight:750; text-decoration:none; }
-    .brand-mark { width:32px; height:27px; display:block; object-fit:contain; filter:drop-shadow(0 0 12px rgba(233,184,114,.38)); }
+    .tabs { display:flex; align-items:end; gap:4px; height:100%; }
+    .site-tab { height:48px; display:flex; align-items:center; gap:9px; padding:0 16px; border:1px solid transparent; border-bottom:0; border-radius:14px 14px 0 0; color:var(--muted); text-decoration:none; font-size:13px; white-space:nowrap; }
+    .site-tab:hover { color:var(--ink); background:rgba(255,255,255,.035); }
+    .site-tab.active { color:var(--ink); background:rgba(255,255,255,.065); border-color:var(--line); }
+    .tab-icon { width:23px; height:20px; display:block; object-fit:contain; filter:drop-shadow(0 0 10px rgba(233,184,114,.38)); }
     .nav-meta { color:var(--muted); font:11px ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.14em; }
     .hero { min-height:650px; display:grid; grid-template-columns:1.05fr .95fr; align-items:center; gap:44px; padding:72px 0 82px; }
     .eyebrow { color:var(--amber); font:11px ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.2em; text-transform:uppercase; }
@@ -112,7 +115,7 @@
   </div>
   <header class="wrap">
     <nav aria-label="Primary navigation">
-      <a class="brand" href="./" aria-label="Tonantzintla home"><img class="brand-mark" src="wabi-sabi-black-hole-mark.svg" alt=""><span>TONANTZINTLA</span></a>
+      <nav class="tabs" aria-label="Site sections"><a class="site-tab active" href="./" aria-current="page"><img class="tab-icon" src="wabi-sabi-black-hole-mark.svg" alt=""><span>Tonantzintla</span></a></nav>
       <span class="nav-meta">NIRI / QUICKSHELL / ARCH</span>
     </nav>
   </header>
