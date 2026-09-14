@@ -143,12 +143,12 @@ TestCase {
                 compare(layout.x + layout.width, anchors.right.x - 6);
         }
     }
-    function test_attached_layouts_meet_the_source_by_default() {
+    function test_attached_layouts_overlap_the_source_by_default() {
         const anchor = {x: 900, y: 12, width: 120, height: 42};
         const layout = Registry.getLayout("calendar", 1920, 1080,
             72, 72, 72, 72);
         Registry.attachLayout(layout, anchor, "top", 1920, 1080,
             72, 72, 72, 72);
-        compare(layout.y, anchor.y + anchor.height);
+        compare(layout.y, anchor.y + anchor.height - 6);
     }
 }
