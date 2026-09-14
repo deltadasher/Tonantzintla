@@ -18,7 +18,7 @@ audio and pitch. **Optics** captures the screen. **Umbra** locks the session.
 
 ```bash
 sudo pacman -S --needed git rust
-git clone https://github.com/deltadasher/Astralith.git Tonantzintla
+git clone https://github.com/deltadasher/Tonantzintla.git Tonantzintla
 cd Tonantzintla
 bin/blackhole install --profile recommended --niri keep --umbra lock --yes
 ~/.local/bin/blackhole start
