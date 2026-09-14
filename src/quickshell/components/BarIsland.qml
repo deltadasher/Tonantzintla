@@ -16,6 +16,11 @@ Rectangle {
     readonly property bool isVertical: barWindow ? barWindow.isVertical : (Settings.barPosition === "left" || Settings.barPosition === "right")
     readonly property string effectivePosition: barWindow ? barWindow.effectivePosition : Settings.barPosition
     readonly property bool separate: Settings.barMode === "capsules"
+    readonly property bool extensionActive: ShellState.ephemerisVisible
+        && ShellState.ephemerisAnchorValid
+        && ShellState.ephemerisAnchorIslandId === islandId
+        && (!barWindow || !ShellState.ephemerisOutput
+            || ShellState.ephemerisOutput === barWindow.outputName)
 
     readonly property var currentLayout: barWindow ? barWindow.activeLayout
         : (isVertical ? Settings.activeLayoutVertical : Settings.activeLayoutHorizontal)
@@ -29,7 +34,8 @@ Rectangle {
             point = source.mapToItem(null, 0, 0);
         }
         ShellState.toggleEphemeris(tab, barWindow ? barWindow.outputName : "",
-            point.x, point.y, source.width, source.height, effectivePosition);
+            point.x, point.y, source.width, source.height, effectivePosition,
+            root.islandId, source);
     }
 
     readonly property var myLocation: islandId ? BarLayout.locate(currentLayout, islandId) : null
@@ -45,11 +51,12 @@ Rectangle {
         : (Settings.compact ? 36 : Theme.barHeight))
     radius: Settings.compact ? 8 : 10
     color: separate && !(ShellState.barEditMode && barWindow)
-        ? surfaceHover.hovered && reactive
-            ? Qt.rgba(Theme.mantle.r, Theme.mantle.g, Theme.mantle.b,
-                Settings.barSurfaceOpacity)
-            : Qt.rgba(Theme.void_.r, Theme.void_.g, Theme.void_.b,
-                Settings.barSurfaceOpacity)
+        ? extensionActive ? Theme.void_
+            : surfaceHover.hovered && reactive
+                ? Qt.rgba(Theme.mantle.r, Theme.mantle.g, Theme.mantle.b,
+                    Settings.barSurfaceOpacity)
+                : Qt.rgba(Theme.void_.r, Theme.void_.g, Theme.void_.b,
+                    Settings.barSurfaceOpacity)
         : "transparent"
     // Studio mode keeps the bar surface transparent so the desktop remains
     // visible; retain a real outline around each live island so it does not
@@ -60,7 +67,8 @@ Rectangle {
     // follows the pointer in the studio overlay.
     opacity: ShellState.isDraggingIsland && ShellState.draggedIslandSourceItem === root
         ? 0 : reveal
-    scale: (0.96 + reveal * 0.04) * (surfaceHover.hovered && reactive ? 1.01 : 1)
+    scale: (0.96 + reveal * 0.04)
+        * (surfaceHover.hovered && reactive && !extensionActive ? 1.01 : 1)
 
     readonly property var islandGlyphs: ({
         launcher: "⌕",

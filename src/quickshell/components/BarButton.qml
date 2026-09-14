@@ -13,7 +13,10 @@ Rectangle {
     // A panel window can take pointer ownership before this button receives an
     // exit event. Suppress hover until the next genuine leave so the old button
     // cannot remain lit (or leave its tooltip behind) after dismissal.
+    readonly property bool sourceActive: ShellState.ephemerisVisible
+        && ShellState.ephemerisAnchorTarget === root
     readonly property bool hovered: pointer.containsMouse && !pointer.hoverSuppressed
+        && !sourceActive
     color: panelOpen ? Theme.controlActive : hovered || activeFocus ? Theme.barAccentVeil : "transparent"
     border.width: activeFocus ? 1 : 0
     border.color: Theme.accentLine
@@ -23,7 +26,7 @@ Rectangle {
     property string accessibleLabel: "Action"
     property string targetPanel: ""
     property string motionKind: "pulse"
-    readonly property bool panelOpen: targetPanel.length > 0 && ShellState.ephemerisVisible && ShellState.ephemerisTab === targetPanel
+    readonly property bool panelOpen: sourceActive
     readonly property bool motionAllowed: Settings.motion && Settings.barIconMotion && Theme.motionScale > 0
     property real iconPulse: 0
     onPanelOpenChanged: if (panelOpen && visible && motionAllowed) opening.restart()

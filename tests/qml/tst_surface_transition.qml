@@ -151,4 +151,14 @@ TestCase {
             72, 72, 72, 72);
         compare(layout.y, anchor.y + anchor.height - 6);
     }
+    function test_side_attachment_near_corner_keeps_source_intersection() {
+        const anchor = {x: 12, y: 8, width: 42, height: 42};
+        const layout = Registry.getLayout("network", 1920, 1080,
+            72, 72, 72, 72);
+        Registry.attachLayout(layout, anchor, "left", 1920, 1080,
+            72, 72, 72, 72);
+        verify(layout.y <= anchor.y + anchor.height);
+        verify(layout.y + layout.height >= anchor.y);
+        compare(layout.x, anchor.x + anchor.width - 6);
+    }
 }
