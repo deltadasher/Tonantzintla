@@ -7,10 +7,12 @@ Rectangle {
     id: root
     property string outputName: ""
     property var anchorHost: null
+    readonly property bool sourceActive: ShellState.ephemerisVisible
+        && ShellState.ephemerisAnchorTarget === root
     implicitWidth: row.implicitWidth + 18
     implicitHeight: Settings.compact ? 34 : 38
     radius: 9
-    color: hover.hovered ? Theme.barNeutralHover : "transparent"
+    color: sourceActive ? Theme.void_ : hover.hovered ? Theme.barNeutralHover : "transparent"
     border.width: 0
 
     HoverHandler { id: hover }
@@ -58,7 +60,7 @@ Rectangle {
                 }
                 TapHandler {
                     onTapped: root.anchorHost
-                        ? root.anchorHost.toggleEphemeris("system", statHitbox)
+                        ? root.anchorHost.toggleEphemeris("system", root)
                         : ShellState.toggleEphemeris("system", root.outputName)
                 }
             }
@@ -101,7 +103,7 @@ Rectangle {
             }
             TapHandler {
                 onTapped: root.anchorHost
-                    ? root.anchorHost.toggleEphemeris("audio", audioHitbox)
+                    ? root.anchorHost.toggleEphemeris("audio", root)
                     : ShellState.toggleEphemeris("audio", root.outputName)
             }
         }

@@ -18,6 +18,8 @@ QtObject {
     property real ephemerisAnchorWidth: 0
     property real ephemerisAnchorHeight: 0
     property string ephemerisAnchorEdge: "top"
+    property string ephemerisAnchorIslandId: ""
+    property var ephemerisAnchorTarget: null
     property string settingsSection: "appearance"
     property bool quickActionsVisible: false
     property string quickActionTab: "telemetry"
@@ -40,29 +42,36 @@ QtObject {
         return Registry.normalize(widget);
     }
 
-    function setEphemerisAnchor(x, y, width, height, edge) {
+    function setEphemerisAnchor(x, y, width, height, edge, islandId, targetItem) {
         ephemerisAnchorX = Number(x || 0);
         ephemerisAnchorY = Number(y || 0);
         ephemerisAnchorWidth = Number(width || 0);
         ephemerisAnchorHeight = Number(height || 0);
         ephemerisAnchorEdge = String(edge || "top");
+        ephemerisAnchorIslandId = String(islandId || "");
+        ephemerisAnchorTarget = targetItem || null;
         ephemerisAnchorValid = ephemerisAnchorWidth > 0 && ephemerisAnchorHeight > 0;
     }
 
     function clearEphemerisAnchor() {
         ephemerisAnchorValid = false;
+        ephemerisAnchorIslandId = "";
+        ephemerisAnchorTarget = null;
     }
 
-    function openEphemeris(tab, outputName, anchorX, anchorY, anchorWidth, anchorHeight, anchorEdge) {
+    function openEphemeris(tab, outputName, anchorX, anchorY, anchorWidth, anchorHeight,
+            anchorEdge, anchorIslandId, anchorTarget) {
         ephemerisTab = normalizeWidget(tab);
         if (outputName && String(outputName).length > 0)
             ephemerisOutput = String(outputName);
-        else if (!ephemerisVisible) {
+        else if (anchorWidth === undefined || anchorHeight === undefined) {
             ephemerisOutput = "";
-            clearEphemerisAnchor();
         }
         if (anchorWidth !== undefined && anchorHeight !== undefined)
-            setEphemerisAnchor(anchorX, anchorY, anchorWidth, anchorHeight, anchorEdge);
+            setEphemerisAnchor(anchorX, anchorY, anchorWidth, anchorHeight,
+                anchorEdge, anchorIslandId, anchorTarget);
+        else
+            clearEphemerisAnchor();
         ephemerisVisible = true;
     }
 
@@ -74,7 +83,8 @@ QtObject {
         closeWidgetSettings();
     }
 
-    function toggleEphemeris(tab, outputName, anchorX, anchorY, anchorWidth, anchorHeight, anchorEdge) {
+    function toggleEphemeris(tab, outputName, anchorX, anchorY, anchorWidth, anchorHeight,
+            anchorEdge, anchorIslandId, anchorTarget) {
         const target = normalizeWidget(tab);
         const requestedOutput = outputName && String(outputName).length > 0
             ? String(outputName) : "";
@@ -83,7 +93,7 @@ QtObject {
             closeEphemeris();
         else
             openEphemeris(target, requestedOutput, anchorX, anchorY,
-                anchorWidth, anchorHeight, anchorEdge);
+                anchorWidth, anchorHeight, anchorEdge, anchorIslandId, anchorTarget);
     }
 
     function openQuickActions(tab) {

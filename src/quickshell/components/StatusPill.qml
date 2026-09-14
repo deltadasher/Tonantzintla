@@ -15,15 +15,19 @@ Rectangle {
     signal scrolled(real delta)
     readonly property bool isVertical: root.parent && typeof root.parent.isVertical !== "undefined"
         ? root.parent.isVertical : (Settings.barPosition === "left" || Settings.barPosition === "right")
+    readonly property bool sourceActive: ShellState.ephemerisVisible
+        && ShellState.ephemerisAnchorTarget === root
+    readonly property bool hovered: pointer.containsMouse && !pointer.hoverSuppressed
+        && !sourceActive
 
     implicitWidth: root.isVertical ? (Settings.compact ? 36 : 40) : (layoutGrid.implicitWidth + 16)
     implicitHeight: root.isVertical ? (layoutGrid.implicitHeight + 8) : (Settings.compact ? 34 : 38)
     radius: 9
     color: root.warning
         ? Qt.rgba(Theme.warning.r, Theme.warning.g, Theme.warning.b, 0.12)
-        : pointer.containsMouse ? Theme.barNeutralHover : "transparent"
+        : sourceActive ? Theme.void_ : hovered ? Theme.barNeutralHover : "transparent"
     border.width: 0
-    scale: pointer.containsMouse ? 1.03 : 1
+    scale: hovered ? 1.03 : 1
 
     GridLayout {
         id: layoutGrid
@@ -57,8 +61,10 @@ Rectangle {
         id: pointer
         anchors.fill: parent
         hoverEnabled: true
+        property bool hoverSuppressed: false
         cursorShape: Qt.PointingHandCursor
-        onClicked: root.activated()
+        onClicked: { hoverSuppressed = true; root.activated(); }
+        onExited: hoverSuppressed = false
         onWheel: function(event) {
             root.scrolled(event.angleDelta.y);
             event.accepted = true;

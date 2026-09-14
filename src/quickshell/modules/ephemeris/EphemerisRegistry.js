@@ -54,19 +54,19 @@ function attachLayout(layout, anchor, edge, screenWidth, screenHeight,
     var gap = attachmentGap === undefined ? -6 : Math.max(-8, attachmentGap);
 
     if (edge === "top") {
-        layout.x = clamp(centerX - layout.width / 2, minX, maxX);
+        layout.x = clamp(centerX - layout.width / 2, 0, screenWidth - layout.width);
         layout.y = clamp(anchor.y + anchor.height + gap, 0, maxY);
     } else if (edge === "bottom") {
-        layout.x = clamp(centerX - layout.width / 2, minX, maxX);
+        layout.x = clamp(centerX - layout.width / 2, 0, screenWidth - layout.width);
         layout.y = clamp(anchor.y - gap - layout.height, minY,
             screenHeight - layout.height);
     } else if (edge === "left") {
         layout.x = clamp(anchor.x + anchor.width + gap, 0, maxX);
-        layout.y = clamp(centerY - layout.height / 2, minY, maxY);
+        layout.y = clamp(centerY - layout.height / 2, 0, screenHeight - layout.height);
     } else if (edge === "right") {
         layout.x = clamp(anchor.x - gap - layout.width, minX,
             screenWidth - layout.width);
-        layout.y = clamp(centerY - layout.height / 2, minY, maxY);
+        layout.y = clamp(centerY - layout.height / 2, 0, screenHeight - layout.height);
     }
     return layout;
 }

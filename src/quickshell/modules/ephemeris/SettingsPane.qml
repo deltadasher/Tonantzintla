@@ -85,11 +85,6 @@ Item {
             }
         }
 
-        LiveBarPreview {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 92
-        }
-
         RowLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -110,7 +105,6 @@ Item {
                     Repeater {
                         model: [
                             { "key": "appearance", "label": "Appearance" },
-                            { "key": "bar-editor", "label": "Bar editor" },
                             { "key": "launcher", "label": "Panels" },
                             { "key": "umbra", "label": "Lock screen" },
                             { "key": "system", "label": "System" },
@@ -157,12 +151,7 @@ Item {
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: {
-                                    if (sectionButton.modelData.key === "bar-editor") {
-                                        ShellState.closeEphemeris();
-                                        ShellState.enterBarEditMode();
-                                    } else {
-                                        ShellState.settingsSection = sectionButton.modelData.key;
-                                    }
+                                    ShellState.settingsSection = sectionButton.modelData.key;
                                     settingsFlick.contentY = 0;
                                 }
                             }

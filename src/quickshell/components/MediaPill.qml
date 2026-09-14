@@ -11,10 +11,12 @@ ClippingRectangle {
     property bool embedded: false
     property string outputName: ""
     property var anchorHost: null
+    readonly property bool sourceActive: ShellState.ephemerisVisible
+        && ShellState.ephemerisAnchorTarget === root
     implicitWidth: Media.available ? (Settings.compact ? 320 : 400) : 0
     implicitHeight: Settings.compact ? 36 : 42
     radius: embedded ? 9 : height / 2
-    color: embedded ? "transparent"
+    color: sourceActive ? Theme.void_ : embedded ? "transparent"
         : mediaHover.hovered ? Theme.elevated : Theme.mantle
     border.width: 0
     opacity: Media.available ? 1 : 0

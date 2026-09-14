@@ -111,7 +111,8 @@ Canvas {
             ctx.lineTo(source.x + source.width, seam);
             ctx.closePath();
         }
-        roundedRect(ctx, source.x, source.y, source.width, source.height, sr);
+        // Aperture owns and paints the source capsule. Only its two outward
+        // shoulders belong to the Ephemeris backing.
     }
 
     onPaint: {

@@ -14,13 +14,17 @@ Rectangle {
     readonly property int signal: activeNetwork ? Number(activeNetwork.signal || 0) : 0
     readonly property bool isVertical: root.parent && typeof root.parent.isVertical !== "undefined"
         ? root.parent.isVertical : (Settings.barPosition === "left" || Settings.barPosition === "right")
+    readonly property bool sourceActive: ShellState.ephemerisVisible
+        && ShellState.ephemerisAnchorTarget === root
+    readonly property bool hovered: pointer.containsMouse && !pointer.hoverSuppressed
+        && !sourceActive
 
     implicitWidth: isVertical ? (Settings.compact ? 36 : 40) : Math.max(126, row.implicitWidth + 18)
     implicitHeight: Settings.compact ? 34 : 38
     radius: 10
-    color: pointer.containsMouse ? Theme.barNeutralHover : "transparent"
+    color: sourceActive ? Theme.void_ : hovered ? Theme.barNeutralHover : "transparent"
     border.width: 0
-    scale: pointer.containsMouse ? 1.025 : 1
+    scale: hovered ? 1.025 : 1
 
     RowLayout {
         id: row
@@ -143,9 +147,14 @@ Rectangle {
         id: pointer
         anchors.fill: parent
         hoverEnabled: true
+        property bool hoverSuppressed: false
         cursorShape: Qt.PointingHandCursor
-        onClicked: root.anchorHost ? root.anchorHost.toggleEphemeris("network", root)
-            : ShellState.toggleEphemeris("network", root.outputName)
+        onClicked: {
+            hoverSuppressed = true;
+            if (root.anchorHost) root.anchorHost.toggleEphemeris("network", root);
+            else ShellState.toggleEphemeris("network", root.outputName);
+        }
+        onExited: hoverSuppressed = false
     }
 
     Behavior on color { ColorAnimation { duration: Theme.motionFast } }
