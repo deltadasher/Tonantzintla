@@ -1,9 +1,10 @@
 import QtQuick
 import ".."
 
-// One backing surface that grows directly from an instrument's source bounds.
-// The animated rounded rectangle is the blob; there is deliberately no second
-// connector shape, neck, or inward-curving bridge to expose the wallpaper.
+// One backing surface that grows from an instrument's source bounds. The final
+// body is deliberately sunk beneath Aperture's source capsule: Aperture is the
+// visible cap and this surface is the expansion behind it. Keeping the final
+// silhouette to one rounded body avoids rotation-specific connector artifacts.
 Canvas {
     id: root
     required property var geometry
@@ -45,76 +46,6 @@ Canvas {
         ctx.closePath();
     }
 
-    // Fill the normally concave junction between the source and the deployed
-    // body with two convex shoulders. These are expressed per edge so the same
-    // silhouette survives bar rotation without positional special cases.
-    function outwardShoulders(ctx, g, source) {
-        const spread = Math.max(18, Math.min(46,
-            (edge === "top" || edge === "bottom" ? source.width : source.height) * 0.38));
-        const bend = spread * 0.72;
-        const sr = Math.max(5, Math.min(12, source.width / 2, source.height / 2));
-
-        if (edge === "bottom") {
-            const seam = g.y + g.height;
-            const shoulderY = source.y + sr;
-            ctx.moveTo(source.x - spread, seam);
-            ctx.bezierCurveTo(source.x - bend * 0.35, seam,
-                source.x, shoulderY - bend * 0.30, source.x, shoulderY);
-            ctx.lineTo(source.x, seam);
-            ctx.closePath();
-            ctx.moveTo(source.x + source.width + spread, seam);
-            ctx.bezierCurveTo(source.x + source.width + bend * 0.35, seam,
-                source.x + source.width, shoulderY - bend * 0.30,
-                source.x + source.width, shoulderY);
-            ctx.lineTo(source.x + source.width, seam);
-            ctx.closePath();
-        } else if (edge === "left") {
-            const seam = g.x;
-            const shoulderX = source.x + source.width - sr;
-            ctx.moveTo(seam, source.y - spread);
-            ctx.bezierCurveTo(seam, source.y - bend * 0.35,
-                shoulderX + bend * 0.30, source.y, shoulderX, source.y);
-            ctx.lineTo(seam, source.y);
-            ctx.closePath();
-            ctx.moveTo(seam, source.y + source.height + spread);
-            ctx.bezierCurveTo(seam, source.y + source.height + bend * 0.35,
-                shoulderX + bend * 0.30, source.y + source.height,
-                shoulderX, source.y + source.height);
-            ctx.lineTo(seam, source.y + source.height);
-            ctx.closePath();
-        } else if (edge === "right") {
-            const seam = g.x + g.width;
-            const shoulderX = source.x + sr;
-            ctx.moveTo(seam, source.y - spread);
-            ctx.bezierCurveTo(seam, source.y - bend * 0.35,
-                shoulderX - bend * 0.30, source.y, shoulderX, source.y);
-            ctx.lineTo(seam, source.y);
-            ctx.closePath();
-            ctx.moveTo(seam, source.y + source.height + spread);
-            ctx.bezierCurveTo(seam, source.y + source.height + bend * 0.35,
-                shoulderX - bend * 0.30, source.y + source.height,
-                shoulderX, source.y + source.height);
-            ctx.lineTo(seam, source.y + source.height);
-            ctx.closePath();
-        } else {
-            const seam = g.y;
-            const shoulderY = source.y + source.height - sr;
-            ctx.moveTo(source.x - spread, seam);
-            ctx.bezierCurveTo(source.x - bend * 0.35, seam,
-                source.x, shoulderY + bend * 0.30, source.x, shoulderY);
-            ctx.lineTo(source.x, seam);
-            ctx.closePath();
-            ctx.moveTo(source.x + source.width + spread, seam);
-            ctx.bezierCurveTo(source.x + source.width + bend * 0.35, seam,
-                source.x + source.width, shoulderY + bend * 0.30,
-                source.x + source.width, shoulderY);
-            ctx.lineTo(source.x + source.width, seam);
-            ctx.closePath();
-        }
-        // Aperture owns and paints the source capsule. Only its two outward
-        // shoulders belong to the Ephemeris backing.
-    }
-
     onPaint: {
         const ctx = getContext("2d");
         ctx.reset();
@@ -124,8 +55,6 @@ Canvas {
         const g = geometry;
         ctx.beginPath();
         roundedRect(ctx, g.x, g.y, g.width, g.height, g.radius);
-        if (attached && g.amount > 0.08)
-            outwardShoulders(ctx, g, g.origin);
         ctx.fillStyle = fillColor;
         ctx.fill();
     }
