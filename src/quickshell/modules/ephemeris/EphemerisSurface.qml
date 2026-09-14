@@ -68,7 +68,7 @@ PanelWindow {
     readonly property bool immersiveWidget: transition.activeTab === "walls"
     readonly property real apertureSurfaceOpacity: Settings.barMode === "capsules"
         ? Math.min(0.82, Settings.barOpacity * 0.78)
-        : Math.min(0.88, Settings.barOpacity * 0.86)
+        : Math.min(0.86, Settings.barOpacity * 0.82)
     // Colour stays opaque inside the Canvas. The aperture-derived alpha is
     // applied once to the complete union, avoiding darker overlap at the lip.
     readonly property color instrumentColor: Theme.void_
@@ -164,7 +164,11 @@ PanelWindow {
 
     Rectangle {
         anchors.fill: parent
-        color: Qt.rgba(Theme.void_.r, Theme.void_.g, Theme.void_.b, ShellState.deepFocus ? 0.45 : 0.18)
+        // Attached instruments and their Aperture source must composite over
+        // the same pixels or equal alpha values still appear mismatched.
+        color: root.anchoredInstrument ? "transparent"
+            : Qt.rgba(Theme.void_.r, Theme.void_.g, Theme.void_.b,
+                ShellState.deepFocus ? 0.45 : 0.18)
         opacity: transition.revealProgress
         MouseArea { anchors.fill: parent; onClicked: root.close() }
 

@@ -91,7 +91,7 @@ Canvas {
         const sourceHalf = Math.max(8, Math.min(28,
             (edge === "top" || edge === "bottom" ? source.width : source.height) * 0.42));
         const landingHalf = sourceHalf + 10 + amount * 10;
-        const overlap = 6;
+        const landingInset = 8;
 
         ctx.beginPath();
         roundedRect(ctx, g.x, g.y, g.width, g.height, g.radius);
@@ -104,24 +104,24 @@ Canvas {
 
         if (edge === "bottom") {
             const sx = source.x + source.width / 2;
-            const sy = source.y + overlap;
+            const sy = source.y;
             const dx = clamp(sx, g.x + g.radius, g.x + g.width - g.radius);
-            verticalLip(ctx, sx, sy, dx, g.y + g.height - overlap, sourceHalf, landingHalf);
+            verticalLip(ctx, sx, sy, dx, g.y + g.height - landingInset, sourceHalf, landingHalf);
         } else if (edge === "left") {
-            const sx = source.x + source.width - overlap;
+            const sx = source.x + source.width;
             const sy = source.y + source.height / 2;
             const dy = clamp(sy, g.y + g.radius, g.y + g.height - g.radius);
-            horizontalLip(ctx, sx, sy, g.x + overlap, dy, sourceHalf, landingHalf);
+            horizontalLip(ctx, sx, sy, g.x + landingInset, dy, sourceHalf, landingHalf);
         } else if (edge === "right") {
-            const sx = source.x + overlap;
+            const sx = source.x;
             const sy = source.y + source.height / 2;
             const dy = clamp(sy, g.y + g.radius, g.y + g.height - g.radius);
-            horizontalLip(ctx, sx, sy, g.x + g.width - overlap, dy, sourceHalf, landingHalf);
+            horizontalLip(ctx, sx, sy, g.x + g.width - landingInset, dy, sourceHalf, landingHalf);
         } else {
             const sx = source.x + source.width / 2;
-            const sy = source.y + source.height - overlap;
+            const sy = source.y + source.height;
             const dx = clamp(sx, g.x + g.radius, g.x + g.width - g.radius);
-            verticalLip(ctx, sx, sy, dx, g.y + overlap, sourceHalf, landingHalf);
+            verticalLip(ctx, sx, sy, dx, g.y + landingInset, sourceHalf, landingHalf);
         }
         ctx.fillStyle = fillColor;
         ctx.fill();
