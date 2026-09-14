@@ -6,6 +6,12 @@ Tonantzintla is one Quickshell application with a small number of deliberately
 separated layers. Keep those boundaries intact: most past regressions came from
 mixing layer-shell window ownership, UI presentation, and service lifetime.
 
+The public suite is described through five focused Pages entry points:
+[Aperture](suite/aperture.html), [Ephemeris](suite/ephemeris.html),
+[Parallax](suite/parallax.html), [Resonance](suite/resonance.html), and
+[Umbra](suite/umbra.html). These pages are user-facing contracts and source
+maps; they do not duplicate the shared runtime services or visual components.
+
 ## Runtime flow
 
 ```text
