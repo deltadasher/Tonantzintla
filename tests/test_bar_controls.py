@@ -15,6 +15,16 @@ class BarControlsTests(unittest.TestCase):
         self.assertIn('implicitWidth: controlSize', button)
         self.assertIn('implicitHeight: controlSize', button)
 
+    def test_thickness_picker_lives_in_the_visible_side_drawer(self):
+        repo = Path(__file__).resolve().parents[1]
+        studio = (repo / 'src/quickshell/modules/aperture/BarEditStudio.qml').read_text()
+        drawer = studio[studio.index('SIDE DRAWER'):]
+        self.assertIn('height: 354', drawer)
+        self.assertIn('text: "Bar Thickness"', drawer)
+        self.assertIn('{ label: "Compact", value: "compact", pixels: "36px" }', drawer)
+        self.assertIn('{ label: "Nominal", value: "nominal", pixels: "44px" }', drawer)
+        self.assertIn('{ label: "Tall", value: "tall", pixels: "52px" }', drawer)
+
     def test_studio_spawning_uses_the_current_edge_and_detects_placements(self):
         repo = Path(__file__).resolve().parents[1]
         studio = (repo / 'src/quickshell/modules/aperture/BarEditStudio.qml').read_text()
