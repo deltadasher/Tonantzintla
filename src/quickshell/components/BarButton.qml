@@ -6,10 +6,23 @@ Rectangle {
     id: root
 
     readonly property bool isVertical: root.parent && typeof root.parent.isVertical !== "undefined" ? root.parent.isVertical : (Settings.barPosition === "left" || Settings.barPosition === "right")
+    // The button lives inside a Grid owned by BarIsland. Derive its square
+    // control area from the island's cross-axis so an active highlight always
+    // keeps a proportional gutter inside compact, nominal, and tall capsules.
+    readonly property var owningIsland: root.parent && root.parent.parent
+        && typeof root.parent.parent.islandId !== "undefined" ? root.parent.parent : null
+    readonly property real islandThickness: owningIsland
+        ? (isVertical ? owningIsland.width : owningIsland.height)
+        : (isVertical ? (Settings.compact ? 42 : 48) : Theme.barHeight)
+    readonly property real controlInset: Math.max(3, Math.round(islandThickness * 0.10))
+    readonly property real controlSize: owningIsland
+        ? Math.max(28, islandThickness - controlInset * 2)
+        : (isVertical ? (Settings.compact ? 32 : 36) : (Settings.compact ? 36 : 40))
 
-    implicitWidth: isVertical ? (Settings.compact ? 32 : 36) : (Settings.compact ? 36 : 40)
-    implicitHeight: isVertical ? (Settings.compact ? 32 : 36) : (Settings.compact ? 36 : 40)
-    radius: 11
+    implicitWidth: controlSize
+    implicitHeight: controlSize
+    radius: Math.min(11, Math.max(7, controlSize * 0.28))
+    clip: true
     // A panel window can take pointer ownership before this button receives an
     // exit event. Suppress hover until the next genuine leave so the old button
     // cannot remain lit (or leave its tooltip behind) after dismissal.
