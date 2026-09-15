@@ -2,17 +2,15 @@
 
 ![Tonantzintla black hole](src/assets/illustrations/wabi-sabi-black-hole.svg)
 
-## WELCOME TO TONANTZINTLA 1.0
+## Tonantzintla 1.1
 
 A desktop with a little gravitational pull.
 
-Built with Quickshell for Niri. Tested on Arch Linux and Obarun.
+Built with Quickshell for Niri & Hyprland. Tested on Arch Linux, similar derivatives and Obarun.
 Orbiting calendars, fluid surfaces, music you can bend, and a black hole
 to come home to. Eccentricity belongs on the desktop.
 
-**Aperture** is the bar. **Ephemeris** holds the instruments.
-**Parallax** is your wallpaper library. **Resonance** handles media, lyrics,
-audio and pitch. **Optics** captures the screen. **Umbra** locks the session.
+## ARTIX NOT SUPPORTED INTENTIONALLY
 
 ### Explore the suite
 
@@ -52,10 +50,11 @@ Add `~/.local/bin` to your PATH if your shell cannot find the command.
 The shell is supervised within your Wayland session on both Arch and Obarun.
 `blackhole daemon logs` shows its recent log.
 
-Existing Astralith preferences are copied on install when the new preference
+Existing *Astralith* preferences are copied on install when the new preference
 directory does not exist. The old runtime stays available for recovery.
 Existing keybindings can continue through a migration alias; new bindings
-should use `blackhole`.
+should use `blackhole` automatically. If it doesnt, just remove your
+current version of Astralith/Tonantzintla, and reinstall.
 
 ### Make it yours
 
