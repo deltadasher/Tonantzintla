@@ -23,7 +23,7 @@
   const dialog = document.querySelector('#demo-dialog');
   if (dialog) {
     const video = dialog.querySelector('video');
-    document.querySelector('[data-watch]').addEventListener('click', () => {
+    document.querySelector('[data-watch]')?.addEventListener('click', () => {
       dialog.showModal();
       video.play().catch(() => { /* Native controls remain available if autoplay is blocked. */ });
     });
