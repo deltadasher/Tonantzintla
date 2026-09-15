@@ -1,7 +1,7 @@
 @font-face{font-family:Orbitron;src:url('fonts/orbitron-500.ttf') format('truetype');font-weight:500;font-style:normal;font-display:swap}
 @font-face{font-family:Orbitron;src:url('fonts/orbitron-600.ttf') format('truetype');font-weight:600;font-style:normal;font-display:swap}
 @font-face{font-family:Orbitron;src:url('fonts/orbitron-700.ttf') format('truetype');font-weight:700;font-style:normal;font-display:swap}
-:root{color-scheme:dark;--bg:#0b0b0d;--panel:#131316;--ink:#f1eee7;--muted:#a5a39e;--line:#ffffff24;--amber:#e9b872;--accent:#e9b872;--accent-rgb:233,184,114;--max:1440px;--mono:ui-monospace,SFMono-Regular,Consolas,monospace;--display:'Orbitron','Arial Narrow','Helvetica Neue',Arial,sans-serif}
+:root{color-scheme:dark;--bg:#0b0b0d;--panel:#131316;--ink:#f1eee7;--muted:#a5a39e;--line:#ffffff24;--amber:#e9b872;--accent:#e9b872;--accent-rgb:233,184,114;--max:1440px;--mono:ui-monospace,SFMono-Regular,Consolas,monospace;--display:'Avayx','Arial Narrow','Helvetica Neue',Arial,sans-serif}
 
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:32px}
@@ -16,20 +16,20 @@ button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 img{display:block;max-width:100%}
 button:disabled{cursor:wait}
 h1,h2,h3,p{margin:0}
-h1,h2,h3{font-family:var(--display);font-weight:600}
+h1{font-weight:600}
 em{font-family:Georgia,"Times New Roman",serif;font-weight:400;color:var(--accent)}
 [hidden]{display:none!important}
 .wrap{width:min(calc(100% - 112px),var(--max));margin-inline:auto}
 .mono,.eyebrow{font:10px/1.6 var(--mono);letter-spacing:.13em}
 .eyebrow{display:block;color:var(--accent);margin-bottom:24px}
 .site-header{height:100px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);position:relative;z-index:4}
-.brand{display:flex;gap:12px;align-items:center;font-family:var(--display);font-size:21px;letter-spacing:-.8px;font-weight:600}
+.brand{display:flex;gap:12px;align-items:center;font-size:21px;letter-spacing:-.8px;font-weight:600}
 .brand img{object-fit:contain}
 .brand-dot{color:var(--accent);margin-left:5px;font-size:12px;vertical-align:top}
 .site-header nav{display:flex;align-items:center;gap:36px;font-size:12px}
 .site-header nav a{transition:color .2s}
 .site-header nav a:hover{color:var(--accent)}
-.nav-install{font-family:var(--display);border:1px solid var(--line);border-radius:40px;padding:10px 20px}
+.nav-install{border:1px solid var(--line);border-radius:40px;padding:10px 20px}
 .nav-install span{margin-left:20px}
 .hero{padding-top:35px;padding-bottom:55px}
 .hero-topline{display:flex;justify-content:space-between;color:var(--muted)}
