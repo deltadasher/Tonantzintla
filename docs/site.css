@@ -16,14 +16,14 @@ button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 img{display:block;max-width:100%}
 button:disabled{cursor:wait}
 h1,h2,h3,p{margin:0}
-h1{font-weight:600}
+h1{font-family:var(--display);font-weight:600}
 em{font-family:Georgia,"Times New Roman",serif;font-weight:400;color:var(--accent)}
 [hidden]{display:none!important}
 .wrap{width:min(calc(100% - 112px),var(--max));margin-inline:auto}
 .mono,.eyebrow{font:10px/1.6 var(--mono);letter-spacing:.13em}
 .eyebrow{display:block;color:var(--accent);margin-bottom:24px}
 .site-header{height:100px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);position:relative;z-index:4}
-.brand{display:flex;gap:12px;align-items:center;font-size:21px;letter-spacing:-.8px;font-weight:600}
+.brand{display:flex;gap:12px;align-items:center;font-family:var(--display);font-size:21px;letter-spacing:-.8px;font-weight:600}
 .brand img{object-fit:contain}
 .brand-dot{color:var(--accent);margin-left:5px;font-size:12px;vertical-align:top}
 .site-header nav{display:flex;align-items:center;gap:36px;font-size:12px}
