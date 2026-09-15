@@ -20,12 +20,6 @@
       event.preventDefault(); selectTab(tabs[next]); tabs[next].focus();
     });
   });
-  document.querySelectorAll('.swatches button[data-tone]').forEach(button => {
-    button.addEventListener('click', () => {
-      const tone = button.dataset.tone;
-      document.body.dataset.tone = tone;
-      document.querySelectorAll('.swatches button[data-tone]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
-    });
   });
   const dialog = document.querySelector('#demo-dialog');
   if (dialog) {
