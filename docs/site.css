@@ -1,4 +1,5 @@
-:root{color-scheme:dark;--bg:#0b0b0d;--panel:#131316;--ink:#f1eee7;--muted:#a5a39e;--line:#ffffff24;--amber:#e9b872;--accent:#e9b872;--accent-rgb:233,184,114;--max:1440px;--mono:ui-monospace,SFMono-Regular,Consolas,monospace}
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700&display=swap');
+:root{color-scheme:dark;--bg:#0b0b0d;--panel:#131316;--ink:#f1eee7;--muted:#a5a39e;--line:#ffffff24;--amber:#e9b872;--accent:#e9b872;--accent-rgb:233,184,114;--max:1440px;--mono:ui-monospace,SFMono-Regular,Consolas,monospace;--display:'Orbitron','Arial Narrow','Helvetica Neue',Arial,sans-serif}
 
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:32px}
@@ -13,20 +14,20 @@ button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 img{display:block;max-width:100%}
 button:disabled{cursor:wait}
 h1,h2,h3,p{margin:0}
-h1,h2,h3{font-weight:500}
+h1,h2,h3{font-family:var(--display);font-weight:600}
 em{font-family:Georgia,"Times New Roman",serif;font-weight:400;color:var(--accent)}
 [hidden]{display:none!important}
 .wrap{width:min(calc(100% - 112px),var(--max));margin-inline:auto}
 .mono,.eyebrow{font:10px/1.6 var(--mono);letter-spacing:.13em}
 .eyebrow{display:block;color:var(--accent);margin-bottom:24px}
 .site-header{height:100px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);position:relative;z-index:4}
-.brand{display:flex;gap:12px;align-items:center;font-size:21px;letter-spacing:-.8px;font-weight:600}
+.brand{display:flex;gap:12px;align-items:center;font-family:var(--display);font-size:21px;letter-spacing:-.8px;font-weight:600}
 .brand img{object-fit:contain}
 .brand-dot{color:var(--accent);margin-left:5px;font-size:12px;vertical-align:top}
 .site-header nav{display:flex;align-items:center;gap:36px;font-size:12px}
 .site-header nav a{transition:color .2s}
 .site-header nav a:hover{color:var(--accent)}
-.nav-install{border:1px solid var(--line);border-radius:40px;padding:10px 20px}
+.nav-install{font-family:var(--display);border:1px solid var(--line);border-radius:40px;padding:10px 20px}
 .nav-install span{margin-left:20px}
 .hero{padding-top:35px;padding-bottom:55px}
 .hero-topline{display:flex;justify-content:space-between;color:var(--muted)}
@@ -74,7 +75,7 @@ h2{font-size:clamp(36px,4.5vw,72px);line-height:1.03;letter-spacing:-.055em}
 .instrument-section h2 em{font-size:.85em}
 .deck{display:grid;grid-template-columns:260px minmax(0,1fr);gap:45px}
 .deck-tabs{display:flex;flex-direction:column;border-top:1px solid var(--line)}
-.deck-tabs button{display:flex;align-items:center;gap:19px;background:none;border:0;border-bottom:1px solid var(--line);padding:24px 12px;font-size:24px;letter-spacing:-.7px;text-align:left;transition:background .2s,color .2s}
+.deck-tabs button{display:flex;align-items:center;gap:19px;background:none;border:0;border-bottom:1px solid var(--line);padding:24px 12px;font-family:var(--display);font-size:24px;letter-spacing:-.7px;text-align:left;transition:background .2s,color .2s}
 .deck-tabs .mono{font-size:9px;color:var(--muted);letter-spacing:0}
 .deck-tabs button[aria-selected=true]{color:var(--accent);background:#ffffff05}
 .deck-tabs button:hover{background:#ffffff07}
@@ -89,7 +90,7 @@ h2{font-size:clamp(36px,4.5vw,72px);line-height:1.03;letter-spacing:-.055em}
 .deck-copy .eyebrow{margin-bottom:10px;font-size:9px}
 .deck-copy h3{font-size:30px;line-height:1.1;letter-spacing:-1.2px;margin-bottom:13px}
 .deck-copy p{font-size:14px;color:var(--muted);max-width:590px}
-.round-link{width:62px;height:62px;flex-shrink:0;display:grid;place-items:center;border:1px solid var(--line);border-radius:50%;font-size:30px;line-height:1;transition:background .25s,color .25s,transform .25s}
+.round-link{width:62px;height:62px;flex-shrink:0;display:grid;place-items:center;border:1px solid var(--line);border-radius:50%;font-family:var(--display);font-size:30px;line-height:1;transition:background .25s,color .25s,transform .25s}
 .round-link:hover{background:var(--accent);color:var(--bg);transform:rotate(45deg)}
 .manifesto{display:grid;grid-template-columns:1fr 2.1fr;gap:60px;padding-block:130px}
 .manifesto-aside{display:flex;flex-direction:column;justify-content:space-between}
@@ -117,7 +118,7 @@ h2{font-size:clamp(36px,4.5vw,72px);line-height:1.03;letter-spacing:-.055em}
 .install-section h2{font-size:clamp(50px,5.5vw,85px)}
 .install-section h2 em{color:inherit}
 .install-section p{margin-top:25px;font-size:14px}
-.button{display:inline-flex;align-items:center;gap:35px;border-radius:40px;padding:14px 23px;font-size:13px;border:1px solid currentColor;transition:transform .25s}
+.button{display:inline-flex;align-items:center;gap:35px;border-radius:40px;padding:14px 23px;font-family:var(--display);font-size:13px;border:1px solid currentColor;transition:transform .25s}
 .button:hover{transform:translateY(-3px)}
 .button.primary{background:#171618;color:#f1eee7;border-color:#171618;margin-top:28px}
 .releases{margin-left:20px;border-color:#19171650}
