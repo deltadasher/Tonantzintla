@@ -20,7 +20,6 @@
       event.preventDefault(); selectTab(tabs[next]); tabs[next].focus();
     });
   });
-  });
   const dialog = document.querySelector('#demo-dialog');
   if (dialog) {
     const video = dialog.querySelector('video');
