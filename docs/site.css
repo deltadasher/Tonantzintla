@@ -1,6 +1,4 @@
-@font-face{font-family:Orbitron;src:url('fonts/orbitron-500.ttf') format('truetype');font-weight:500;font-style:normal;font-display:swap}
-@font-face{font-family:Orbitron;src:url('fonts/orbitron-600.ttf') format('truetype');font-weight:600;font-style:normal;font-display:swap}
-@font-face{font-family:Orbitron;src:url('fonts/orbitron-700.ttf') format('truetype');font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:Avayx;src:url('fonts/avayx-regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
 :root{color-scheme:dark;--bg:#0b0b0d;--panel:#131316;--ink:#f1eee7;--muted:#a5a39e;--line:#ffffff24;--amber:#e9b872;--accent:#e9b872;--accent-rgb:233,184,114;--max:1440px;--mono:ui-monospace,SFMono-Regular,Consolas,monospace;--display:'Avayx','Arial Narrow','Helvetica Neue',Arial,sans-serif}
 
 *{box-sizing:border-box}
@@ -16,7 +14,7 @@ button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 img{display:block;max-width:100%}
 button:disabled{cursor:wait}
 h1,h2,h3,p{margin:0}
-h1{font-family:var(--display);font-weight:600}
+h1{font-family:var(--display);font-weight:400}
 em{font-family:Georgia,"Times New Roman",serif;font-weight:400;color:var(--accent)}
 [hidden]{display:none!important}
 .wrap{width:min(calc(100% - 112px),var(--max));margin-inline:auto}
