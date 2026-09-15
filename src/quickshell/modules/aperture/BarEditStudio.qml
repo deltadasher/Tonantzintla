@@ -728,10 +728,13 @@ PanelWindow {
 
                                 Rectangle {
                                     Layout.fillWidth: true; implicitHeight: 40; radius: 8
-                                    color: !Settings.compact ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.24) : Theme.controlRest
+                                    readonly property bool selected: !Settings.compact
+                                        && Settings.barHeightProfile !== "tall"
+                                        && Settings.barHeightProfile !== "spacious"
+                                    color: selected ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.24) : Theme.controlRest
                                     border.width: 0
-                                    border.color: !Settings.compact ? Theme.accent : Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.12)
-                                    Text { anchors.centerIn: parent; text: "Cozy Height (48px)"; color: !Settings.compact ? Theme.accent : Theme.moon; font.pixelSize: 11; font.bold: true }
+                                    border.color: selected ? Theme.accent : Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.12)
+                                    Text { anchors.centerIn: parent; text: "Nominal (44px)"; color: parent.selected ? Theme.accent : Theme.moon; font.pixelSize: 11; font.bold: true }
                                     MouseArea { anchors.fill: parent; onClicked: { Settings.compact = false; Settings.barHeightProfile = "nominal"; } }
                                 }
 
@@ -742,6 +745,17 @@ PanelWindow {
                                     border.color: Settings.compact ? Theme.accent : Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.12)
                                     Text { anchors.centerIn: parent; text: "Compact Height (36px)"; color: Settings.compact ? Theme.accent : Theme.moon; font.pixelSize: 11; font.bold: true }
                                     MouseArea { anchors.fill: parent; onClicked: { Settings.compact = true; Settings.barHeightProfile = "compact"; } }
+                                }
+
+                                Rectangle {
+                                    Layout.fillWidth: true; implicitHeight: 40; radius: 8
+                                    readonly property bool selected: !Settings.compact
+                                        && (Settings.barHeightProfile === "tall" || Settings.barHeightProfile === "spacious")
+                                    color: selected ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.24) : Theme.controlRest
+                                    border.width: 0
+                                    border.color: selected ? Theme.accent : Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.12)
+                                    Text { anchors.centerIn: parent; text: "Tall (52px)"; color: parent.selected ? Theme.accent : Theme.moon; font.pixelSize: 11; font.bold: true }
+                                    MouseArea { anchors.fill: parent; onClicked: { Settings.compact = false; Settings.barHeightProfile = "tall"; } }
                                 }
                             }
                         }

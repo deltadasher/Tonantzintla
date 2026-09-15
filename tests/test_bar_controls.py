@@ -7,6 +7,14 @@ import unittest
 
 
 class BarControlsTests(unittest.TestCase):
+    def test_bar_buttons_scale_inside_their_owning_island(self):
+        repo = Path(__file__).resolve().parents[1]
+        button = (repo / 'src/quickshell/components/BarButton.qml').read_text()
+        self.assertIn('typeof root.parent.parent.islandId !== "undefined" ? root.parent.parent : null', button)
+        self.assertIn('readonly property real controlInset: Math.max(3, Math.round(islandThickness * 0.10))', button)
+        self.assertIn('implicitWidth: controlSize', button)
+        self.assertIn('implicitHeight: controlSize', button)
+
     def test_studio_spawning_uses_the_current_edge_and_detects_placements(self):
         repo = Path(__file__).resolve().parents[1]
         studio = (repo / 'src/quickshell/modules/aperture/BarEditStudio.qml').read_text()
