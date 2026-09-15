@@ -1003,7 +1003,9 @@ PanelWindow {
         anchors.rightMargin: root.sideDrawerOpen ? 0 : -width + 12
         anchors.verticalCenter: parent.verticalCenter
         width: 292
-        height: 300
+        // Keep the appearance controls together rather than clipping the
+        // thickness picker below the reset action.
+        height: 354
 
         EdgeFluidSurface {
             anchors.fill: parent
@@ -1165,6 +1167,49 @@ T"
                             color: Math.abs(Settings.barOpacity - modelData) < 0.04 ? Theme.accent : Theme.controlRest
                             Text { anchors.centerIn: parent; text: Math.round(modelData * 100); color: Math.abs(Settings.barOpacity - modelData) < 0.04 ? Theme.void_ : Theme.moon; font.pixelSize: 9; font.bold: true }
                             MouseArea { anchors.fill: parent; onClicked: Settings.barOpacity = modelData }
+                        }
+                    }
+                }
+            }
+
+            // Bar Thickness. This is intentionally in the quick side drawer:
+            // it changes the cross-axis that every island highlight must fit.
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 4
+                RowLayout {
+                    Layout.fillWidth: true
+                    Text { text: "Bar Thickness"; color: Theme.moon; font.pixelSize: 11 }
+                    Item { Layout.fillWidth: true }
+                    Text {
+                        text: Settings.compact ? "36px" : (Settings.barHeightProfile === "tall" || Settings.barHeightProfile === "spacious" ? "52px" : "44px")
+                        color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: 10
+                    }
+                }
+                RowLayout {
+                    Layout.fillWidth: true; spacing: 4
+                    Repeater {
+                        model: [
+                            { label: "Compact", value: "compact", pixels: "36px" },
+                            { label: "Nominal", value: "nominal", pixels: "44px" },
+                            { label: "Tall", value: "tall", pixels: "52px" }
+                        ]
+                        Rectangle {
+                            Layout.fillWidth: true; implicitHeight: 24; radius: 4
+                            readonly property bool selected: modelData.value === "compact"
+                                ? Settings.compact
+                                : !Settings.compact && (modelData.value === "tall"
+                                    ? (Settings.barHeightProfile === "tall" || Settings.barHeightProfile === "spacious")
+                                    : Settings.barHeightProfile !== "tall" && Settings.barHeightProfile !== "spacious")
+                            color: selected ? Theme.accent : Theme.controlRest
+                            Text { anchors.centerIn: parent; text: modelData.label; color: parent.selected ? Theme.void_ : Theme.moon; font.pixelSize: 9; font.bold: true }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    Settings.compact = modelData.value === "compact"
+                                    Settings.barHeightProfile = modelData.value
+                                }
+                            }
                         }
                     }
                 }
