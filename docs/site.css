@@ -14,7 +14,7 @@ button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 img{display:block;max-width:100%}
 button:disabled{cursor:wait}
 h1,h2,h3,p{margin:0}
-h1{font-family:var(--display);font-weight:400}
+h1{font-weight:500}
 em{font-family:Georgia,"Times New Roman",serif;font-weight:400;color:var(--accent)}
 [hidden]{display:none!important}
 .wrap{width:min(calc(100% - 112px),var(--max));margin-inline:auto}
