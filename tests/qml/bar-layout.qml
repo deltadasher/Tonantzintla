@@ -84,6 +84,8 @@ Window {
         editor.selection = "clock";
         Settings.barIconMotion = true;
         Settings.motion = true;
+        ShellState.setEphemerisAnchor(0, 0, button.width, button.height,
+            "top", "launcher", button);
         ShellState.ephemerisTab = "guide";
         ShellState.ephemerisVisible = true;
         check(button.panelOpen, "button tracks panel state");
