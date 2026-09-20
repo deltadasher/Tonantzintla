@@ -18,3 +18,5 @@ singleton Spectrum 1.0 Spectrum.qml
 singleton Umbra 1.0 Umbra.qml
 singleton IdleLock 1.0 IdleLock.qml
 singleton Weather 1.0 Weather.qml
+singleton Authentication 1.0 Authentication.qml
+singleton FeatureRegistry 1.0 FeatureRegistry.qml

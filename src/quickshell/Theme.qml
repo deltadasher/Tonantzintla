@@ -85,6 +85,9 @@ QtObject {
         : Settings.motionSpeedProfile === "instant" ? 0
         : Settings.motionSpeedProfile === "snappy" ? 0.55
         : Settings.motionSpeedProfile === "cinematic" ? 1.6 : 1.0
+    readonly property int surfaceEnterDuration: Math.round(280 * motionScale)
+    readonly property int surfaceExitDuration: Math.round(190 * motionScale)
+    readonly property int effectDuration: Math.round(140 * motionScale)
     readonly property int motionFast: Math.max(1, Math.round(120 * (motionScale || 0.001)))
     readonly property int motionNormal: Math.max(1, Math.round(220 * (motionScale || 0.001)))
     readonly property int motionSlow: Math.max(1, Math.round(420 * (motionScale || 0.001)))

@@ -119,7 +119,7 @@ class BlackholeCliTests(unittest.TestCase):
             fake_git = bin_dir / "git"
             fake_git.write_text(f"""#!/bin/sh
 echo "git $@" >> "{log_file}"
-if [ "$FAIL_GIT" = "1" ]; then
+if [ "$FAIL_GIT" = "1" ] && [ "$3" = "pull" ]; then
     echo "Simulated git pull error" >&2
     exit 1
 fi

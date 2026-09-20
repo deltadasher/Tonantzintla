@@ -5,36 +5,41 @@ import Quickshell.Wayland
 import "../.."
 import "../../services"
 import "../../components"
+import "../../components/ApertureMetrics.js" as ApertureMetrics
 import "EphemerisRegistry.js" as Registry
 
 PanelWindow {
     id: root
     required property var modelData
     screen: modelData
+    readonly property string activeInstrument: transition.activeTab.split(":")[0]
+    readonly property bool compactInstrument: transition.activeTab.indexOf(":quick") >= 0
     readonly property string outputName: modelData.name
     readonly property bool targetScreen: ShellState.ephemerisOutput.length > 0
         ? ShellState.ephemerisOutput === outputName
         : Compositor.focusedOutput.length > 0
             ? Compositor.focusedOutput === outputName
             : Quickshell.screens.length > 0 && modelData === Quickshell.screens[0]
-    readonly property int barClearance: (Settings.compact ? 38 : Theme.barHeight)
-        + (Settings.barMode === "docked" ? 10 : Settings.barMargin * 2 + 8)
-    readonly property int topClearance: Settings.edgeHasIslands(outputName, "top") ? barClearance : 16
-    readonly property int bottomClearance: Settings.edgeHasIslands(outputName, "bottom") ? barClearance : 16
-    readonly property int leftClearance: Settings.edgeHasIslands(outputName, "left") ? barClearance : 16
-    readonly property int rightClearance: Settings.edgeHasIslands(outputName, "right") ? barClearance : 16
+    function clearance(edge) {
+        return ApertureMetrics.clearance(edge, Settings.edgeHasIslands(outputName, edge),
+            Settings.compact, Settings.barHeightProfile, Theme.barHeight,
+            Settings.barMode, Settings.barMargin);
+    }
+    readonly property real topClearance: clearance("top")
+    readonly property real bottomClearance: clearance("bottom")
+    readonly property real leftClearance: clearance("left")
+    readonly property real rightClearance: clearance("right")
+    readonly property var safeArea: Registry.safeArea(width, height, topClearance,
+        bottomClearance, leftClearance, rightClearance)
     property bool displayedAnchorValid: false
     property real displayedAnchorX: 0
     property real displayedAnchorY: 0
     property real displayedAnchorWidth: 0
     property real displayedAnchorHeight: 0
     property string displayedAnchorEdge: "top"
-    // Every bar-launched panel remembers its source for placement. Calendar is
-    // the sole instrument that physically grows from Aperture; the others dock
-    // nearby as independent satellite surfaces.
+    // The source, backing, rounded mask, and input lifetime share one transition.
     readonly property bool sourcePositioned: displayedAnchorValid
-    readonly property bool anchoredInstrument: sourcePositioned
-        && transition.activeTab === "calendar"
+    readonly property bool anchoredInstrument: sourcePositioned && !root.immersiveWidget
     readonly property string anchorEdge: sourcePositioned
         ? displayedAnchorEdge : Settings.getEffectiveBarPosition(outputName)
 
@@ -50,7 +55,7 @@ PanelWindow {
     }
     Component.onCompleted: captureRequestedAnchor()
     readonly property var widgetLayout: {
-        const layout = Registry.getLayout(transition.activeTab, width, height,
+        const layout = Registry.getLayout(root.activeInstrument, width, height,
             topClearance, bottomClearance, leftClearance, rightClearance,
             Settings.ephemerisStyle);
         if (widgetLoader.status === Loader.Ready && widgetLoader.item
@@ -58,6 +63,9 @@ PanelWindow {
             layout.height = Math.min(layout.height,
                 Math.max(240, widgetLoader.item.preferredSurfaceHeight));
 
+        if (widgetLoader.status === Loader.Ready && widgetLoader.item
+                && widgetLoader.item.preferredSurfaceWidth !== undefined)
+            layout.width = Math.min(layout.width, widgetLoader.item.preferredSurfaceWidth);
         if (sourcePositioned && layout.placement !== "horizon") {
             Registry.attachLayout(layout, {
                 x: displayedAnchorX,
@@ -65,12 +73,12 @@ PanelWindow {
                 width: displayedAnchorWidth,
                 height: displayedAnchorHeight
             }, anchorEdge, width, height, topClearance, bottomClearance,
-                leftClearance, rightClearance, anchoredInstrument ? -6 : 10);
+                leftClearance, rightClearance, 8);
         }
         return layout;
     }
-    readonly property color moduleTone: Theme.moduleAccent(transition.activeTab)
-    readonly property bool immersiveWidget: transition.activeTab === "walls"
+    readonly property color moduleTone: Theme.moduleAccent(root.activeInstrument)
+    readonly property bool immersiveWidget: root.activeInstrument === "walls"
     // Ephemeris is a reading surface. It remains opaque even when Aperture is
     // configured as glass so wallpaper detail cannot compete with its content.
     readonly property real instrumentSurfaceOpacity: 1.0
@@ -98,8 +106,11 @@ PanelWindow {
     SurfaceTransition {
         id: transition
         requestedVisible: ShellState.ephemerisVisible && root.targetScreen
-        requestedTab: Registry.normalize(ShellState.ephemerisTab)
-        motionEnabled: Settings.motion
+        requestedTab: Registry.normalize(ShellState.ephemerisTab) + (ShellState.quickInstrument ? ":quick" : "")
+        motionEnabled: Theme.motionScale > 0
+        enterDuration: Theme.surfaceEnterDuration
+        exitDuration: Theme.surfaceExitDuration
+        effectDuration: Theme.effectDuration
         contentReady: widgetLoader.status === Loader.Ready || widgetLoader.status === Loader.Error
         onDeploying: {
             if (widgetLoader.item && widgetLoader.item.beginDeployment) widgetLoader.item.beginDeployment();
@@ -117,6 +128,10 @@ PanelWindow {
     }
 
     readonly property rect originRect: {
+        const fitted = Registry.fitRect(rawOriginRect, safeArea);
+        return Qt.rect(fitted.x, fitted.y, fitted.width, fitted.height);
+    }
+    readonly property rect rawOriginRect: {
         if (root.anchoredInstrument)
             return Qt.rect(root.displayedAnchorX, root.displayedAnchorY,
                 root.displayedAnchorWidth, root.displayedAnchorHeight);
@@ -174,134 +189,151 @@ PanelWindow {
         return Qt.rect(ox, oy, ow, oh);
     }
 
+    property rect displayedDestination: Qt.rect(root.widgetLayout.x, root.widgetLayout.y, root.widgetLayout.width, root.widgetLayout.height)
+    Behavior on displayedDestination { PropertyAnimation { duration: transition.mounted && Theme.motionScale > 0 ? Theme.surfaceEnterDuration : 0; easing.type: Easing.OutCubic } }
+
     InstrumentGeometry {
         id: surfaceGeometry
         origin: root.originRect
-        destination: Qt.rect(root.widgetLayout.x, root.widgetLayout.y, root.widgetLayout.width, root.widgetLayout.height)
-        progress: transition.contentProgress
-        motion: Settings.motion
+        destination: root.displayedDestination
+        progress: transition.revealProgress
+        motion: Theme.motionScale > 0
     }
 
-    Rectangle {
-        anchors.fill: parent
-        // Attached instruments and their Aperture source must composite over
-        // the same pixels or equal alpha values still appear mismatched.
-        color: root.anchoredInstrument ? "transparent"
-            : Qt.rgba(Theme.void_.r, Theme.void_.g, Theme.void_.b,
-                ShellState.deepFocus ? 0.45 : 0.18)
-        opacity: transition.revealProgress
-        MouseArea { anchors.fill: parent; onClicked: root.close() }
+    // Both painting and pointer input stop at the reserved Aperture boundary.
+    // Clipping updates immediately if bar settings change during an animation.
+    mask: Region { item: safeViewport }
+    Item {
+        id: safeViewport
+        x: root.safeArea.x; y: root.safeArea.y
+        width: root.safeArea.width; height: root.safeArea.height
+        clip: true
+        Item {
+            x: -safeViewport.x; y: -safeViewport.y
+            width: root.width; height: root.height
+            Rectangle {
+                anchors.fill: parent
+                // Source-anchored instruments leave the desktop undimmed; all
+                // other scrims remain inside the same safe area as their panel.
+                color: root.anchoredInstrument ? "transparent"
+                    : Qt.rgba(Theme.void_.r, Theme.void_.g, Theme.void_.b,
+                        ShellState.deepFocus ? 0.45 : 0.18)
+                opacity: transition.revealProgress
+                MouseArea { anchors.fill: parent; onClicked: root.close() }
 
-        Loader {
-            id: blobBacking
-            anchors.fill: parent
-            active: root.blobExperiment && !root.immersiveWidget
-            source: active ? Qt.resolvedUrl("../../components/ExperimentalBlobBacking.qml") : ""
-            onLoaded: {
-                item.geometry = surfaceGeometry;
-                item.origin = root.originRect;
-                item.anchored = root.anchoredInstrument;
-            }
-        }
-
-        InstrumentBridge {
-            anchors.fill: parent
-            geometry: surfaceGeometry
-            edge: root.anchorEdge
-            attached: root.anchoredInstrument
-            fillColor: root.instrumentColor
-            visible: !root.immersiveWidget
-                && (!root.blobExperiment || blobBacking.status === Loader.Error)
-                && transition.revealProgress > 0.01
-            opacity: root.instrumentSurfaceOpacity
-        }
-
-        ClippingRectangle {
-            id: deck
-            x: surfaceGeometry.x; y: surfaceGeometry.y
-            width: surfaceGeometry.width; height: surfaceGeometry.height
-            // The geometry expands into the solid instrument backing and rounded mask.
-            // Parallax stays open; Resonance and other panels own rounded, clipped containment.
-            radius: surfaceGeometry.radius
-            color: "transparent"
-            clip: true
-            opacity: Settings.motion ? 0.80 + 0.20 * transition.contentProgress : 1
-            scale: Settings.motion && Settings.motionStyle !== "rise"
-                ? 0.96 + 0.04 * transition.contentProgress : 1
-
-            Item {
-                id: fixedContent
-                x: root.widgetLayout.x - surfaceGeometry.x
-                y: root.widgetLayout.y - surfaceGeometry.y
-                width: root.widgetLayout.width
-                height: root.widgetLayout.height
-
-                MouseArea { anchors.fill: parent; onClicked: if (root.immersiveWidget) root.close() }
-
-                // Super+Alt anywhere on an open widget opens that widget's own
-                // settings, matching the gesture the bar islands answer to.
-                // Sits above the widget so it wins the press, and declines
-                // every other click so normal interaction is untouched.
-                MouseArea {
+                Loader {
+                    id: blobBacking
                     anchors.fill: parent
-                    z: 9999
-                    acceptedButtons: Qt.LeftButton
-                    onPressed: function(mouse) {
-                        const hasMeta = Boolean(mouse.modifiers & Qt.MetaModifier);
-                        const hasAlt = Boolean(mouse.modifiers & Qt.AltModifier);
-                        if (!(hasMeta && hasAlt)) {
-                            mouse.accepted = false;
-                            return;
-                        }
-                        mouse.accepted = true;
-                        const origin = mapToItem(null, 0, 0);
-                        ShellState.openWidgetSettings(transition.activeTab,
-                            origin.x, origin.y, width, height);
+                    active: root.blobExperiment && !root.immersiveWidget
+                    source: active ? Qt.resolvedUrl("../../components/ExperimentalBlobBacking.qml") : ""
+                    onLoaded: {
+                        item.geometry = surfaceGeometry;
+                        item.origin = root.originRect;
+                        item.anchored = root.anchoredInstrument;
                     }
                 }
-                EphemerisAtmosphere {
+
+                InstrumentBridge {
                     anchors.fill: parent
+                    geometry: surfaceGeometry
+                    edge: root.anchorEdge
+                    attached: root.anchoredInstrument
+                    fillColor: root.instrumentColor
                     visible: !root.immersiveWidget
-                    module: transition.activeTab
-                    presentation: transition.contentProgress
+                        && (!root.blobExperiment || blobBacking.status === Loader.Error)
+                        && transition.revealProgress > 0.01
+                    opacity: root.instrumentSurfaceOpacity
                 }
-                WabiSabiBlackHole {
-                    anchors.centerIn: parent
-                    width: Math.min(150, parent.width * 0.3); height: width * 0.7
-                    visible: Settings.motion && transition.phase !== "open" && transition.phase !== "closing"
-                    opacity: 0.35 * (1 - transition.contentProgress)
-                    diskColor: root.moduleTone; horizonColor: Theme.mantle
-                }
-                Item {
-                    id: keyCatcher
-                    anchors.fill: parent
-                    focus: true
-                    Keys.onPressed: function(event) {
-                        if (event.key === Qt.Key_Escape) { root.close(); event.accepted = true; }
-                    }
-                    Loader {
-                        id: widgetLoader
-                        anchors.fill: parent
-                        anchors.margins: root.immersiveWidget ? 8 : 20
-                        active: transition.mounted
-                        asynchronous: true
-                        focus: true
-                        enabled: transition.interactive
-                        visible: status === Loader.Ready
-                        opacity: transition.contentProgress
-                        transform: Translate { y: Settings.motion && Settings.motionStyle === "rise" ? (1 - transition.contentProgress) * 18 : 0 }
-                        source: Qt.resolvedUrl(Registry.sourceFor(transition.activeTab))
-                    }
-                    StatusMessage {
-                        anchors.centerIn: parent
-                        width: Math.min(parent.width - 40, 400)
-                        visible: widgetLoader.status === Loader.Error
-                        title: "This instrument couldn’t open"
-                        detail: root.widgetLayout.title + ". Try again, or use Escape to return to your desktop."
-                        actionText: "Try again"
-                        onActivated: {
-                            widgetLoader.source = "";
-                            widgetLoader.source = Qt.binding(function() { return Qt.resolvedUrl(Registry.sourceFor(transition.activeTab)); });
+
+                ClippingRectangle {
+                    id: deck
+                    x: surfaceGeometry.x; y: surfaceGeometry.y
+                    width: surfaceGeometry.width; height: surfaceGeometry.height
+                    // The geometry expands into the solid instrument backing and rounded mask.
+                    // Parallax stays open; Resonance and other panels own rounded, clipped containment.
+                    radius: surfaceGeometry.radius
+                    color: "transparent"
+                    clip: true
+                    opacity: Settings.motion ? 0.80 + 0.20 * transition.contentProgress : 1
+                    scale: Settings.motion && Settings.motionStyle !== "rise"
+                        ? 0.96 + 0.04 * transition.contentProgress : 1
+
+                    Item {
+                        id: fixedContent
+                        x: root.widgetLayout.x - surfaceGeometry.x
+                        y: root.widgetLayout.y - surfaceGeometry.y
+                        width: root.widgetLayout.width
+                        height: root.widgetLayout.height
+
+                        MouseArea { anchors.fill: parent; onClicked: if (root.immersiveWidget) root.close() }
+
+                        // Super+Alt anywhere on an open widget opens that widget's own
+                        // settings, matching the gesture the bar islands answer to.
+                        // Sits above the widget so it wins the press, and declines
+                        // every other click so normal interaction is untouched.
+                        MouseArea {
+                            anchors.fill: parent
+                            z: 9999
+                            acceptedButtons: Qt.LeftButton
+                            onPressed: function(mouse) {
+                                const hasMeta = Boolean(mouse.modifiers & Qt.MetaModifier);
+                                const hasAlt = Boolean(mouse.modifiers & Qt.AltModifier);
+                                if (!(hasMeta && hasAlt)) {
+                                    mouse.accepted = false;
+                                    return;
+                                }
+                                mouse.accepted = true;
+                                const origin = mapToItem(null, 0, 0);
+                                ShellState.openWidgetSettings(root.activeInstrument,
+                                    origin.x, origin.y, width, height);
+                            }
+                        }
+                        EphemerisAtmosphere {
+                            anchors.fill: parent
+                            visible: !root.immersiveWidget
+                            module: root.activeInstrument
+                            presentation: transition.contentProgress
+                        }
+                        WabiSabiBlackHole {
+                            anchors.centerIn: parent
+                            width: Math.min(150, parent.width * 0.3); height: width * 0.7
+                            visible: Settings.motion && transition.phase !== "open" && transition.phase !== "closing"
+                            opacity: 0.35 * (1 - transition.contentProgress)
+                            diskColor: root.moduleTone; horizonColor: Theme.mantle
+                        }
+                        Item {
+                            id: keyCatcher
+                            anchors.fill: parent
+                            focus: true
+                            Keys.onPressed: function(event) {
+                                if (event.key === Qt.Key_Escape) { root.close(); event.accepted = true; }
+                            }
+                            Loader {
+                                id: widgetLoader
+                                anchors.fill: parent
+                                anchors.margins: root.immersiveWidget ? 8 : 20
+                                active: transition.mounted
+                                asynchronous: true
+                                focus: true
+                                enabled: transition.interactive
+                                visible: status === Loader.Ready
+                                opacity: transition.contentProgress
+                                transform: Translate { y: Settings.motion && Settings.motionStyle === "rise" ? (1 - transition.contentProgress) * 18 : 0 }
+                                source: root.compactInstrument ? Qt.resolvedUrl("widgets/catalog/QuickInstrument.qml") : Qt.resolvedUrl(Registry.sourceFor(root.activeInstrument))
+                                onLoaded: if (item && item.instrument !== undefined) item.instrument = root.activeInstrument
+                            }
+                            StatusMessage {
+                                anchors.centerIn: parent
+                                width: Math.min(parent.width - 40, 400)
+                                visible: widgetLoader.status === Loader.Error
+                                title: "This instrument couldn’t open"
+                                detail: root.widgetLayout.title + ". Try again, or use Escape to return to your desktop."
+                                actionText: "Try again"
+                                onActivated: {
+                                    widgetLoader.source = "";
+                                    widgetLoader.source = Qt.binding(function() { return root.compactInstrument ? Qt.resolvedUrl("widgets/catalog/QuickInstrument.qml") : Qt.resolvedUrl(Registry.sourceFor(root.activeInstrument)); });
+                                }
+                            }
                         }
                     }
                 }

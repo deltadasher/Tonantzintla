@@ -3,17 +3,22 @@ import QtQuick.Layouts
 import "../.."
 import "../../components"
 import "../../services"
+import "../../components/SettingsSearch.js" as Search
 
 pragma ComponentBehavior: Bound
 
 Item {
     id: root
 
+    property string query: ""
+    readonly property var searchResults: Search.search(query)
+    function focusPrimary() { searchInput.forceActiveFocus(); }
+    Component.onCompleted: Settings.checkpointAppearance()
     property real sectionReveal: 1
     property int selectedExtension: -1
 
     function extensionAlwaysOn(id) {
-        return id === "parallax" || id === "transit" || id === "clipboard" || id === "optics";
+        return id === "authentication" || id === "parallax" || id === "transit" || id === "clipboard" || id === "optics";
     }
 
     // Uniform toggle sections are driven by data rows: {key, label, detail}
@@ -58,7 +63,7 @@ Item {
         target: root
         property: "sectionReveal"
         to: 1
-        duration: Settings.motion ? 240 : 0
+        duration: Theme.motionNormal
         easing.type: Easing.OutCubic
     }
 
@@ -76,6 +81,7 @@ Item {
                 font.weight: Font.Black
             }
             Item { Layout.fillWidth: true }
+            ActionButton { text: "Undo appearance changes"; enabled: Settings.canUndoAppearance; onClicked: Settings.undoAppearance() }
             Text {
                 text: Environment.version
                 color: Theme.muted
@@ -85,7 +91,43 @@ Item {
             }
         }
 
+        Rectangle {
+            Layout.fillWidth: true; implicitHeight: 42
+            radius: 12; color: Theme.controlRest
+            border.width: searchInput.activeFocus ? 1 : 0; border.color: Theme.accent
+            TextInput {
+                id: searchInput
+                anchors.fill: parent; anchors.margins: 12
+                color: Theme.moon; font.family: Theme.fontText; font.pixelSize: 13
+                Accessible.name: "Search settings"
+                onTextChanged: root.query = text
+                Keys.onEscapePressed: if (text.length) clear()
+                Keys.onReturnPressed: if (root.searchResults.length) { ShellState.settingsSection = root.searchResults[0].section; clear(); }
+                Text { anchors.fill: parent; visible: !searchInput.text && !searchInput.activeFocus; text: "Search settings — motion, monitor, cursor…"; color: Theme.muted; font: parent.font }
+            }
+        }
+        Text {
+            Layout.fillWidth: true
+            text: Settings.persistenceStatus
+            color: Settings.persistenceFailed ? Theme.danger : Theme.muted
+            font.family: Theme.fontText; font.pixelSize: 11
+        }
+        ColumnLayout {
+            visible: root.query.trim().length > 0
+            Layout.fillWidth: true
+            Repeater {
+                model: root.searchResults
+                ActionButton {
+                    required property var modelData
+                    Layout.fillWidth: true
+                    text: modelData.label
+                    onClicked: { ShellState.settingsSection = modelData.section; searchInput.clear(); }
+                }
+            }
+            Text { visible: root.searchResults.length === 0; text: "No matching settings"; color: Theme.muted; font.family: Theme.fontText }
+        }
         RowLayout {
+            visible: root.query.trim().length === 0
             Layout.fillWidth: true
             Layout.fillHeight: true
             spacing: 18
@@ -109,18 +151,24 @@ Item {
                             { "key": "umbra", "label": "Lock screen" },
                             { "key": "system", "label": "System" },
                             { "key": "niri", "label": "Niri settings" },
-                            { "key": "extensions", "label": "Extensions" }
+                            { "key": "extensions", "label": "Features" }
                         ]
 
                         Rectangle {
                             id: sectionButton
                             required property var modelData
+                            activeFocusOnTab: true
+                            Accessible.role: Accessible.Button
+                            Accessible.name: modelData.label
+                            Accessible.onPressAction: ShellState.settingsSection = modelData.key
+                            Keys.onReturnPressed: ShellState.settingsSection = modelData.key
+                            Keys.onSpacePressed: ShellState.settingsSection = modelData.key
                             readonly property bool active: ShellState.settingsSection === modelData.key
                             Layout.fillWidth: true
                             Layout.preferredHeight: 40
                             radius: 12
                             color: active ? Theme.accent
-                                : sectionPointer.containsMouse ? Theme.controlHover : "transparent"
+                                : sectionPointer.containsMouse || activeFocus ? Theme.controlHover : "transparent"
                             border.width: 0
 
                             RowLayout {
@@ -216,9 +264,9 @@ Item {
             SettingChoice {
                 Layout.fillWidth: true
                 label: "Font preset"
-                value: Settings.typographyProfile
+                value: Settings.typographyProfile === "serpantinum" ? "observatory" : Settings.typographyProfile
                 choices: [
-                    { "label": "SERP", "value": "serpantinum" },
+                    { "label": "OBSERVATORY", "value": "observatory" },
                     { "label": "READABLE", "value": "readable" },
                     { "label": "SYSTEM", "value": "system" }
                 ]
@@ -888,7 +936,7 @@ Item {
                 spacing: 4
 
                 Repeater {
-                    model: PluginRegistry.entries.filter(function(entry) {
+                    model: FeatureRegistry.entries.filter(function(entry) {
                         return !root.extensionAlwaysOn(entry.id);
                     })
 
@@ -969,7 +1017,7 @@ Item {
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
                                 root.selectedExtension = toggleRow.index;
-                                PluginRegistry.toggle(toggleRow.modelData.id);
+                                FeatureRegistry.toggle(toggleRow.modelData.id);
                             }
                         }
 
@@ -991,7 +1039,7 @@ Item {
                 spacing: 4
 
                 Repeater {
-                    model: PluginRegistry.entries.filter(function(entry) {
+                    model: FeatureRegistry.entries.filter(function(entry) {
                         return root.extensionAlwaysOn(entry.id);
                     })
 

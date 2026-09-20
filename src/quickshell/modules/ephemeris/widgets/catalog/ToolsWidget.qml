@@ -51,16 +51,6 @@ Item {
             }
             ToolCard {
                 Layout.fillWidth: true
-                code: "PICK"
-                title: "Window picker"
-                detail: "Open the overview before picking a window"
-                onActivated: {
-                    ShellState.closeEphemeris();
-                    Quickshell.execDetached(["niri", "msg", "action", "toggle-overview"]);
-                }
-            }
-            ToolCard {
-                Layout.fillWidth: true
                 code: "TIMER"
                 title: "Timers"
                 detail: "Countdown, stopwatch, and focus timer"
@@ -91,14 +81,6 @@ Item {
                 status: DeviceState.batteryAvailable ? DeviceState.batteryPercent + "%"
                     : DeviceState.powerProfileAvailable ? DeviceState.powerProfile.toUpperCase() : "DESKTOP"
                 onActivated: ShellState.toggleEphemeris("battery")
-            }
-            ToolCard {
-                Layout.fillWidth: true
-                code: "STATS"
-                title: "System stats"
-                detail: "Open the compact system monitor"
-                status: SysStats.cpuPercent + "% CPU"
-                onActivated: ShellState.openQuickActions("telemetry")
             }
             ToolCard {
                 Layout.fillWidth: true

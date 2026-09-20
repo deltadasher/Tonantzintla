@@ -3,12 +3,14 @@ pragma Singleton
 import QtQuick
 import Quickshell.Services.Notifications
 import ".."
+import "NotificationModel.js" as Model
 
 QtObject {
     id: root
 
+    property var records: []
     property int nextUid: 0
-    property int unreadCount: 0
+    readonly property int unreadCount: records.filter(function(record) { return !record.read; }).length
     property var liveNotifications: ({})
     property ListModel history: ListModel {}
     property ListModel popups: ListModel {}
@@ -50,9 +52,30 @@ QtObject {
         model.insert(0, entry);
     }
 
+    function rebuildHistory() {
+        history.clear();
+        Model.groups(records).forEach(function(group) { history.append(group); });
+    }
+
+    function remember(entry) {
+        const next = Model.append(records, entry, 100);
+        const retained = next.map(function(r) { return r.uid; });
+        records.forEach(function(old) {
+            if (retained.indexOf(old.uid) < 0) {
+                removePopup(old.uid);
+                const notification = notificationFor(old.uid);
+                if (notification) notification.dismiss();
+                delete liveNotifications[old.uid];
+            }
+        });
+        records = next;
+        rebuildHistory();
+    }
+
     function makeEntry(uid, appName, summary, body, icon, critical, urgency, actions) {
         const timestamp = Date.now();
         return {
+            "read": ShellState.ephemerisVisible && ShellState.ephemerisTab === "notifications",
             "uid": uid,
             "uids": [uid],
             "groupKey": String(appName || "System").trim().toLowerCase(),
@@ -94,10 +117,8 @@ QtObject {
             notification.body, notification.image || notification.appIcon,
             critical, urgency, actions);
 
-        insertOrFuse(history, entry, 180000);
-        while (history.count > 100)
-            history.remove(history.count - 1);
-        unreadCount++;
+        entry.groupKey = String(notification.desktopEntry || notification.appName || "System").trim().toLowerCase();
+        remember(entry);
 
         if (!Settings.doNotDisturb && (!ShellState.deepFocus || critical))
             insertOrFuse(popups, makeEntry(uid, notification.appName,
@@ -112,8 +133,7 @@ QtObject {
             summary || "Transit link online",
             body || "This toast is local to the active Tonantzintla shell.",
             "", false, 1, []);
-        insertOrFuse(history, entry, 180000);
-        unreadCount++;
+        remember(entry);
         if (!Settings.doNotDisturb && !ShellState.deepFocus)
             insertOrFuse(popups, makeEntry(uid, "Tonantzintla",
                 summary || "Transit link online",
@@ -130,22 +150,26 @@ QtObject {
         }
     }
 
-    function removeHistory(uid) {
-        for (let index = 0; index < history.count; index++) {
-            if (containsUid(history.get(index), uid)) {
-                const row = history.get(index);
-                history.remove(index);
-                const members = row.uids || [row.uid];
-                for (let member = 0; member < members.length; member++) {
-                    const groupedNotification = notificationFor(members[member]);
-                    if (groupedNotification)
-                        groupedNotification.dismiss();
-                    delete liveNotifications[members[member]];
-                }
-                break;
-            }
-        }
+    function removeMessage(uid) {
+        const notification = notificationFor(uid);
+        if (notification) notification.dismiss();
+        delete liveNotifications[uid];
+        records = Model.remove(records, [uid]);
         removePopup(uid);
+        rebuildHistory();
+    }
+
+    function removeHistory(uid) {
+        const group = Model.groups(records).find(function(r) { return r.uid === uid; });
+        const members = group ? group.uids : [uid];
+        members.forEach(function(id) {
+            const notification = notificationFor(id);
+            if (notification) notification.dismiss();
+            delete liveNotifications[id];
+            removePopup(id);
+        });
+        records = Model.remove(records, members);
+        rebuildHistory();
     }
 
     function invokeDefault(uid) {
@@ -175,14 +199,19 @@ QtObject {
     }
 
     function clearHistory() {
+        Object.keys(liveNotifications).forEach(function(uid) {
+            const notification = notificationFor(uid);
+            if (notification) notification.dismiss();
+        });
+        records = [];
         history.clear();
         popups.clear();
         liveNotifications = ({});
-        unreadCount = 0;
     }
 
     function markRead() {
-        unreadCount = 0;
+        records = records.map(function(record) { return Object.assign({}, record, {read: true}); });
+        rebuildHistory();
     }
 
     property Timer ageClock: Timer {

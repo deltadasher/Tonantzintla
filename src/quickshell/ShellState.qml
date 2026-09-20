@@ -22,6 +22,7 @@ QtObject {
     property var ephemerisAnchorTarget: null
     property string settingsSection: "appearance"
     property bool quickActionsVisible: false
+    property bool quickInstrument: false
     property string quickActionTab: "telemetry"
     property int umbraRevealSerial: 0
     // Session-only: leaving focus restores the user's original preferences.
@@ -62,6 +63,7 @@ QtObject {
     function openEphemeris(tab, outputName, anchorX, anchorY, anchorWidth, anchorHeight,
             anchorEdge, anchorIslandId, anchorTarget) {
         ephemerisTab = normalizeWidget(tab);
+        quickInstrument = Number(anchorWidth || 0) > 0 && ["audio", "media"].indexOf(ephemerisTab) >= 0;
         if (outputName && String(outputName).length > 0)
             ephemerisOutput = String(outputName);
         else if (anchorWidth === undefined || anchorHeight === undefined) {
