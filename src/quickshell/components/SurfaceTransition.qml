@@ -7,6 +7,9 @@ Item {
     property bool requestedVisible: false
     property string requestedTab: "apps"
     property bool motionEnabled: true
+    property int enterDuration: 280
+    property int exitDuration: 190
+    property int effectDuration: 140
     property bool contentReady: false
     property bool mounted: false
     property string activeTab: "apps"
@@ -68,23 +71,23 @@ Item {
     Timer { id: frame; interval: 16; onTriggered: root.tryEnter() }
     NumberAnimation {
         id: reveal; target: root; property: "revealProgress"; to: 1
-        duration: root.motionEnabled ? 240 : 90; easing.type: Easing.OutCubic
+        duration: root.motionEnabled ? root.enterDuration : 0; easing.type: Easing.OutCubic
     }
     SequentialAnimation {
         id: enter
-        NumberAnimation { target: root; property: "contentProgress"; to: 1; duration: root.motionEnabled ? 260 : 90; easing.type: Easing.OutCubic }
+        NumberAnimation { target: root; property: "contentProgress"; to: 1; duration: root.motionEnabled ? root.enterDuration : 0; easing.type: Easing.OutCubic }
         ScriptAction { script: { root.phase = "open"; root.settled(); root.requestSwitch(); } }
     }
     SequentialAnimation {
         id: leave
-        NumberAnimation { target: root; property: "contentProgress"; to: 0; duration: root.motionEnabled ? 130 : 80; easing.type: Easing.InCubic }
+        NumberAnimation { target: root; property: "contentProgress"; to: 0; duration: root.motionEnabled ? root.effectDuration : 0; easing.type: Easing.InCubic }
         ScriptAction { script: root.swap() }
     }
     SequentialAnimation {
         id: closing
         ParallelAnimation {
-            NumberAnimation { target: root; property: "contentProgress"; to: 0; duration: root.motionEnabled ? 130 : 90 }
-            NumberAnimation { target: root; property: "revealProgress"; to: 0; duration: root.motionEnabled ? 180 : 90 }
+            NumberAnimation { target: root; property: "contentProgress"; to: 0; duration: root.motionEnabled ? root.effectDuration : 0 }
+            NumberAnimation { target: root; property: "revealProgress"; to: 0; duration: root.motionEnabled ? root.exitDuration : 0 }
         }
         ScriptAction { script: { root.mounted = false; root.phase = "closed"; } }
     }

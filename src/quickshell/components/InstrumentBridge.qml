@@ -1,10 +1,8 @@
 import QtQuick
 import ".."
 
-// One backing surface that grows from an instrument's source bounds. The final
-// body is deliberately sunk beneath Aperture's source capsule: Aperture is the
-// visible cap and this surface is the expansion behind it. Keeping the final
-// silhouette to one rounded body avoids rotation-specific connector artifacts.
+// The backing follows the same safe geometry as the rounded content mask.
+// Ephemeris clips the whole composition outside Aperture's reserved area.
 Canvas {
     id: root
     required property var geometry

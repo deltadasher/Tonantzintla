@@ -13,6 +13,7 @@ QtObject {
         && (ShellState.ephemerisTab === "system"
             || ShellState.ephemerisTab === "quickstats")
 
+    property bool available: false
     property int cpuPercent: 0
     property int memoryPercent: 0
     property real memoryUsedGb: 0
@@ -235,6 +236,7 @@ QtObject {
             onStreamFinished: {
                 try {
                     root.applySlowSnapshot(JSON.parse(text));
+                    root.available = true;
                 } catch (error) {
                     console.warn("[Tonantzintla/System] Slow telemetry decode failed:", error);
                 }

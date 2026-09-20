@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Services.SystemTray
 import "../.."
 import "../../components"
+import "../../components/ApertureMetrics.js" as ApertureMetrics
 import "../../services"
 import "islands"
 
@@ -22,8 +23,9 @@ Item {
     readonly property bool isRight: effectivePosition === "right"
     readonly property bool docked: Settings.barMode === "docked"
     readonly property bool capsules: Settings.barMode === "capsules"
-    readonly property int bodyThickness: Settings.compact ? (isVertical ? 42 : 36) : (Settings.barHeightProfile === "tall" || Settings.barHeightProfile === "spacious" ? (isVertical ? 54 : 52) : (isVertical ? 48 : Theme.barHeight))
-    readonly property int shellMargin: docked ? 0 : Settings.barMargin
+    readonly property int bodyThickness: ApertureMetrics.bodyThickness(effectivePosition,
+        Settings.compact, Settings.barHeightProfile, Theme.barHeight)
+    readonly property int shellMargin: ApertureMetrics.shellMargin(Settings.barMode, Settings.barMargin)
     property real leftReveal: 0
     property real workspaceReveal: 0
     property real mediaReveal: 0

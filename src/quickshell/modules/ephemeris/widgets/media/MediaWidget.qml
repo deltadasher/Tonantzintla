@@ -11,6 +11,7 @@ pragma ComponentBehavior: Bound
 
 ClippingRectangle {
     id: root
+    SpectrumConsumer { active: root.visible && ShellState.ephemerisVisible }
     radius: 26
     color: Theme.mantle
 

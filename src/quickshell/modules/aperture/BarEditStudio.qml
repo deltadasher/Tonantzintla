@@ -557,7 +557,7 @@ PanelWindow {
                             }
                         }
 
-                        // Desktop Presets Row (Serpantinum, Caelestia, Solaris, etc.)
+                        // Desktop presets
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: 6
@@ -575,8 +575,8 @@ PanelWindow {
 
                                 Repeater {
                                     model: [
-                                        { id: "serpantinum", name: "Serpantinum", desc: "Violet • Top • Capsules • Fluid" },
-                                        { id: "caelestia",   name: "Caelestia",   desc: "Cyan • Left • Rail • Snappy" },
+                                        { id: "expressive", name: "Expressive", desc: "Violet • Top • Capsules • Fluid" },
+                                        { id: "compact",   name: "Compact",   desc: "Cyan • Left • Rail • Snappy" },
                                         { id: "solaris",     name: "Solaris",     desc: "Amber • Bottom • Docked" },
                                         { id: "cyberpunk",   name: "Cyberpunk",   desc: "Rose • Right • Instant" },
                                         { id: "minimalist",  name: "Zen Float",   desc: "Silver • Top • Minimal" }

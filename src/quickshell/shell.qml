@@ -14,6 +14,22 @@ import "services"
 
 ShellRoot {
     id: root
+    LazyLoader {
+        id: authenticationLoader
+        active: true
+        source: Qt.resolvedUrl("modules/auth/AuthenticationPrompt.qml")
+    }
+    IpcHandler {
+        target: "authentication"
+        function status(): string { return !authenticationLoader.item ? "load-failed" : Authentication.registered ? "ready" : "unavailable"; }
+        function cancel(): void { Authentication.cancelRequested(); }
+        function retry(): void {
+            if (Authentication.registered) return;
+            authenticationLoader.active = false;
+            Qt.callLater(function() { authenticationLoader.active = true; });
+        }
+    }
+
     // Instantiate the idle watcher even when the settings panel is closed.
     readonly property string idleLockStatus: IdleLock.status
 
@@ -92,7 +108,7 @@ ShellRoot {
 
     Timer {
         id: ephemerisUnload
-        interval: Settings.motion ? 220 : 130
+        interval: Theme.surfaceExitDuration + 48
         onTriggered: root.ephemerisResident = false
     }
 
@@ -105,7 +121,7 @@ ShellRoot {
 
     Timer {
         id: umbraPreviewUnload
-        interval: 80
+        interval: Settings.motion && Settings.umbraMotion ? 1000 : 80
         onTriggered: root.umbraPreviewResident = false
     }
 

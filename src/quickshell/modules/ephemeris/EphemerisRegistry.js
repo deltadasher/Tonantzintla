@@ -17,8 +17,7 @@ var catalog = [
     {id: "battery", title: "Reactor telemetry", code: "PWR", width: 780, height: 590, placement: "right", source: "widgets/system/BatteryWidget.qml"},
     {id: "focus", title: "Focus orbit", code: "FCS", width: 900, height: 650, source: "widgets/productivity/FocusWidget.qml"},
     {id: "system", title: "Observatory telemetry", code: "SYS", width: 1060, height: 660, source: "widgets/system/SystemWidget.qml"},
-    {id: "guide", title: "Tonantzintla flight manual", code: "GDE", width: 720, height: 900, placement: "left", source: "widgets/catalog/GuideWidget.qml"},
-    {id: "quickstats", title: "Local constellation", code: "TEL", width: 680, height: 620, source: "../quickactions/TelemetryAction.qml"}
+    {id: "guide", title: "Tonantzintla flight manual", code: "GDE", width: 720, height: 900, placement: "left", source: "widgets/catalog/GuideWidget.qml"}
 ];
 
 function widgets(enabledSettings) {
@@ -29,6 +28,7 @@ function widgets(enabledSettings) {
     });
 }
 function entry(name) {
+    if (name === "quickstats" || name === "telemetry") name = "system";
     for (var i = 0; i < catalog.length; ++i)
         if (catalog[i].id === name) return catalog[i];
     return catalog[0];
@@ -38,36 +38,42 @@ function sourceFor(name) { return entry(name).source; }
 function clamp(value, minimum, maximum) {
     return Math.max(Math.min(minimum, maximum), Math.min(maximum, value));
 }
+// A single output-local safe rectangle applies to resting and animated bounds.
+function safeArea(screenWidth, screenHeight, top, bottom, left, right) {
+    const x = Math.min(screenWidth, Math.max(0, left));
+    const y = Math.min(screenHeight, Math.max(0, top));
+    return {x: x, y: y,
+        width: Math.max(0, screenWidth - x - Math.max(0, right)),
+        height: Math.max(0, screenHeight - y - Math.max(0, bottom))};
+}
+function fitRect(rect, bounds) {
+    const width = Math.min(Math.max(0, rect.width), bounds.width);
+    const height = Math.min(Math.max(0, rect.height), bounds.height);
+    return {x: clamp(rect.x, bounds.x, bounds.x + bounds.width - width),
+        y: clamp(rect.y, bounds.y, bounds.y + bounds.height - height),
+        width: width, height: height};
+}
 function attachLayout(layout, anchor, edge, screenWidth, screenHeight,
         topClearance, bottomClearance, leftClearance, rightClearance, attachmentGap) {
     if (!layout || !anchor || layout.placement === "horizon")
         return layout;
-
-    var centerX = anchor.x + anchor.width / 2;
-    var centerY = anchor.y + anchor.height / 2;
-    var minX = leftClearance;
-    var maxX = screenWidth - rightClearance - layout.width;
-    var minY = topClearance;
-    var maxY = screenHeight - bottomClearance - layout.height;
-    // Negative gaps sink Calendar beneath its Aperture capsule. Positive gaps
-    // place independent satellite panels just beyond their invoking control.
-    var gap = attachmentGap === undefined ? -6 : Math.max(-8, attachmentGap);
-
-    if (edge === "top") {
-        layout.x = clamp(centerX - layout.width / 2, 0, screenWidth - layout.width);
-        layout.y = clamp(anchor.y + anchor.height + gap, 0, maxY);
-    } else if (edge === "bottom") {
-        layout.x = clamp(centerX - layout.width / 2, 0, screenWidth - layout.width);
-        layout.y = clamp(anchor.y - gap - layout.height, minY,
-            screenHeight - layout.height);
-    } else if (edge === "left") {
-        layout.x = clamp(anchor.x + anchor.width + gap, 0, maxX);
-        layout.y = clamp(centerY - layout.height / 2, 0, screenHeight - layout.height);
-    } else if (edge === "right") {
-        layout.x = clamp(anchor.x - gap - layout.width, minX,
-            screenWidth - layout.width);
-        layout.y = clamp(centerY - layout.height / 2, 0, screenHeight - layout.height);
+    const bounds = safeArea(screenWidth, screenHeight, topClearance,
+        bottomClearance, leftClearance, rightClearance);
+    const centerX = anchor.x + anchor.width / 2;
+    const centerY = anchor.y + anchor.height / 2;
+    const gap = attachmentGap === undefined ? 8 : Math.max(0, attachmentGap);
+    if (edge === "top" || edge === "bottom") {
+        layout.x = centerX - layout.width / 2;
+        layout.y = edge === "top" ? anchor.y + anchor.height + gap
+            : anchor.y - gap - layout.height;
+    } else {
+        layout.x = edge === "left" ? anchor.x + anchor.width + gap
+            : anchor.x - gap - layout.width;
+        layout.y = centerY - layout.height / 2;
     }
+    const fitted = fitRect(layout, bounds);
+    layout.x = fitted.x; layout.y = fitted.y;
+    layout.width = fitted.width; layout.height = fitted.height;
     return layout;
 }
 function getLayout(name, screenWidth, screenHeight, topClearance, bottomClearance, leftClearance, rightClearance, style) {

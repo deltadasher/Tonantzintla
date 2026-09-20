@@ -1,12 +1,15 @@
 import QtQuick
 import QtTest
 import "../../src/quickshell/components"
+import "../../src/quickshell/components/ApertureMetrics.js" as ApertureMetrics
 import "../../src/quickshell/modules/ephemeris/EphemerisRegistry.js" as Registry
 import "../../src/quickshell/services/MediaMath.js" as MediaMath
 
 TestCase {
     id: test
     name: "SurfaceTransition"
+    property real progressAtSwap: -1
+    Connections { target: controller; function onActiveTabChanged() { test.progressAtSwap = controller.contentProgress; } }
     when: windowShown
     width: 640; height: 420
     SurfaceTransition { id: controller }
@@ -61,7 +64,7 @@ TestCase {
         compare(controller.activeTab, "apps");
         compare(controller.interactive, false);
         tryCompare(controller, "activeTab", "walls");
-        verify(controller.contentProgress < 0.05);
+        verify(test.progressAtSwap < 0.05);
         tryCompare(controller, "phase", "open");
     }
     function test_rapid_switches_use_latest_request() {
@@ -114,51 +117,63 @@ TestCase {
         }
         compare(Registry.normalize("unknown"), "apps");
     }
-    function test_attached_layouts_stay_bounded_on_every_edge() {
-        const width = 1920;
-        const height = 1080;
-        const clearance = 72;
-        const anchors = {
-            top: {x: 1450, y: 12, width: 42, height: 42},
-            bottom: {x: 280, y: 1026, width: 42, height: 42},
-            left: {x: 12, y: 180, width: 42, height: 42},
-            right: {x: 1866, y: 790, width: 42, height: 42}
-        };
-        for (const edge of ["top", "bottom", "left", "right"]) {
-            const layout = Registry.getLayout("settings", width, height,
-                clearance, clearance, clearance, clearance);
-            Registry.attachLayout(layout, anchors[edge], edge, width, height,
-                clearance, clearance, clearance, clearance, 6);
-            verify(layout.x >= 0);
-            verify(layout.y >= 0);
-            verify(layout.x + layout.width <= width);
-            verify(layout.y + layout.height <= height);
-            if (edge === "top")
-                compare(layout.y, anchors.top.y + anchors.top.height + 6);
-            else if (edge === "bottom")
-                compare(layout.y + layout.height, anchors.bottom.y - 6);
-            else if (edge === "left")
-                compare(layout.x, anchors.left.x + anchors.left.width + 6);
-            else
-                compare(layout.x + layout.width, anchors.right.x - 6);
+    function assertInside(rect, bounds) {
+        verify(rect.x >= bounds.x - 0.001);
+        verify(rect.y >= bounds.y - 0.001);
+        verify(rect.x + rect.width <= bounds.x + bounds.width + 0.001);
+        verify(rect.y + rect.height <= bounds.y + bounds.height + 0.001);
+    }
+    function test_panels_clear_all_aperture_edges_and_corners() {
+        const edges = ["top", "bottom", "left", "right"];
+        for (const size of [[320, 240], [800, 600], [1536, 864], [1920, 1080], [3840, 2160]]) {
+            for (const style of ["compact", "spotlight", "default"]) {
+                for (const edge of edges) {
+                    // Occupied on every edge: attachment must also respect adjacent bars.
+                    const bounds = Registry.safeArea(size[0], size[1], 80, 80, 86, 86);
+                    const anchor = {x: edge === "right" ? size[0] - 60 : 12,
+                        y: edge === "bottom" ? size[1] - 60 : 12, width: 42, height: 42};
+                    for (const widget of Registry.widgets()) {
+                        const layout = Registry.getLayout(widget.id, size[0], size[1], 80, 80, 86, 86, style);
+                        // Even legacy callers asking for overlap cannot enter the bar strip.
+                        Registry.attachLayout(layout, anchor, edge, size[0], size[1], 80, 80, 86, 86, -6);
+                        assertInside(layout, bounds);
+                        const origin = Registry.fitRect(anchor, bounds);
+                        geometry.origin = Qt.rect(origin.x, origin.y, origin.width, origin.height);
+                        geometry.destination = Qt.rect(layout.x, layout.y, layout.width, layout.height);
+                        geometry.motion = true;
+                        for (const progress of [0, 0.05, 0.25, 0.5, 0.8, 1, 0.8, 0.2, 0]) {
+                            geometry.progress = progress;
+                            assertInside(geometry, bounds);
+                        }
+                        geometry.motion = false;
+                        assertInside(geometry, bounds);
+                    }
+                }
+            }
         }
     }
-    function test_attached_layouts_overlap_the_source_by_default() {
-        const anchor = {x: 900, y: 12, width: 120, height: 42};
-        const layout = Registry.getLayout("calendar", 1920, 1080,
-            72, 72, 72, 72);
-        Registry.attachLayout(layout, anchor, "top", 1920, 1080,
-            72, 72, 72, 72);
-        compare(layout.y, anchor.y + anchor.height - 6);
+    function test_bar_metrics_reserve_real_thickness_for_every_profile() {
+        for (const edge of ["top", "bottom", "left", "right"]) {
+            for (const compact of [false, true]) {
+                for (const profile of ["normal", "tall", "spacious"]) {
+                    for (const mode of ["docked", "capsules", "floating"]) {
+                        for (const margin of [0, 12, 32]) {
+                            const vertical = edge === "left" || edge === "right";
+                            const body = compact ? (vertical ? 42 : 36)
+                                : profile === "normal" ? (vertical ? 48 : 44) : (vertical ? 54 : 52);
+                            const expected = body + (mode === "docked" ? 0 : margin * 2) + 8;
+                            compare(ApertureMetrics.clearance(edge, true, compact, profile, 44, mode, margin), expected);
+                            compare(ApertureMetrics.clearance(edge, false, compact, profile, 44, mode, margin), 16);
+                        }
+                    }
+                }
+            }
+        }
     }
-    function test_side_attachment_near_corner_keeps_source_intersection() {
-        const anchor = {x: 12, y: 8, width: 42, height: 42};
-        const layout = Registry.getLayout("network", 1920, 1080,
-            72, 72, 72, 72);
-        Registry.attachLayout(layout, anchor, "left", 1920, 1080,
-            72, 72, 72, 72);
-        verify(layout.y <= anchor.y + anchor.height);
-        verify(layout.y + layout.height >= anchor.y);
-        compare(layout.x, anchor.x + anchor.width - 6);
+    function test_no_available_space_never_reverses_clearances() {
+        const bounds = Registry.safeArea(80, 60, 90, 90, 90, 90);
+        compare(bounds.width, 0);
+        compare(bounds.height, 0);
+        assertInside(Registry.fitRect({x: 0, y: 0, width: 900, height: 700}, bounds), bounds);
     }
 }

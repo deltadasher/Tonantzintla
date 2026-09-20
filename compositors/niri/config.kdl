@@ -148,7 +148,7 @@ spawn-at-startup "sh" "-lc" "exec \"$HOME/.local/bin/blackhole\" session-start"
 spawn-at-startup "swayidle" "-w" "timeout" "600" "niri msg action power-off-monitors" "resume" "niri msg action power-on-monitors" "before-sleep" "$HOME/.local/bin/blackhole lock"
 // Clipboard capture will be enabled when Transit owns clipboard history.
 // spawn-at-startup "wl-paste" "--watch" "cliphist" "store"
-spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
+spawn-at-startup "sh" "-c" "exec python3 \"${XDG_DATA_HOME:-$HOME/.local/share}/tonantzintla/src/libexec/auth-agent-bootstrap.py\""
 // For X11 apps (Steam, some games): install 'xwayland-satellite', then:
 // spawn-at-startup "xwayland-satellite"
 

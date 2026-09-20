@@ -12,12 +12,11 @@ Item {
     property bool motionActive: true
     property real phase: 0
 
-    NumberAnimation on phase {
-        from: 0
-        to: 1
-        duration: Settings.motion && Settings.umbraMotion ? 68000 : 1
-        loops: Animation.Infinite
+    Timer {
+        interval: 83
+        repeat: true
         running: root.motionActive && Settings.motion && Settings.umbraMotion && root.visible
+        onTriggered: root.phase = (root.phase + interval / 68000) % 1
     }
 
     Canvas {

@@ -2,5 +2,6 @@ import QtQuick
 import "../.."
 
 Item {
-    SettingsPane { anchors.fill: parent }
+    function focusPrimary() { pane.focusPrimary(); }
+    SettingsPane { id: pane; anchors.fill: parent }
 }

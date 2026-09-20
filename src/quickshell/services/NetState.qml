@@ -45,6 +45,17 @@ QtObject {
 
     property bool managerAvailable: false
     property bool loading: false
+    property bool apiAvailable: false
+    property var vpnProfiles: []
+    readonly property bool busy: actionProcess.running
+    property string pendingKey: ""
+    property string actionState: "idle"
+    property string promptKind: ""
+    property string promptMessage: ""
+    property string requestPayload: ""
+    property bool structuredAction: false
+    property string actionHelper: ""
+    property bool receivedResult: false
     property var wifiNetworks: []
     property var bluetoothDevices: []
     property var ethernetDevices: []
@@ -81,9 +92,14 @@ QtObject {
         stateProcess.running = true;
     }
 
-    function runAction(command, message) {
+    function runAction(command, message, key) {
         if (actionProcess.running)
             return;
+        structuredAction = false;
+        actionHelper = "";
+        receivedResult = false;
+        actionState = "pending";
+        pendingKey = key || "";
         pendingAction = message;
         statusMessage = message;
         actionProcess.command = command;
@@ -99,24 +115,43 @@ QtObject {
         runAction(["nmcli", "device", "wifi", "rescan"], "SCANNING WI-FI…");
     }
 
-    function connectWifi(ssid, password) {
-        if (!managerAvailable) {
-            statusMessage = "NETWORKMANAGER ACCESS IS UNAVAILABLE";
-            return;
-        }
-        const command = ["nmcli", "device", "wifi", "connect", ssid];
-        if (password && password.length > 0)
-            command.push("password", password);
-        runAction(command, "LINKING TO " + ssid.toUpperCase() + "…");
+    function requestAction(helper, data, message, key) {
+        if (busy) return false;
+        runAction(["python3", Environment.script(helper)], message, key);
+        structuredAction = true;
+        actionHelper = helper;
+        requestPayload = JSON.stringify(data) + "\n";
+        return true;
     }
 
-    function disconnectWifi(ssid) {
-        if (!managerAvailable) {
-            statusMessage = "NETWORKMANAGER ACCESS IS UNAVAILABLE";
-            return;
-        }
-        runAction(["nmcli", "connection", "down", "id", ssid],
-            "DISCONNECTING " + ssid.toUpperCase() + "…");
+    function connectWifi(ssid, password, uuid) {
+        if (!apiAvailable) { statusMessage = "Network control unavailable. Open Advanced settings."; return false; }
+        return requestAction("network-action.py", {action: "wifi-connect", ssid: ssid,
+            password: password || "", uuid: uuid || ""}, "Connecting to " + ssid + "…", ssid);
+    }
+
+    function disconnectWifi(network) {
+        if (!network.uuid) { statusMessage = "Connection identity is unavailable. Refresh or open Advanced settings."; return; }
+        requestAction("network-action.py", {action: "disconnect", uuid: network.uuid},
+            "Disconnecting " + network.ssid + "…", network.ssid);
+    }
+
+    function vpnAction(profile) {
+        requestAction("network-action.py", {action: profile.connected ? "disconnect" : "vpn-connect", uuid: profile.uuid},
+            (profile.connected ? "Disconnecting " : "Connecting ") + profile.name + "…", profile.uuid);
+    }
+
+    function answerPrompt(value) {
+        if (busy && structuredAction) actionProcess.write(JSON.stringify({response: value}) + "\n");
+    }
+
+    function cancelAction() {
+        if (!busy) return;
+        actionState = "cancelling";
+        statusMessage = "Cancelling…";
+        promptKind = "";
+        if (structuredAction) actionProcess.write('{"cancel":true}\n');
+        else actionProcess.signal(15);
     }
 
     function scanBluetooth() {
@@ -126,8 +161,12 @@ QtObject {
 
     function bluetoothAction(address, connected, paired) {
         const operation = connected ? "disconnect" : paired ? "connect" : "pair";
+        if (operation === "pair") {
+            requestAction("bluetooth-pair.py", {address: address}, "Pairing " + address + "…", address);
+            return;
+        }
         runAction(["bluetoothctl", "--timeout", "20", operation, address],
-            operation.toUpperCase() + " " + address + "…");
+            operation.toUpperCase() + " " + address + "…", address);
     }
 
     function ethernetAction(device, connected) {
@@ -163,11 +202,13 @@ QtObject {
                     root.fallbackKind = data.kind || (activeWifi ? "WIFI"
                         : activeEthernet ? "LINK" : "NET");
                     if (data.summary !== true) {
+                        root.apiAvailable = data.apiAvailable === true;
+                        root.vpnProfiles = data.vpn || [];
                         root.bluetoothDevices = data.bluetooth || [];
                         root.ethernetDevices = data.ethernet || [];
                     }
                     root.helperStateReady = true;
-                    root.statusMessage = "NETWORK UPDATED";
+                    if (root.actionState === "idle") root.statusMessage = "Network updated.";
                 } catch (error) {
                     root.managerAvailable = false;
                     root.helperStateReady = false;
@@ -186,21 +227,42 @@ QtObject {
     }
 
     property Process actionProcess: Process {
-        stdout: StdioCollector {
-            onStreamFinished: {
-                if (text.trim().length > 0)
-                    root.statusMessage = text.trim().split("\n").pop().toUpperCase();
+        stdinEnabled: true
+        onStarted: {
+            if (root.structuredAction) {
+                write(root.requestPayload);
+                root.requestPayload = "";
             }
         }
-        stderr: StdioCollector {
-            onStreamFinished: {
-                if (text.trim().length > 0)
-                    root.statusMessage = text.trim().split("\n").pop().toUpperCase();
+        stdout: SplitParser {
+            onRead: function(line) {
+                if (!root.structuredAction) return;
+                try {
+                    const data = JSON.parse(line);
+                    if (data.prompt !== undefined) {
+                        root.promptKind = data.prompt;
+                        root.promptMessage = data.message || "";
+                    }
+                    if (data.ok !== undefined) {
+                        root.receivedResult = true;
+                        root.actionState = data.ok ? "success" : "failed";
+                        root.statusMessage = data.message;
+                    }
+                } catch (error) { /* Only structured status reaches the UI. */ }
             }
         }
-        onRunningChanged: {
-            if (!running)
-                root.refreshDelay.restart();
+        onExited: function(code, status) {
+            root.requestPayload = "";
+            root.actionHelper = "";
+            root.promptKind = "";
+            root.pendingKey = "";
+            if (!root.receivedResult) {
+                const cancelled = root.actionState === "cancelling";
+                root.actionState = cancelled ? "cancelled" : code === 0 ? "success" : "failed";
+                root.statusMessage = cancelled ? "Cancelled." : code === 0 ? "Action completed. Refreshing…"
+                    : "Action failed. Check the device and try again.";
+            }
+            root.refreshDelay.restart();
         }
     }
 
