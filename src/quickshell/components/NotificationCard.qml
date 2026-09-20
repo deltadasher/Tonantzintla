@@ -44,11 +44,20 @@ Rectangle {
     signal actionInvoked(string identifier)
 
     implicitHeight: Math.max(78 + root.massBoost, content.implicitHeight + 20)
-        * (root.critical ? 1 : 0.76 + root.visibleFreshness * 0.24)
+
     radius: Theme.radiusLarge
     color: critical ? Theme.controlDanger
         : hover.hovered ? Theme.controlHover : Theme.mantle
-    opacity: hover.hovered || critical ? 1 : 0.42 + visibleFreshness * 0.58
+    opacity: hover.hovered || activeFocus || critical ? 1 : 0.88 + visibleFreshness * 0.12
+    activeFocusOnTab: true
+    Accessible.role: Accessible.Button
+    Accessible.name: appName + ": " + summary
+    Accessible.onPressAction: activated()
+    Keys.onReturnPressed: activated()
+    Keys.onSpacePressed: activated()
+    Keys.onDeletePressed: dismissed()
+    border.width: activeFocus ? 1 : 0
+    border.color: Theme.accent
     clip: true
 
     Rectangle {
@@ -162,7 +171,7 @@ Rectangle {
                     Theme.void_.b, 0.76) : Theme.muted
                 font.family: Theme.fontText
                 font.pixelSize: 11
-                maximumLineCount: root.popup ? 2 : 3
+                maximumLineCount: root.popup ? 2 : 12
                 wrapMode: Text.WordWrap
                 elide: Text.ElideRight
             }
@@ -175,32 +184,14 @@ Rectangle {
 
                 Repeater {
                     model: root.actions || []
-                    Rectangle {
+                    ActionButton {
                         required property var modelData
-                        implicitWidth: actionLabel.implicitWidth + 18
-                        implicitHeight: 25
-                        radius: 8
-                        color: actionPointer.containsMouse ? Theme.accent : Theme.controlRest
-                        border.width: 0
-                        Text {
-                            id: actionLabel
-                            anchors.centerIn: parent
-                            text: (modelData.text || modelData.identifier || "OPEN").toUpperCase()
-                            color: actionPointer.containsMouse ? Theme.void_ : Theme.moon
-                            font.family: Theme.fontMono
-                            font.pixelSize: 11
-                            font.weight: Font.Bold
-                            font.letterSpacing: 0.7
-                        }
-                        MouseArea {
-                            id: actionPointer
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.actionInvoked(modelData.identifier)
-                        }
+                        text: modelData.text || modelData.identifier || "Open"
+                        implicitHeight: 28
+                        onClicked: root.actionInvoked(modelData.identifier)
                     }
                 }
+
                 Item { Layout.fillWidth: true }
             }
         }

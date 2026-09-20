@@ -30,6 +30,7 @@ QtObject {
         : failed ? "ACCESS DENIED" : "SESSION SECURED"
 
     signal unlocked()
+    signal previewUnlocked()
 
     function resetState() {
         releaseDelay.stop();
@@ -85,6 +86,7 @@ QtObject {
     }
 
     function submit() {
+        if (unlocking) return;
         if (previewActive) {
             beginUnlock();
             return;
@@ -122,6 +124,7 @@ QtObject {
         const wasPreview = previewActive;
         unlocking = false;
         if (wasPreview) {
+            previewUnlocked();
             previewActive = false;
             statusText = "READY";
             return;

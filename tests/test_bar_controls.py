@@ -29,7 +29,7 @@ class BarControlsTests(unittest.TestCase):
         repo = Path(__file__).resolve().parents[1]
         studio = (repo / 'src/quickshell/modules/aperture/BarEditStudio.qml').read_text()
         self.assertIn('Settings.placeIsland(outputName, id, currentEdge, zone, ordered);', studio)
-        self.assertIn('readonly property bool present: loc !== null || placement !== null', studio)
+        self.assertRegex(studio, r'readonly property bool present: (?:modelData\.id === "dock" \? Settings.dockEnabled : )?loc !== null \|\| placement !== null')
         self.assertIn('visible: !present', studio)
         self.assertIn('visible: present', studio)
 

@@ -7,6 +7,7 @@ import "../../../../services"
 
 Item {
     id: root
+    SpectrumConsumer { active: root.visible && ShellState.ephemerisVisible }
 
     property string activeTab: "routes"
     readonly property var activeNodes: activeTab === "outputs" ? Audio.outputs

@@ -372,6 +372,36 @@ def ethernet_devices(manager_available: bool = True) -> list[dict[str, object]]:
     return rows
 
 
+def connection_profiles(wifi):
+    """Resolve SSIDs separately from editable profile names; never fetch secrets."""
+    try:
+        import gi
+        gi.require_version("NM", "1.0")
+        from gi.repository import NM
+        client = NM.Client.new(None)
+        active = {a.get_uuid() for a in client.get_active_connections()}
+        profiles, vpns = [], []
+        for connection in client.get_connections():
+            kind = connection.get_connection_type()
+            item = {"uuid": connection.get_uuid(), "name": connection.get_id(),
+                    "connected": connection.get_uuid() in active}
+            if kind in ("vpn", "wireguard"):
+                vpns.append(item)
+            wireless = connection.get_setting_wireless()
+            if wireless and wireless.get_ssid():
+                item["ssid"] = wireless.get_ssid().get_data().decode("utf-8", "replace")
+                profiles.append(item)
+        for row in wifi:
+            matches = sorted((p for p in profiles if p["ssid"] == row["ssid"]),
+                             key=lambda p: (not p["connected"], p["uuid"]))
+            row["uuid"] = matches[0]["uuid"] if matches else ""
+            row["saved"] = bool(matches)
+        return True, vpns
+    except Exception:
+        # Optional libnm support; read-only nmcli/kernel inventory still works.
+        return False, []
+
+
 def main() -> None:
     manager_available = networkmanager_available()
     manager = "networkmanager" if manager_available else "external"
@@ -393,8 +423,11 @@ def main() -> None:
     bluetooth_powered, bluetooth = bluetooth_devices()
     wifi = wifi_networks(manager_available)
     ethernet = ethernet_devices(manager_available)
+    api_available, vpns = connection_profiles(wifi) if manager_available else (False, [])
     connected, label, kind = active_connection(wifi, ethernet)
     payload = {
+        "apiAvailable": api_available,
+        "vpn": vpns,
         "available": manager_available,
         "manager": manager,
         "connected": connected,

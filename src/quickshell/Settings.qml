@@ -13,6 +13,39 @@ QtObject {
     property bool debug: Quickshell.env("TONANTZINTLA_DEBUG") === "1"
     property bool persistenceReady: false
     property int layoutRevision: 0
+    property string persistenceStatus: "Loading preferences…"
+    property bool persistenceFailed: false
+    property string submittedSnapshot: ""
+    property int externalRevision: 0
+    property bool preferencesLoading: false
+    property var appearanceCheckpoint: null
+    property int checkpointRevision: 0
+    readonly property var appearanceKeys: ["compact", "motion", "barIconMotion", "animateStars", "atmosphereStyle", "adaptivePalette", "motionStyle", "motionSpeedProfile", "accentName", "typographyProfile", "fontText", "fontDisplay", "fontMono", "fontIcon", "barMode", "barMargin", "barOpacity", "barHeightProfile", "barPosition", "barLayoutHorizontal", "barLayoutVertical", "barOutputOverrides", "barIslandPlacements", "ephemerisStyle"]
+    readonly property bool canUndoAppearance: appearanceCheckpoint !== null && checkpointRevision === externalRevision
+        && JSON.stringify(appearanceCheckpoint) !== JSON.stringify(appearanceSnapshot())
+
+    function appearanceSnapshot() {
+        const values = {};
+        appearanceKeys.forEach(function(key) { values[key] = root[key]; });
+        return values;
+    }
+    function checkpointAppearance() {
+        appearanceCheckpoint = appearanceSnapshot();
+        checkpointRevision = externalRevision;
+    }
+    function undoAppearance() {
+        if (!canUndoAppearance) return;
+        const before = appearanceCheckpoint;
+        // Position changes clear placements in shell.qml; restore the layouts after it.
+        appearanceKeys.forEach(function(key) { root[key] = before[key]; });
+        checkpointAppearance();
+    }
+    function savePreferences() {
+        submittedSnapshot = JSON.stringify(appearanceSnapshot());
+        persistenceStatus = "Saving preferences…";
+        settingsFile.writeAdapter();
+    }
+
 
     // Every persisted setting is declared exactly once, on the JsonAdapter
     // below. These aliases keep the public Settings.<name> surface stable;
@@ -307,7 +340,7 @@ QtObject {
     }
 
     function applyDesktopPreset(name) {
-        if (name === "serpantinum") {
+        if (name === "expressive" || name === "serpantinum") {
             accentName = "violet";
             barPosition = "top";
             barMode = "capsules";
@@ -316,7 +349,7 @@ QtObject {
             motionSpeedProfile = "fluid";
             applyTypographyPreset("serpantinum");
             applyBarLayoutPreset({start: ["launcher", "workspaces", "media", "window_title"], center: ["clock"], end: ["system_stats", "status", "tray", "controls"]});
-        } else if (name === "caelestia") {
+        } else if (name === "compact" || name === "caelestia") {
             accentName = "cyan";
             barPosition = "left";
             barMode = "capsules";
@@ -343,7 +376,7 @@ QtObject {
             motionSpeedProfile = "instant";
             applyTypographyPreset("serpantinum");
             applyBarLayoutPreset({start: ["launcher", "workspaces"], center: ["clock", "media"], end: ["status", "tray", "controls"]});
-        } else if (name === "minimalist") {
+        } else if (name === "quiet" || name === "minimalist") {
             accentName = "silver";
             barPosition = "top";
             barMode = "floating";
@@ -379,6 +412,7 @@ QtObject {
     }
 
     function applyTypographyPreset(name) {
+        if (name === "serpantinum") name = "observatory";
         typographyProfile = name;
         if (name === "readable") {
             fontText = "Noto Sans";
@@ -402,7 +436,7 @@ QtObject {
 
     property Timer saveTimer: Timer {
         interval: 220
-        onTriggered: root.settingsFile.writeAdapter()
+        onTriggered: root.savePreferences()
     }
 
     property Process ensureDirectory: Process {
@@ -417,21 +451,35 @@ QtObject {
     property FileView settingsFile: FileView {
         path: root.configPath
         watchChanges: true
+        atomicWrites: true
         printErrors: root.debug
         onLoaded: {
+            const current = JSON.stringify(root.appearanceSnapshot());
+            if (root.persistenceReady && current !== root.submittedSnapshot) {
+                root.externalRevision++;
+                root.appearanceCheckpoint = null;
+            }
+            root.preferencesLoading = false;
+            root.persistenceFailed = false;
+            root.persistenceStatus = "Preferences loaded";
             root.persistenceReady = true;
             root.migrateLegacyPersonalDefaults();
         }
-        onFileChanged: reload()
+        onFileChanged: { root.preferencesLoading = true; reload(); }
         onAdapterUpdated: {
-            if (root.persistenceReady)
+            if (root.persistenceReady && !root.preferencesLoading)
                 root.saveTimer.restart();
         }
+        onSaved: { root.persistenceFailed = false; root.persistenceStatus = "Preferences saved"; }
+        onSaveFailed: { root.persistenceFailed = true; root.persistenceStatus = "Could not save preferences. Check configuration permissions."; }
         onLoadFailed: function(error) {
+            root.preferencesLoading = false;
+            root.persistenceFailed = true;
+            root.persistenceStatus = "Could not load preferences. Existing settings have been kept in memory.";
             if (error === FileViewError.FileNotFound && !root.ensureDirectory.running) {
                 root.persistenceReady = true;
                 root.migrateLegacyPersonalDefaults();
-                writeAdapter();
+                root.savePreferences();
             }
         }
 
@@ -451,7 +499,7 @@ QtObject {
             property bool adaptivePalette: false
             property string motionStyle: "rise"
             property string accentName: "violet"
-            property string typographyProfile: "serpantinum"
+            property string typographyProfile: "observatory"
             property int universalProfileVersion: 0
             property string fontText: "JetBrains Mono"
             property string fontDisplay: "JetBrains Mono"

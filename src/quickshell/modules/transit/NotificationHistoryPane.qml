@@ -7,6 +7,8 @@ import "../../services"
 pragma ComponentBehavior: Bound
 
 Item {
+    id: root
+    property var expandedGroups: ({})
 
     onVisibleChanged: {
         if (visible)
@@ -91,23 +93,44 @@ Item {
             spacing: 8
             model: Notifications.history
 
-            delegate: NotificationCard {
+            delegate: Column {
+                id: groupRow
                 required property var model
-                uid: model.uid
-                appName: model.appName
-                summary: model.summary
-                body: model.body
-                icon: model.icon
-                time: model.time
-                critical: model.critical
-                receivedAt: model.receivedAt
-                urgency: model.urgency
-                count: model.count
-                actions: model.actions || []
                 width: historyList.width
-                onActivated: Notifications.invokeDefault(uid)
-                onActionInvoked: function(identifier) { Notifications.invokeAction(uid, identifier); }
-                onDismissed: Notifications.removeHistory(uid)
+                spacing: 6
+                readonly property bool expanded: root.expandedGroups[model.groupKey] === true
+                readonly property var members: JSON.parse(model.membersJson || "[]")
+                ActionButton {
+                    width: parent.width
+                    visible: groupRow.model.count > 1
+                    text: (groupRow.expanded ? "▾  " : "▸  ") + groupRow.model.appName + " · " + groupRow.model.count + " messages"
+                    onClicked: {
+                        const next = Object.assign({}, root.expandedGroups);
+                        next[groupRow.model.groupKey] = !groupRow.expanded;
+                        root.expandedGroups = next;
+                    }
+                }
+                Repeater {
+                    model: groupRow.expanded ? groupRow.members : groupRow.members.slice(0, 1)
+                    NotificationCard {
+                        required property var modelData
+                        width: groupRow.width
+                        uid: modelData.uid
+                        appName: modelData.appName
+                        summary: modelData.summary
+                        body: modelData.body
+                        icon: modelData.icon
+                        time: modelData.time
+                        critical: modelData.critical
+                        receivedAt: modelData.receivedAt
+                        urgency: modelData.urgency
+                        count: 1
+                        actions: modelData.actions || []
+                        onActivated: Notifications.invokeDefault(uid)
+                        onActionInvoked: function(identifier) { Notifications.invokeAction(uid, identifier); }
+                        onDismissed: Notifications.removeMessage(uid)
+                    }
+                }
             }
 
             Text {

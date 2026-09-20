@@ -189,3 +189,57 @@ miniature. The preview must not create a second `PanelWindow` or fake telemetry.
 4. Inspect the live Quickshell log for `Configuration Loaded` and new warnings.
 5. Test the affected surface manually.
 6. Commit the focused change before beginning another risky pass.
+
+## September 2026 interaction refinement
+
+- Ephemeris now uses shared entry/exit/effect timings, including the resident
+  lifetime. Geometry follows surface reveal independently of content swaps.
+  Bar-launched audio/media open compact controls; Expand uses the same transition
+  controller to enter the full instrument. Parallax retains its open orbit.
+- Transit retains at most 100 individual notification records. App groups are
+  derived presentation with independently readable/actionable members. History
+  remains memory-only; no notification content is newly persisted to disk.
+- Network actions are bounded helpers. `network-action.py` uses libnm and accepts
+  credentials only through stdin. SSIDs and saved profile UUIDs remain separate.
+  Enterprise/WEP/unsupported security requires Advanced settings. Saved VPN and
+  WireGuard profiles can activate/deactivate; interactive VPN-specific secret
+  acquisition still depends on the system's NetworkManager secret agent.
+- `bluetooth-pair.py` registers a temporary, non-default BlueZ agent for the
+  selected device only. PIN, passkey, confirmation, display and cancellation
+  use newline-delimited JSON on the owned process pipes. It never silently
+  trusts devices or becomes the global agent.
+- Optional network dependencies: Python GObject (`python-gobject` on Arch),
+  libnm introspection (`libnm`), and Python D-Bus (`python-dbus`) for pairing.
+  Missing bindings produce unavailable/error states and retain external tools.
+- AuthenticationPrompt uses Quickshell's PolkitAgent. It does not displace an
+  existing agent. `auth-agent-bootstrap.py` waits briefly for verified native
+  registration on session startup, then executes an external agent if necessary.
+  Its fallback is bounded, not a new supervisor. Existing autostart configurations
+  require an explicit ownership handoff; do not kill arbitrary authentication
+  processes. Quickshell builds without the Polkit module can still load the shell
+  because this module is loaded by URL.
+- Settings search indexes ordinary terms and routes to the existing sections.
+  Appearance Undo survives the shell's own atomic writes but is invalidated by
+  external appearance edits. Cursor/output transactions retain their existing
+  independent validation and rollback behavior.
+- FeatureRegistry describes built-in capabilities, not third-party extensions.
+  PluginRegistry is a compatibility adapter. `quickstats`/`telemetry` normalize
+  to System; the duplicate catalog entry and duplicate overview action are gone.
+- SpectrumConsumer explicitly acquires/releases the shared spectrum service.
+  Audio analysis runs only for active consumers while media is playing.
+
+API references used for the original adapters:
+[NetworkManager](https://www.networkmanager.dev/docs/libnm/latest/NMClient.html),
+[BlueZ](https://bluez.readthedocs.io/en/latest/agent-api/),
+[Quickshell Polkit](https://quickshell.org/docs/v0.3.1/types/Quickshell.Services.Polkit/AuthFlow/).
+
+### Aperture clearance invariant
+
+Ephemeris reserves every occupied Aperture edge on its target output.
+`components/ApertureMetrics.js` supplies the same body thickness and margins
+used by the actual bar, including compact, vertical, tall, and docked profiles.
+Attachment placement and animation origins fit inside that safe rectangle;
+negative attachment gaps no longer permit overlap. The entire composition
+(including dimming and experimental backings) is clipped to it, and the Wayland
+pointer mask uses the same rectangle. Clearance changes take effect immediately
+even while panel geometry is animating. Aperture remains visible and clickable.

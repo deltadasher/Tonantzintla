@@ -135,6 +135,12 @@ Item {
         model: root.radarNetworks
         Item {
             id: networkNode
+            activeFocusOnTab: root.enabled
+            Accessible.role: Accessible.Button
+            Accessible.name: modelData.ssid + ", " + modelData.signal + "% signal"
+            Accessible.onPressAction: root.networkActivated(modelData)
+            Keys.onReturnPressed: root.networkActivated(modelData)
+            Keys.onSpacePressed: root.networkActivated(modelData)
             required property int index
             required property var modelData
             readonly property real angle: root.angleFor(modelData)
@@ -155,7 +161,7 @@ Item {
                 color: networkNode.modelData.secure
                         ? networkNode.modelData.saved ? Theme.accent : Theme.muted
                         : Theme.cyan
-                scale: nodePointer.containsMouse ? 1.16 : 1
+                scale: nodePointer.containsMouse || networkNode.activeFocus ? 1.16 : 1
                 Behavior on scale { NumberAnimation { duration: Settings.motion ? 150 : 0; easing.type: Easing.OutCubic } }
 
                 Rectangle {

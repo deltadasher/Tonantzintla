@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Effects
 import Quickshell
@@ -18,12 +19,46 @@ FocusScope {
     readonly property real sf: Math.max(0.72, Math.min(1.35,
         Math.min(width / 1920, height / 1080)))
     readonly property real pad: Math.max(26, width * 0.045)
-    readonly property real horizonSize: Math.min(height * 0.90, width * 0.56)
+    readonly property real horizonSize: Math.min(height * 1.26, width * 0.78)
     readonly property bool surfaceActive: root.previewMode
         ? Umbra.previewActive : Umbra.active
     readonly property real visualEnergy: Math.max(root.authEnergy,
         Umbra.authenticating || Umbra.unlocking ? 1 : Umbra.failed ? 0.76 : 0)
-    readonly property real contentOpacity: root.intro * (1 - root.consume)
+    readonly property bool motionEnabled: Settings.motion && Settings.umbraMotion
+    readonly property real contentOpacity: stage(0.10, 0.42) * (1 - root.departure)
+    readonly property real clockArrival: stage(0.22, 0.64)
+    readonly property real inputArrival: Umbra.password.length > 0 || Umbra.failed || Umbra.authenticating
+        ? 1 : stage(0.28, 0.60)
+    readonly property real mediaArrival: stage(0.46, 0.84)
+
+    // One linear master timeline; each layer owns a bounded reveal window.
+    function curve(value, start, end) {
+        const t = Math.max(0, Math.min(1, (value - start) / (end - start)));
+        return t * t * t * (t * (t * 6 - 15) + 10);
+    }
+    function stage(start, end) { return curve(intro, start, end); }
+    readonly property real departure: curve(consume, 0.08, 0.46)
+    readonly property real plunge: curve(consume, 0.34, 0.96)
+    readonly property real recoil: Math.sin(curve(consume, 0, 0.36) * Math.PI)
+
+    function startEntrance() {
+        introAnimation.stop();
+        intro = motionEnabled ? 0 : 1;
+        if (motionEnabled) introDelay.restart();
+        focusDelay.restart();
+    }
+
+    onMotionEnabledChanged: {
+        if (!motionEnabled) {
+            introDelay.stop();
+            introAnimation.stop();
+            intro = 1;
+            if (Umbra.unlocking) {
+                consumeAnimation.stop();
+                consume = 1;
+            }
+        }
+    }
     readonly property string wallpaperPath: Settings.umbraUseWallpaper
         && Settings.wallpaperKind === "image" ? Settings.wallpaperPath : ""
     readonly property url wallpaperSource: wallpaperPath.length > 0
@@ -44,18 +79,16 @@ FocusScope {
 
     Component.onCompleted: {
         if (root.surfaceActive) {
-            introDelay.restart();
-            focusDelay.restart();
+            startEntrance();
         }
     }
 
     onSurfaceActiveChanged: {
         if (root.surfaceActive) {
-            root.intro = 0;
-            introDelay.restart();
-            focusDelay.restart();
+            startEntrance();
         } else {
             introDelay.stop();
+            introAnimation.stop();
             focusDelay.stop();
             root.intro = 0;
         }
@@ -77,8 +110,12 @@ FocusScope {
             typingDecay.restart();
         }
         function onUnlockingChanged() {
-            if (Umbra.unlocking)
+            if (Umbra.unlocking) {
+                introDelay.stop();
+                introAnimation.stop();
+                root.intro = 1;
                 consumeAnimation.restart();
+            }
             else {
                 consumeAnimation.stop();
                 root.consume = 0;
@@ -107,8 +144,8 @@ FocusScope {
         target: root
         property: "intro"
         to: 1
-        duration: Settings.motion && Settings.umbraMotion ? 1180 : 0
-        easing.type: Easing.OutExpo
+        duration: root.motionEnabled ? 2200 : 0
+        easing.type: Easing.Linear
     }
     NumberAnimation {
         id: authDecay
@@ -118,23 +155,15 @@ FocusScope {
         duration: Settings.motion && Settings.umbraMotion ? 1300 : 0
         easing.type: Easing.OutCubic
     }
-    SequentialAnimation {
+    NumberAnimation {
         id: consumeAnimation
-        NumberAnimation {
-            target: root; property: "consume"; from: 0; to: 0.08
-            duration: Settings.motion && Settings.umbraMotion ? 170 : 0
-            easing.type: Easing.OutCubic
-        }
-        NumberAnimation {
-            target: root; property: "consume"; to: 0.16
-            duration: Settings.motion && Settings.umbraMotion ? 280 : 0
-            easing.type: Easing.InOutCubic
-        }
-        NumberAnimation {
-            target: root; property: "consume"; to: 1
-            duration: Settings.motion && Settings.umbraMotion ? 930 : 0
-            easing.type: Easing.InCubic
-        }
+        target: root
+        property: "consume"
+        from: 0
+        to: 1
+        // Finish before the existing 1460ms authenticated release deadline.
+        duration: root.motionEnabled ? 1380 : 0
+        easing.type: Easing.Linear
     }
     NumberAnimation {
         id: typingDecay
@@ -168,7 +197,7 @@ FocusScope {
     Rectangle {
         anchors.fill: parent
         color: Theme.void_
-        opacity: Settings.umbraBlurWallpaper ? 0.62 : 0.73
+        opacity: Settings.umbraBlurWallpaper ? 0.84 : 0.86
     }
 
     Rectangle {
@@ -182,13 +211,20 @@ FocusScope {
         }
     }
 
+    Rectangle {
+        anchors.fill: parent
+        color: Theme.void_
+        opacity: 1 - root.stage(0.08, 0.72)
+    }
+
     UmbraField {
         anchors.fill: parent
-        focalX: width * 0.75
+        focalX: width * (0.69 - root.plunge * 0.19)
         focalY: height * 0.48
         energy: root.visualEnergy
         motionActive: root.surfaceActive
-        opacity: root.contentOpacity
+        scale: 1 + (1 - root.stage(0.0, 0.8)) * 0.045 + root.plunge * 0.16
+        opacity: root.stage(0.08, 0.72) * (1 - root.departure)
     }
 
     Rectangle {
@@ -211,104 +247,95 @@ FocusScope {
         id: eventHorizon
         width: root.horizonSize
         height: width
-        x: (root.width * (0.73 - root.consume * 0.23)) - width * 0.5
-            + (1 - root.intro) * root.width * 0.20
-        y: root.height * (0.48 + root.consume * 0.02) - height * 0.5
+        x: (root.width * (0.69 - root.plunge * 0.19)) - width * 0.5
+            + (1 - root.stage(0.08, 0.85)) * root.width * 0.018
+        y: root.height * (0.48 + root.plunge * 0.02) - height * 0.5
         deployment: root.intro
-        energy: root.visualEnergy
+        energy: root.visualEnergy + root.recoil * 0.5
         failed: Umbra.failed
         authenticating: Umbra.authenticating
         collapseActive: Umbra.unlocking
         collapseProgress: root.consume
         shock: root.failureShock
         motionActive: root.surfaceActive
-        opacity: root.intro
-        scale: (0.38 + root.intro * 0.62)
+        opacity: root.stage(0.0, 0.08)
+        scale: (1 + (1 - root.stage(0.05, 0.90)) * 0.12)
             * (1 - root.failureShock * 0.11)
-            * (1 + Math.pow(root.consume, 1.45) * 5.9)
-        rotation: (1 - root.intro) * -28 + root.consume * 26
-            + root.failureShock * -9
+            * (1 - root.recoil * 0.045 + Math.pow(root.plunge, 2.4) * 7.5)
+        rotation: 0
         z: root.consume > 0 ? 20 : 0
     }
 
-    Rectangle {
+    Row {
         x: root.pad
         y: root.pad
-        width: 9 * root.sf
-        height: 54 * root.sf
-        color: Umbra.failed ? Theme.danger : Theme.accent
-        opacity: root.contentOpacity * 0.76
-        transform: Translate { x: (1 - root.intro) * -32 * root.sf }
+        spacing: 14 * root.sf
+        opacity: root.contentOpacity
+        Rectangle {
+            width: 24 * root.sf; height: 2 * root.sf
+            anchors.verticalCenter: parent.verticalCenter
+            color: Theme.accent
+        }
+        Text {
+            text: "UMBRA"
+            color: Theme.moon
+            font.family: Theme.fontMono
+            font.pixelSize: 13 * root.sf
+            font.letterSpacing: 6 * root.sf
+        }
     }
 
     Text {
-        visible: root.previewMode
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.rightMargin: root.pad
-        anchors.topMargin: root.pad
-        text: "ESC"
+        anchors.margins: root.pad
+        text: root.previewMode ? "PREVIEW   /   ESC TO CLOSE" : Umbra.stateCode
         color: Theme.muted
         font.family: Theme.fontMono
-        font.pixelSize: 12 * root.sf
-        font.weight: Font.Bold
-        opacity: root.contentOpacity * 0.74
+        font.pixelSize: 10 * root.sf
+        font.letterSpacing: 1.5 * root.sf
+        opacity: root.contentOpacity
     }
 
-    // Time is a vertical fracture rather than a centered hero clock.
     Item {
-        x: root.pad + (1 - root.intro) * -90 * root.sf
-        y: root.height * 0.145
-        width: Math.min(root.width * 0.28, 470 * root.sf)
-        height: 360 * root.sf
-        opacity: root.contentOpacity
+        x: root.pad
+        y: root.height * 0.29 + (1 - root.clockArrival) * 28 * root.sf
+            + root.departure * 26 * root.sf
+        transform: Translate { x: root.departure * 92 * root.sf }
+        width: root.width * 0.44
+        height: 240 * root.sf
+        opacity: root.clockArrival * (1 - root.departure)
 
-        Rectangle {
-            x: 0
-            y: 6 * root.sf
-            width: 9 * root.sf
-            height: 272 * root.sf
-            color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.70)
-        }
         Text {
-            x: 28 * root.sf
-            y: -20 * root.sf
-            text: Qt.formatDateTime(clock.date, "HH")
-            color: Theme.moon
-            font.family: Theme.fontDisplay
-            font.pixelSize: 150 * root.sf
-            font.weight: Font.Medium
-            font.letterSpacing: -3 * root.sf
-        }
-        Text {
-            x: 28 * root.sf
-            y: 112 * root.sf
-            text: Qt.formatDateTime(clock.date, "mm")
-            color: Theme.moon
-            font.family: Theme.fontDisplay
-            font.pixelSize: 150 * root.sf
-            font.weight: Font.Medium
-            font.letterSpacing: -3 * root.sf
-        }
-        Text {
-            x: 30 * root.sf
-            y: 292 * root.sf
-            text: Qt.formatDateTime(clock.date, "dddd / MMMM dd").toUpperCase()
-            color: Theme.muted
+            text: Qt.formatDateTime(clock.date, "dddd, MMMM dd").toUpperCase()
+            color: Theme.accent
             font.family: Theme.fontMono
-            font.pixelSize: 10 * root.sf
-            font.letterSpacing: 1.15 * root.sf
+            font.pixelSize: 11 * root.sf
+            font.letterSpacing: 2 * root.sf
+        }
+        Text {
+            y: 23 * root.sf
+            text: Qt.formatDateTime(clock.date, "HH:mm")
+            color: Theme.moon
+            font.family: Theme.fontDisplay
+            font.pixelSize: 126 * root.sf
+            font.weight: Font.Light
+            font.letterSpacing: -5 * root.sf
+        }
+        Rectangle {
+            y: 180 * root.sf
+            width: 42 * root.sf; height: 2 * root.sf
+            color: Theme.accent
         }
         Text {
             visible: Settings.umbraShowWeather && Weather.available
-            x: 30 * root.sf
-            y: 320 * root.sf
+            x: 60 * root.sf; y: 174 * root.sf
             text: Math.round(Number(Weather.current.temp || 0)) + Weather.unitSymbol
-                + "  /  " + String(Weather.current.condition || "LOADING").toUpperCase()
-            color: Theme.cyan
+                + "  /  " + String(Weather.current.condition || "").toUpperCase()
+            color: Theme.muted
             font.family: Theme.fontMono
             font.pixelSize: 10 * root.sf
-            font.weight: Font.DemiBold
+            font.letterSpacing: 1 * root.sf
         }
     }
 
@@ -316,16 +343,16 @@ FocusScope {
     // each character energizes a node on this trajectory.
     Item {
         x: root.pad + root.failureOffset
-        y: root.height * 0.58 + (1 - root.intro) * 95 * root.sf
-        width: Math.min(root.width * 0.59, 1080 * root.sf)
-        height: Math.min(root.height * 0.30, 300 * root.sf)
-        opacity: root.contentOpacity
+        y: root.height * 0.58
+        width: Math.min(root.width * 0.37, 660 * root.sf)
+        height: 120 * root.sf
+        opacity: root.inputArrival * (1 - root.departure)
 
         Text {
             x: 0
             y: 0
-            visible: Umbra.failed || Umbra.authenticating
-            text: Umbra.statusText
+            text: Umbra.failed || Umbra.authenticating || Umbra.unlocking ? Umbra.statusText
+                : passwordInput.text.length > 0 ? "ENTER TO UNLOCK" : "TYPE YOUR PASSWORD"
             color: Umbra.failed ? Theme.danger
                 : Umbra.authenticating ? Theme.cyan : Theme.muted
             font.family: Theme.fontMono
@@ -341,7 +368,7 @@ FocusScope {
             height: parent.height - 22 * root.sf
             count: passwordInput.text.length
             maxNodes: 32
-            deployment: root.intro
+            deployment: root.inputArrival
             energy: root.typingEnergy
             failed: Umbra.failed
             authenticating: Umbra.authenticating
@@ -351,7 +378,7 @@ FocusScope {
         Rectangle {
             x: parent.width * 0.94 - width * 0.5
             y: 22 * root.sf + (parent.height - 22 * root.sf) * 0.27 - height * 0.5
-            width: (Umbra.authenticating ? 84 : 70) * root.sf
+            width: 44 * root.sf
             height: width
             radius: width / 2
             color: Umbra.failed ? Theme.danger
@@ -364,7 +391,7 @@ FocusScope {
 
             Rectangle {
                 anchors.centerIn: parent
-                width: Umbra.authenticating ? parent.width * 0.42 : parent.width * 0.16
+                width: Umbra.authenticating ? parent.width * 0.42 : parent.width * 0.12
                 height: width
                 radius: width / 2
                 color: passwordInput.text.length > 0 || Umbra.failed ? Theme.void_ : Theme.muted
@@ -450,8 +477,8 @@ FocusScope {
         anchors.bottomMargin: root.pad
         width: Math.min(470 * root.sf, parent.width * 0.34)
         height: 108 * root.sf
-        opacity: root.contentOpacity
-        transform: Translate { x: (1 - root.intro) * 70 * root.sf }
+        opacity: root.mediaArrival * (1 - root.departure)
+        // Media hit targets stay at their final positions throughout arrival.
 
         UmbraDisc {
             id: mediaDisc
@@ -538,22 +565,42 @@ FocusScope {
         }
     }
 
+    Column {
+        x: root.pad
+        y: root.height - root.pad - height
+        spacing: 8 * root.sf
+        opacity: root.contentOpacity * 0.8
+        Text {
+            text: Umbra.userName
+            color: Theme.moon
+            font.family: Theme.fontDisplay
+            font.pixelSize: 16 * root.sf
+        }
+        Text {
+            text: root.previewMode ? "SESSION VEIL / PREVIEW" : "SESSION LOCKED"
+            color: Theme.muted
+            font.family: Theme.fontMono
+            font.pixelSize: 9 * root.sf
+            font.letterSpacing: 2 * root.sf
+        }
+    }
+
     Rectangle {
         anchors.fill: parent
         z: 30
         color: Theme.void_
-        opacity: Math.max(0, (root.consume - 0.80) / 0.20)
+        opacity: root.curve(root.consume, 0.86, 0.985)
     }
 
     SequentialAnimation {
         id: failureAnimation
         ParallelAnimation {
             SequentialAnimation {
-                NumberAnimation { target: root; property: "failureOffset"; to: -16 * root.sf; duration: 45 }
-                NumberAnimation { target: root; property: "failureOffset"; to: 12 * root.sf; duration: 70 }
-                NumberAnimation { target: root; property: "failureOffset"; to: -8 * root.sf; duration: 65 }
-                NumberAnimation { target: root; property: "failureOffset"; to: 5 * root.sf; duration: 60 }
-                NumberAnimation { target: root; property: "failureOffset"; to: 0; duration: 110; easing.type: Easing.OutCubic }
+                NumberAnimation { target: root; property: "failureOffset"; to: -16 * root.sf; duration: Settings.motion && Settings.umbraMotion ? 45 : 0 }
+                NumberAnimation { target: root; property: "failureOffset"; to: 12 * root.sf; duration: Settings.motion && Settings.umbraMotion ? 70 : 0 }
+                NumberAnimation { target: root; property: "failureOffset"; to: -8 * root.sf; duration: Settings.motion && Settings.umbraMotion ? 65 : 0 }
+                NumberAnimation { target: root; property: "failureOffset"; to: 5 * root.sf; duration: Settings.motion && Settings.umbraMotion ? 60 : 0 }
+                NumberAnimation { target: root; property: "failureOffset"; to: 0; duration: Settings.motion && Settings.umbraMotion ? 110 : 0; easing.type: Easing.OutCubic }
             }
             SequentialAnimation {
                 NumberAnimation {

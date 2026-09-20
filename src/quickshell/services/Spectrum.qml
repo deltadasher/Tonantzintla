@@ -10,8 +10,14 @@ QtObject {
 
     property var values: Array(28).fill(0)
     property bool available: false
-    readonly property bool requested: ShellState.ephemerisVisible
-        && (ShellState.ephemerisTab === "media" || ShellState.ephemerisTab === "audio")
+    property var consumers: []
+    readonly property bool requested: consumers.length > 0
+    function acquire(owner) {
+        if (consumers.indexOf(owner) < 0) consumers = consumers.concat([owner]);
+    }
+    function release(owner) {
+        consumers = consumers.filter(function(item) { return item !== owner; });
+    }
     readonly property string configPath: Quickshell.shellDir + "/../../config/cava-raw.conf"
 
     function consume(frame) {
@@ -30,7 +36,7 @@ QtObject {
     property Process cavaProcess: Process {
         // Visualization must never compete with PipeWire for scheduling.
         command: ["nice", "-n", "10", "cava", "-p", root.configPath]
-        running: root.requested && Media.available
+        running: root.requested && Media.available && Media.playing
         stdout: SplitParser {
             splitMarker: "\n"
             onRead: function(data) { root.consume(data); }
