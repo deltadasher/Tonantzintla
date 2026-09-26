@@ -85,6 +85,11 @@ PanelWindow {
     // Colour stays opaque inside the Canvas. The aperture-derived alpha is
     // applied once to the complete union, avoiding darker overlap at the lip.
     readonly property color instrumentColor: Theme.void_
+    readonly property bool softwareRenderer: safeViewport.GraphicsInfo.api === GraphicsInfo.Software
+    readonly property bool gravityRequested: Settings.panelMaterial === "gravity"
+        && !root.immersiveWidget && Quickshell.env("TONANTZINTLA_DISABLE_GRAVITY") !== "1"
+    readonly property bool gravityReady: gravityBacking.status === Loader.Ready
+        && gravityBacking.item && gravityBacking.item.usable
     readonly property bool blobExperiment: Quickshell.env("TONANTZINTLA_BLOB_EXPERIMENT") === "1"
 
     visible: transition.mounted && targetScreen
@@ -224,12 +229,27 @@ PanelWindow {
                 Loader {
                     id: blobBacking
                     anchors.fill: parent
-                    active: root.blobExperiment && !root.immersiveWidget
+                    active: root.blobExperiment && !root.immersiveWidget && !root.gravityReady
                     source: active ? Qt.resolvedUrl("../../components/ExperimentalBlobBacking.qml") : ""
                     onLoaded: {
                         item.geometry = surfaceGeometry;
                         item.origin = root.originRect;
                         item.anchored = root.anchoredInstrument;
+                    }
+                }
+
+                Loader {
+                    id: gravityBacking
+                    active: root.gravityRequested && transition.mounted && root.targetScreen
+                    sourceComponent: GravityMaterial {
+                        geometry: surfaceGeometry
+                        reveal: transition.revealProgress
+                        activity: Theme.motionScale > 0
+                            ? Math.max(Math.sin(Math.PI * transition.revealProgress),
+                                (1 - transition.contentProgress) * 0.7) : 0
+                        primary: root.moduleTone
+                        secondary: Theme.moduleSecondary(root.activeInstrument)
+                        backing: root.instrumentColor
                     }
                 }
 
@@ -239,14 +259,25 @@ PanelWindow {
                     edge: root.anchorEdge
                     attached: root.anchoredInstrument
                     fillColor: root.instrumentColor
-                    visible: !root.immersiveWidget
+                    visible: !root.immersiveWidget && !root.gravityReady
                         && (!root.blobExperiment || blobBacking.status === Loader.Error)
                         && transition.revealProgress > 0.01
                     opacity: root.instrumentSurfaceOpacity
                 }
 
+                Item {
+                    id: softwareDeck
+                    x: surfaceGeometry.x; y: surfaceGeometry.y
+                    width: surfaceGeometry.width; height: surfaceGeometry.height
+                    visible: root.softwareRenderer
+                    clip: true
+                    opacity: deck.opacity
+                    scale: deck.scale
+                }
+
                 ClippingRectangle {
                     id: deck
+                    visible: !root.softwareRenderer
                     x: surfaceGeometry.x; y: surfaceGeometry.y
                     width: surfaceGeometry.width; height: surfaceGeometry.height
                     // The geometry expands into the solid instrument backing and rounded mask.
@@ -260,6 +291,9 @@ PanelWindow {
 
                     Item {
                         id: fixedContent
+                        // Quickshell's rounded mask itself needs a shader. Keep
+                        // controls usable with rectangular clipping in software.
+                        parent: root.softwareRenderer ? softwareDeck : deck.contentItem
                         x: root.widgetLayout.x - surfaceGeometry.x
                         y: root.widgetLayout.y - surfaceGeometry.y
                         width: root.widgetLayout.width
@@ -290,7 +324,7 @@ PanelWindow {
                         }
                         EphemerisAtmosphere {
                             anchors.fill: parent
-                            visible: !root.immersiveWidget
+                            visible: !root.immersiveWidget && !root.gravityReady
                             module: root.activeInstrument
                             presentation: transition.contentProgress
                         }

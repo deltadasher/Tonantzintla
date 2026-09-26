@@ -1,6 +1,6 @@
 .pragma library
 var entries = [
-    {section:"appearance", label:"Appearance", terms:"theme accent colour color font typography motion animation reduced stars transparency compact"},
+    {section:"appearance", label:"Appearance", terms:"theme accent colour color font typography motion animation reduced stars gravity optics material transparency compact"},
     {section:"launcher", label:"Panels", terms:"aperture bar layout position dock islands launcher command palette calculator app descriptions"},
     {section:"umbra", label:"Lock screen", terms:"umbra password black hole idle timeout lock wallpaper"},
     {section:"system", label:"System", terms:"weather location units terminal browser file manager notifications sound"},

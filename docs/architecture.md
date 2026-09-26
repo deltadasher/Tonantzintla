@@ -243,3 +243,16 @@ negative attachment gaps no longer permit overlap. The entire composition
 (including dimming and experimental backings) is clipped to it, and the Wayland
 pointer mask uses the same rectangle. Clearance changes take effect immediately
 even while panel geometry is animating. Aperture remains visible and clickable.
+
+### Procedural gravity material
+
+`components/GravityMaterial.qml` optionally replaces the ordinary Ephemeris
+backing with a directly drawn Qt Quick shader. `Settings.panelMaterial` selects
+`gravity` or `classic`; the appearance undo includes it. It consumes existing
+transition progress rather than running an independent animation. No texture
+capture or additional offscreen layer is introduced by this renderer. The
+existing safe viewport clips both the panel and its light field outside Aperture.
+Parallax retains its existing composition. Software rendering or shader errors
+use the classic backing; `TONANTZINTLA_DISABLE_GRAVITY=1` is a startup override.
+The old decorative atmosphere is suppressed while this material is available.
+See `components/shaders/README.md` for compilation and resource boundaries.
