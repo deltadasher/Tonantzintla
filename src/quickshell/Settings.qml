@@ -20,7 +20,7 @@ QtObject {
     property bool preferencesLoading: false
     property var appearanceCheckpoint: null
     property int checkpointRevision: 0
-    readonly property var appearanceKeys: ["compact", "motion", "barIconMotion", "animateStars", "atmosphereStyle", "adaptivePalette", "motionStyle", "motionSpeedProfile", "accentName", "typographyProfile", "fontText", "fontDisplay", "fontMono", "fontIcon", "barMode", "barMargin", "barOpacity", "barHeightProfile", "barPosition", "barLayoutHorizontal", "barLayoutVertical", "barOutputOverrides", "barIslandPlacements", "ephemerisStyle"]
+    readonly property var appearanceKeys: ["compact", "motion", "barIconMotion", "animateStars", "atmosphereStyle", "adaptivePalette", "motionStyle", "panelMaterial", "motionSpeedProfile", "accentName", "typographyProfile", "fontText", "fontDisplay", "fontMono", "fontIcon", "barMode", "barMargin", "barOpacity", "barHeightProfile", "barPosition", "barLayoutHorizontal", "barLayoutVertical", "barOutputOverrides", "barIslandPlacements", "ephemerisStyle"]
     readonly property bool canUndoAppearance: appearanceCheckpoint !== null && checkpointRevision === externalRevision
         && JSON.stringify(appearanceCheckpoint) !== JSON.stringify(appearanceSnapshot())
 
@@ -61,6 +61,7 @@ QtObject {
     property alias animateStars: settingsAdapter.animateStars
     property alias atmosphereStyle: settingsAdapter.atmosphereStyle
     property alias adaptivePalette: settingsAdapter.adaptivePalette
+    property alias panelMaterial: settingsAdapter.panelMaterial
     property alias motionStyle: settingsAdapter.motionStyle
     property alias accentName: settingsAdapter.accentName
     property alias typographyProfile: settingsAdapter.typographyProfile
@@ -497,6 +498,7 @@ QtObject {
             property bool animateStars: true
             property string atmosphereStyle: "nominal"
             property bool adaptivePalette: false
+            property string panelMaterial: "gravity"
             property string motionStyle: "rise"
             property string accentName: "violet"
             property string typographyProfile: "observatory"
