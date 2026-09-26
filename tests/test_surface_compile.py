@@ -20,6 +20,7 @@ class SurfaceCompileTests(unittest.TestCase):
                     qml / "modules/ephemeris/CursorSettings.qml",
                     qml / "modules/ephemeris/OutputSettings.qml",
                     qml / "components/InstrumentBridge.qml",
+                    qml / "components/GravityMaterial.qml",
                     qml / "components/EdgeFluidSurface.qml",
                     qml / "components/FocusScrim.qml",
                     qml / "modules/ephemeris/TonantzintlaMorphBackdrop.qml",

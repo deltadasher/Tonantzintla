@@ -327,6 +327,17 @@ Item {
 
             SettingChoice {
                 Layout.fillWidth: true
+                label: "Panel material"
+                value: Settings.panelMaterial
+                choices: [
+                    { "label": "CLASSIC", "value": "classic" },
+                    { "label": "GRAVITY", "value": "gravity" }
+                ]
+                onSelected: function(value) { Settings.panelMaterial = value; }
+            }
+
+            SettingChoice {
+                Layout.fillWidth: true
                 label: "Panel animation"
                 value: Settings.motionStyle
                 choices: [
