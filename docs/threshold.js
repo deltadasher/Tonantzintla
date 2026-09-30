@@ -1,6 +1,8 @@
 (() => {
   const threshold = document.querySelector('#threshold');
+  if (!threshold) return;
   const enter = threshold.querySelector('.threshold-hole');
+  if (!enter) return;
   const svg = threshold.querySelector('.threshold-peel');
   const halves = ['top', 'bottom'].map(side => ({
     sheet: svg.querySelector(`.threshold-sheet.${side}`),
@@ -11,7 +13,7 @@
   const key = 'tonantzintla-entered';
   const clamp = value => Math.max(0, Math.min(1, value));
   const smooth = value => { const t = clamp(value); return t * t * (3 - 2 * t); };
-  const content = [...document.querySelectorAll('body > header, body > main, body > footer')];
+  const content = [...document.querySelectorAll('body > .skip-link, body > header, body > main, body > footer')];
   let started = null;
   let frame = 0;
   let width, height, radius;
@@ -19,7 +21,10 @@
   const cutEnd = 0.56;
 
   // Storage can be blocked; entrance must still work without it.
+  threshold.hidden = false;
   try { threshold.hidden = sessionStorage.getItem(key) === '1'; } catch {}
+  // Shared links should take visitors straight to the requested content.
+  if (window.location?.hash) threshold.hidden = true;
   if (threshold.hidden) return;
   const previousOverflow = document.documentElement.style.overflow;
   document.documentElement.style.overflow = 'hidden';
@@ -35,6 +40,7 @@
       document.querySelector('.site-tab')?.focus({ preventScroll: true });
     }
     window.removeEventListener('resize', resize);
+    window.removeEventListener('keydown', onKeyDown);
     motion.removeEventListener('change', onMotionChange);
   };
 
@@ -89,7 +95,7 @@
   }
   function onMotionChange() { if (motion.matches) finish(); }
   function dismiss() {
-    if (threshold.classList.contains('departing')) return;
+    if (threshold.hidden || threshold.classList.contains('departing')) return;
     if (motion.matches) { finish(); return; }
     // Finish the brief arrival first rather than replacing an in-flight transform.
     const arrival = enter.getAnimations().find(animation => animation.playState === 'running');
@@ -103,7 +109,11 @@
     threshold.classList.add('departing');
     frame = requestAnimationFrame(tick);
   }
+  function onKeyDown(event) {
+    if (event.key === 'Escape') { event.preventDefault(); finish(); }
+  }
   enter.addEventListener('click', dismiss);
+  window.addEventListener('keydown', onKeyDown);
   window.addEventListener('resize', resize);
   motion.addEventListener('change', onMotionChange);
 })();
