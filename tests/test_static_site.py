@@ -3,11 +3,12 @@
 These checks do not establish browser layout, playback, or accessibility quality.
 """
 from html.parser import HTMLParser
+import hashlib
 from pathlib import Path
 import re
 import struct
 import unittest
-from urllib.parse import unquote, urlsplit
+from urllib.parse import parse_qs, unquote, urlsplit
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -121,6 +122,13 @@ class StaticWebsiteTests(unittest.TestCase):
                         dimensions = image_size(target)
                         if dimensions:
                             self.assertEqual((int(attrs["width"]), int(attrs["height"])), dimensions, location)
+                    if tag == "script" or (tag == "link" and attrs.get("rel") == "stylesheet"):
+                        resource = attrs.get("src") if tag == "script" else attrs.get("href")
+                        target = local_target(page, resource)
+                        self.assertIsNotNone(target, f"{location} controller/style must remain local")
+                        revision = hashlib.sha256(target[0].read_bytes()).hexdigest()[:12]
+                        self.assertEqual(parse_qs(urlsplit(resource).query).get("v"), [revision],
+                                         f"{location} asset URL must match its content revision")
                     if tag == "button":
                         self.assertEqual(attrs.get("type"), "button", location)
                     if tag == "nav":

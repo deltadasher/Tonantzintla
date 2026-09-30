@@ -21,6 +21,10 @@ Its session marker is optional; blocked storage does not prevent entrance.
 Without JavaScript, content and installation commands remain visible, all five
 instrument descriptions are exposed, and the recording has a direct link.
 
+Local stylesheet and controller URLs carry content-hash revisions so cached
+assets cannot drift behind updated markup. The static validator checks these
+revisions; refresh the query value whenever the referenced file changes.
+
 The site includes canonical/social metadata, a six-page `sitemap.xml`, and a
 project-path-aware `404.html`. Existing Google site verification is preserved.
 
