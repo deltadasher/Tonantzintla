@@ -65,8 +65,19 @@ code { font-family: var(--mono); font-size: .92em; overflow-wrap: anywhere; }
 .threshold-hint { position: absolute; bottom: 36px; left: 20px; right: 20px; z-index: 2; text-align: center; color: var(--accent); font-size: 9px; }
 .threshold-hint span { display: block; margin-top: 10px; color: var(--muted); font-size: 8px; letter-spacing: .04em; }
 
+/* Geometric icons avoid emoji and missing-glyph fallbacks on lean Linux systems. */
+.icon-arrow { position: relative; display: inline-block; width: 1em; height: 1em; font-size: 14px; line-height: 1; flex-shrink: 0; vertical-align: -.1em; }
+.icon-arrow::before { content: ''; position: absolute; width: 1em; height: 1.5px; background: currentColor; top: calc(50% - .75px); left: 0; transform: rotate(-45deg); }
+.icon-arrow::after { content: ''; position: absolute; width: .62em; height: .62em; top: .11em; right: .11em; border-top: 1.5px solid currentColor; border-right: 1.5px solid currentColor; }
+.icon-arrow-up { transform: rotate(-45deg); }
+.icon-arrow-down { transform: rotate(135deg); }
+.icon-arrow-downright { transform: rotate(90deg); }
+.round-link .icon-arrow { font-size: 22px; }
+.next-instrument > span:last-child > .icon-arrow { font-size: clamp(32px,5vw,70px); align-self: center; }
+.footer-bottom .icon-arrow { font-size: 9px; }
+
 /* An editorial hero: the actual mark has room to keep its imperfect silhouette. */
-.hero { padding-block: 30px 42px; }
+.hero { padding-block: 30px 42px; overflow: clip; overflow-clip-margin: 16px; }
 .hero-topline { display: flex; justify-content: space-between; gap: 20px; color: var(--muted); }
 .hero-topline > span:first-child { color: var(--accent); }
 .status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-right: 9px; }
@@ -78,7 +89,9 @@ code { font-family: var(--mono); font-size: .92em; overflow-wrap: anywhere; }
 .hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
 .hero-watch { color: var(--ink); }
 .hero-watch:hover { background: #ffffff09; }
-.small-play { color: var(--accent); font-size: 10px; }
+.small-play { color: var(--accent); display: inline-block; width: 10px; height: 12px; flex-shrink: 0; }
+.small-play::before,.play-icon::before { content: ''; display: block; width: 0; height: 0; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-left: 8px solid currentColor; }
+.play-icon::before { margin-left: 3px; }
 .hero-art { position: relative; min-width: 0; width: 100%; aspect-ratio: 1; display: grid; place-items: center; isolation: isolate; }
 .hero-art::before { content: ''; position: absolute; inset: 4%; background: radial-gradient(ellipse,rgba(var(--accent-rgb),.07),transparent 68%); border-radius: 50%; }
 .hero-art img { width: 110%; max-width: none; height: auto; transform: rotate(-12deg); filter: drop-shadow(0 25px 30px #0005); position: relative; z-index: 1; transition: transform 1s cubic-bezier(.2,.8,.2,1); }
