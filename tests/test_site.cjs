@@ -22,6 +22,8 @@ function setup(options = {}) {
         'aria-controls': 'panel-' + name,
         'aria-selected': String(i === (options.selected ?? 0)),
     }));
+    tabs.forEach((tab, i) => {tab.dataset.instrument = names[i];});
+    const dispatched = [];
     const watch = options.empty ? [] : [element(), element()];
     const close = element();
     const copy = options.empty ? null : element();
@@ -67,7 +69,9 @@ function setup(options = {}) {
         if (options.pending) await options.pending;
         copied = text;
     }}};
+    if (options.customEvents) window.CustomEvent = class {constructor(type, init) {this.type = type; this.detail = init.detail;}};
     const document = {
+        dispatchEvent(event) {dispatched.push(event);},
         querySelectorAll(selector) {return {'[data-instrument]': tabs, '[data-watch]': watch, '[data-reveal]': reveals}[selector] ?? [];},
         getElementById(id) {return panels[names.indexOf(id.replace('panel-', ''))];},
         querySelector(selector) {return {
@@ -77,7 +81,7 @@ function setup(options = {}) {
         createRange() {return {selectNodeContents(target) {this.code = target;}};},
     };
     vm.runInNewContext(source, {document, navigator, window});
-    return {tabs, panels, watch, close, dialog, copy, status, code, window, reveals, motion,
+    return {tabs, panels, watch, dispatched, close, dialog, copy, status, code, window, reveals, motion,
         observed, unobserved, observerCallback, disconnected: () => disconnected,
         copied: () => copied, writes: () => writes, selected: () => selected,
         playCount: () => playCount, pauseCount: () => pauseCount};
@@ -158,7 +162,13 @@ function press(site, index, key, expected) {
         const fallback = setup(options); assert.equal(fallback.observed.length, 0);
         assert(fallback.reveals.every(item => !item.classList.values.has('reveal-ready')));
     }
-    setup({empty: true}); // All five static suite pages must safely share the script.
+    const connected = setup({customEvents:true});
+    assert.equal(connected.dispatched.at(-1).type, 'tonantzintla:instrument');
+    assert.equal(connected.dispatched.at(-1).detail.id, 'aperture');
+    connected.tabs[3].events.click(); assert.equal(connected.dispatched.at(-1).detail.id, 'resonance');
+    connected.tabs[3].events.keydown({key:'End',preventDefault(){}});
+    assert.equal(connected.dispatched.at(-1).detail.id, 'umbra');
+    setup({empty: true, customEvents:true}); // All five static suite pages must safely share the script.
     await Promise.resolve();
     console.log('Site: tabs, keyboard, deep links, repeated dialog/focus, clipboard success/pending/fallback, optional motion, and static-page safety passed.');
 })().catch(error => {console.error(error); process.exitCode = 1;});
