@@ -4,7 +4,8 @@ const assert = require('node:assert/strict');
 const source = readFileSync('docs/threshold.js', 'utf8');
 function setup({ reduced = false, stored = false, blocked = false, width = 1280, height = 720,
   hash = '', noThreshold = false, noEnter = false, unrelatedFocus = false, noFocusTarget = false,
-  arrival = null, overflow = '', skipFocus = false, noSvg = false, alreadyInert = false } = {}) {
+  arrival = null, overflow = '', skipFocus = false, noSvg = false, alreadyInert = false,
+  legacyStored = false } = {}) {
   const nodes = new Map();
   function element(name) {
     if (!nodes.has(name)) nodes.set(name, {
@@ -26,6 +27,7 @@ function setup({ reduced = false, stored = false, blocked = false, width = 1280,
   window.CustomEvent = class { constructor(type) { this.type = type; } };
   const dispatched = [];
   let pending, written = false, requests = 0;
+  const storageReads = [], storageWrites = [];
   const sandbox = {
     document: { querySelector(selector) {
       if ((noThreshold && selector === '#threshold') || (noFocusTarget && selector === '.site-tab')) return null;
@@ -33,11 +35,12 @@ function setup({ reduced = false, stored = false, blocked = false, width = 1280,
     }, querySelectorAll: () => content, documentElement: root, dispatchEvent(event) { dispatched.push(event.type); },
     activeElement: element(unrelatedFocus ? 'other' : skipFocus ? '.threshold-skip' : '.threshold-hole') },
     window, matchMedia: () => motion,
-    sessionStorage: { getItem() { if(blocked) throw Error(); return stored ? '1' : null; }, setItem() { if(blocked) throw Error(); written = true; } },
+    sessionStorage: { getItem(key) { storageReads.push(key); if(blocked) throw Error(); return stored || (legacyStored && key === 'tonantzintla-entered') ? '1' : null; }, setItem(key) { if(blocked) throw Error(); storageWrites.push(key); written = true; } },
     requestAnimationFrame(fn) { pending = fn; return ++requests; }, cancelAnimationFrame() { pending = null; },
   };
   vm.runInNewContext(source, sandbox);
-  return { element, content, root, motion, window, dispatched, click() { element('.threshold-hole').events.click?.(); },
+  return { element, content, root, motion, window, dispatched, storageReads, storageWrites,
+    click() { element('.threshold-hole').events.click?.(); },
     skip() { element('.threshold-skip').events.click?.(); },
     escape(key = 'Escape') { let prevented = false; window.events.keydown({key, preventDefault() {prevented = true;}}); return prevented; },
     step(t) { const fn = pending; pending = null; assert.equal(typeof fn, 'function'); fn(t); },
@@ -84,6 +87,9 @@ function setup({ reduced = false, stored = false, blocked = false, width = 1280,
     assert.equal(resumed.root.style.overflow,'');assert(resumed.content.every(e => !e.inert));
     assert.equal(resumed.window.events.keydown, undefined);assert.equal(resumed.written(),false);
   }
+  const legacy=setup({legacyStored:true});assert(!legacy.element('#threshold').hidden,'old session flag cannot hide the restored opening');
+  assert.deepEqual(legacy.storageReads,['tonantzintla-entered-v2']);legacy.skip();
+  assert.deepEqual(legacy.storageWrites,['tonantzintla-entered-v2'],'dismissal preserves current-session revisit bypass');
   for (const options of [{noThreshold:true}, {noEnter:true}, {noSvg:true}]) {
     const missing=setup(options);assert.equal(missing.requests(),0);assert.equal(missing.root.style.overflow,'');
   }
