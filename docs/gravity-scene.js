@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later
  * Tonantzintla's browser-native observatory study.
- * A sculpted, imperfect accretion stream, not an astronomical simulation.
+ * Bent-light rays through a thin emissive disk, not a solid sculpted torus.
+ * Physically inspired; this is an illustration, not a precision simulation.
  * The product's existing WabiSabiBlackHole mark remains the actual logo.
  */
 (() => {
@@ -25,105 +26,79 @@
   uniform vec2 rotation;
   uniform float time;
   uniform float instrument;
-  const float PI = 3.14159265;
+  const float HORIZON = .72;
   mat2 turn(float a) { float s=sin(a),c=cos(a); return mat2(c,-s,s,c); }
-  // The rising far-side fold is grounded in the project's wabi-sabi stream.
-  float stream(vec3 p) {
-    float angle = atan(p.z, p.x);
-    float radial = length(p.xz);
-    float wave = sin(angle*3.+.65)*.055 + sin(angle*5.-.8)*.025;
-    float rise = (.78 + instrument*.012) * .5 * (sqrt(p.z*p.z+.035)-p.z);
-    float center = 1.47 + wave + sin(angle+1.2)*.10;
-    float width = .26 + instrument*.012 + .06*sin(angle*2.-.7);
-    float height = .025 + .012*(.5+.5*cos(angle*3.));
-    float y = p.y + .19 - rise - sin(angle*2.+time*.085)*.035;
-    vec2 q = abs(vec2(radial-center,y)) - vec2(width-.02,height-.02);
-    float slab = length(max(q,0.)) + min(max(q.x,q.y),0.) - .02;
-    // A small, separated lower lens is part of the original mark's identity.
-    vec3 l=p; l.y += .69;
-    float lower = length(vec2((length(l.xz)-1.16)*.70,l.y))-.027;
-    lower = max(lower, .35-l.z);
-    lower = max(lower, -.35-l.x);
-    return min(slab, lower);
+  float hash(vec2 p) {
+    p=fract(p*vec2(123.34,456.21)); p+=dot(p,p+45.32);
+    return fract(p.x*p.y);
   }
-  vec3 normalAt(vec3 p) {
-    vec2 e=vec2(.006,0.);
-    return normalize(vec3(stream(p+e.xyy)-stream(p-e.xyy),stream(p+e.yxy)-stream(p-e.yxy),stream(p+e.yyx)-stream(p-e.yyx)));
+  float noise(vec2 q) {
+    vec2 i=floor(q),f=fract(q); f=f*f*(3.-2.*f);
+    return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),
+      mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);
   }
-  float sphereHit(vec3 ro,vec3 rd) {
-    vec3 oc=ro-vec3(.035,.15,0.);
-    float b=dot(oc,rd), c=dot(oc,oc)-.83*.83;
-    float h=b*b-c;
-    return h<0.?100.:max(0.,-b-sqrt(h));
+  float gas(vec2 q) {
+    float value=0.,weight=.55;
+    for(int j=0;j<4;j++) {
+      value+=weight*noise(q);
+      q=mat2(1.6,1.2,-1.2,1.6)*q+vec2(4.7,9.2); weight*=.5;
+    }
+    return value;
   }
-  float grain(vec2 p) { return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453); }
+  vec3 acceleration(vec3 p,float angularMomentum) {
+    float r=length(p);
+    return -1.5*HORIZON*angularMomentum*p/max(pow(r,5.),.001);
+  }
+  // Curved null-ray approximation in a nonrotating Schwarzschild field.
+  // Gas occupies a flat, zero-thickness equatorial disk. Its raised image is
+  // caused by bent light, never by folding or extruding the disk geometry.
+  vec3 trace(vec2 screen) {
+    vec3 ro=vec3(0.,2.32,12.);
+    ro.yz=turn(rotation.y)*ro.yz; ro.xz=turn(rotation.x)*ro.xz;
+    vec3 fw=normalize(-ro);
+    vec3 right=normalize(cross(fw,vec3(0.,1.,0.))),up=cross(right,fw);
+    vec3 velocity=normalize(fw*1.35+right*screen.x+up*screen.y);
+    vec3 p=ro, radiance=vec3(0.);
+    float angularMomentum=dot(cross(p,velocity),cross(p,velocity));
+    float opacity=0.;
+    for(int i=0;i<192;i++) {
+      float r=length(p),step=.045+.048*r;
+      vec3 acc=acceleration(p,angularMomentum);
+      vec3 next=p+velocity*step+.5*acc*step*step;
+      vec3 nextVelocity=velocity+.5*(acc+acceleration(next,angularMomentum))*step;
+      if(p.y*next.y<0.) {
+        float fraction=clamp(p.y/(p.y-next.y),0.,1.);
+        vec3 hit=mix(p,next,fraction);
+        float radius=length(hit.xz);
+        if(radius>2.15 && radius<5.4) {
+          float angle=atan(hit.z,hit.x);
+          float edge=smoothstep(2.15,2.42,radius)*(1.-smoothstep(3.4,5.4,radius));
+          float heat=pow(2.5/max(radius,2.15),2.7);
+          float shear=angle+radius*.58-time*.035/pow(radius,1.5);
+          vec2 q=vec2(cos(shear),sin(shear))*radius*1.8;
+          float cloud=.38+.9*gas(q);
+          float beaming=pow(1.+.38*(-hit.x/radius),3.);
+          vec3 emission=mix(vec3(1.,.26,.055),vec3(1.,.9,.68),heat*.8);
+          float power=heat*edge*cloud*beaming*1.3;
+          radiance+=emission*power*(1.-opacity);
+          // Both light and optical depth fade smoothly at the disk edges.
+          opacity+=(1.-opacity)*.88*edge;
+        }
+      }
+      p=next; velocity=nextVelocity;
+      float distance=length(p);
+      if(distance<HORIZON || distance>15.5 || opacity>.99) break;
+    }
+    return radiance;
+  }
   void main() {
     vec2 screen=(uv-.5)*vec2(resolution.x/resolution.y,1.);
-    vec3 ro=vec3(0.,1.35,5.35);
-    ro.yz=turn(rotation.y)*ro.yz;
-    ro.xz=turn(rotation.x)*ro.xz;
-    vec3 target=vec3(0.,.12,0.);
-    vec3 fw=normalize(target-ro);
-    vec3 right=normalize(cross(fw,vec3(0.,1.,0.)));
-    vec3 up=cross(right,fw);
-    vec3 rd=normalize(fw*2.95+right*screen.x*2.+up*screen.y*2.);
-    float horizon=sphereHit(ro,rd);
-    // Bound work to the sculpted stream's bounding sphere.
-    float b=dot(ro,rd),h=b*b-dot(ro,ro)+2.55*2.55;
-    vec3 bg=vec3(.0431,.0431,.0510);
-    float ambient=exp(-dot(screen*vec2(.7,1.),screen*vec2(.7,1.))*3.);
-    bg += vec3(.014,.009,.008)*ambient;
-    if(h<0.) { color=vec4(bg,1.); return; }
-    float t=max(0.,-b-sqrt(h));
-    float end=min(-b+sqrt(h),horizon);
-    float glow=0.; bool hit=false; vec3 p=ro+rd*t;
-    for(int i=0;i<96;i++) {
-      p=ro+rd*t;
-      float d=stream(p);
-      glow+=exp(-abs(d)*22.)*.005;
-      if(d<.0045) { hit=true; break; }
-      t+=max(d*.76,.009);
-      if(t>end) break;
-    }
-    vec3 amber=vec3(1.,.58,.23);
-    vec3 pale=vec3(1.,.88,.65);
-    vec3 violet=vec3(.60,.55,.78);
-    vec3 result=bg+amber*glow*.36;
-    // Fine photographic fringe, confined to the actual event-horizon rim.
-    vec3 toCenter=vec3(.035,.15,0.)-ro;
-    float impact=length(toCenter-dot(toCenter,rd)*rd);
-    float halo=exp(-abs(impact-.846)*42.);
-    result+=mix(amber,violet,.22+instrument*.05)*halo*.20;
-    if(horizon<100.) result=vec3(.004,.004,.006)+amber*halo*.055;
-    if(hit && t<end) {
-      float a=atan(p.z,p.x);
-      float r=length(p.xz);
-      vec3 n=normalAt(p);
-      vec3 light=normalize(vec3(-1.5,3.,-1.8));
-      float diffuse=.26+.74*max(dot(n,light),0.);
-      float fresnel=pow(1.-abs(dot(n,-rd)),2.);
-      // Concentric lanes shear with angle, carrying texture around the fold.
-      float shear=a-time*.03;
-      float turbulence=sin(a*3.+r*7.-time*.11)*.012+sin(a*7.-r*5.)*.008;
-      float lanes=.5+.5*sin((r+turbulence)*112.+sin(shear*3.)*1.3);
-      lanes=pow(lanes,10.);
-      float fine=.5+.5*sin(r*357.+a*6.+sin(a*9.)*2.-time*.2);
-      float mottled=.5+.5*sin(r*38.+a*5.+sin(a*11.+r*6.));
-      float temperature=clamp((1.9-r)*.95,0.,1.);
-      vec3 base=mix(vec3(.18,.075,.025),amber,.30+mottled*.24);
-      base=mix(base,pale,temperature*.45);
-      float doppler=.55+.45*pow(.5+.5*sin(a-.6),2.);
-      result=base*(diffuse*.72+lanes*.58+fine*.085)*doppler;
-      result+=pale*lanes*temperature*.36;
-      float polished=pow(max(dot(n,normalize(light-rd)),0.),16.);
-      result+=pale*polished*.72;
-      result+=mix(amber,violet,instrument*.04)*fresnel*.19;
-      result+=amber*glow*.12;
-      result=1.-exp(-result*1.65);
-    }
-    float vignette=1.-smoothstep(.45,1.10,length(screen));
-    result=mix(bg,result,vignette);
-    result+=(grain(gl_FragCoord.xy)-.5)/255.;
+    // Two fixed subpixel rays soften the very narrow photon image without
+    // flickering temporal jitter. This remains a bounded, dependency-free draw.
+    vec2 pixel=vec2(.25)/resolution.y;
+    vec3 radiance=.5*(trace(screen-pixel)+trace(screen+pixel));
+    vec3 background=vec3(.0431,.0431,.0510);
+    vec3 result=max(background,1.-exp(-radiance*.85));
     color=vec4(result,1.);
   }`;
 
@@ -135,7 +110,8 @@
   let targetYaw = yaw, targetPitch = pitch;
   let selected = 0, targetSelected = 0;
   let drag = null, width = 0, height = 0;
-  const canAnimate = () => !disposed && !lost && visible && !document.hidden && !frozen && !reduced.matches;
+  let entered = !document.getElementById('threshold') || document.getElementById('threshold').hidden;
+  const canAnimate = () => entered && !disposed && !lost && visible && !document.hidden && !frozen && !reduced.matches;
   function setStatus(text) { if (status) status.textContent = text; }
   function updateControls() {
     if (motionButton) {
@@ -145,7 +121,15 @@
     }
     if (resetButton) resetButton.disabled = lost || !program;
   }
+  function releaseResources() {
+    if (gl && !gl.isContextLost?.()) {
+      if (program) gl.deleteProgram(program);
+      if (buffer) gl.deleteBuffer(buffer);
+    }
+    program=null; buffer=null;
+  }
   function fallback(message) {
+    releaseResources();
     cancelAnimationFrame(raf); raf = 0;
     drag = null;
     stage.classList.remove('is-dragging');
@@ -170,6 +154,9 @@
     return shader;
   }
   function initialize() {
+    if (disposed) return;
+    releaseResources();
+    let vs, fs;
     try {
       const attributes = { alpha: false, antialias: false, depth: false, stencil: false, powerPreference: 'low-power', preserveDrawingBuffer: false };
       gl = canvas.getContext('webgl2', attributes);
@@ -179,11 +166,11 @@
       // The same geometry also works on browsers with WebGL 1 only.
       const vsSource = modern ? vertexSource : vertexSource.replace('#version 300 es','').replace('in vec2 position','attribute vec2 position').replace('out vec2 uv','varying vec2 uv');
       const fsSource = modern ? fragmentSource : fragmentSource.replace('#version 300 es','').replace('in vec2 uv','varying vec2 uv').replace('out vec4 color;','').replace(/\bcolor\b/g,'gl_FragColor');
-      const vs = compile(gl.VERTEX_SHADER, vsSource);
-      const fs = compile(gl.FRAGMENT_SHADER, fsSource);
+      vs = compile(gl.VERTEX_SHADER, vsSource);
+      fs = compile(gl.FRAGMENT_SHADER, fsSource);
       program = gl.createProgram();
       gl.attachShader(program, vs); gl.attachShader(program, fs); gl.linkProgram(program);
-      gl.deleteShader(vs); gl.deleteShader(fs);
+      gl.deleteShader(vs); gl.deleteShader(fs); vs=null; fs=null;
       if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
       gl.useProgram(program);
       buffer = gl.createBuffer();
@@ -207,6 +194,7 @@
       setStatus(reduced.matches ? 'Still view · reduced motion' : 'Drag to change your view');
       schedule();
     } catch (error) {
+      if (vs) gl.deleteShader(vs); if (fs) gl.deleteShader(fs);
       console.warn('Tonantzintla: using the still black-hole view.', error);
       fallback();
     }
@@ -214,10 +202,11 @@
   function resize() {
     if (!gl || !program || lost) return;
     const rect = canvas.getBoundingClientRect();
-    // The ray-marched composition is capped by both DPR and total pixel area.
-    let ratio = Math.min(window.devicePixelRatio || 1, 1.65);
+    // The curved-ray composition is capped by both DPR and total pixel area.
+    const compact = rect.width < 600;
+    let ratio = Math.min(window.devicePixelRatio || 1, compact ? 1.35 : 1.65);
     const pixels = Math.max(1, rect.width * rect.height);
-    ratio = Math.min(ratio, Math.sqrt(720000 / pixels));
+    ratio = Math.min(ratio, Math.sqrt((compact ? 180000 : 360000) / pixels));
     const w = Math.max(1,Math.round(rect.width*ratio));
     const h = Math.max(1,Math.round(rect.height*ratio));
     if (w !== width || h !== height) {
@@ -307,6 +296,7 @@
     requestDraw();
   });
   canvas.addEventListener('lostpointercapture', () => { drag=null; stage.classList.remove('is-dragging'); });
+  document.addEventListener('tonantzintla:entered', () => { entered=true; resize(); requestDraw(); });
   document.addEventListener('tonantzintla:instrument', event => {
     const ids=['aperture','ephemeris','parallax','resonance','umbra'];
     targetSelected=Math.max(0,ids.indexOf(event.detail?.id));
@@ -331,7 +321,7 @@
     event.preventDefault(); lost=true; suspend(); fallback('Still view · 3D rendering paused');
   });
   canvas.addEventListener('webglcontextrestored',initialize);
-  window.addEventListener('pagehide', event => { suspend(); if(!event.persisted) { disposed=true; observer?.disconnect(); resizeObserver?.disconnect(); } });
+  window.addEventListener('pagehide', event => { suspend(); if(!event.persisted) { disposed=true; releaseResources(); observer?.disconnect(); resizeObserver?.disconnect(); } });
   window.addEventListener('pageshow', event => { if(event.persisted) { resize(); requestDraw(); } });
   initialize();
 })();

@@ -4,14 +4,14 @@ const assert = require('node:assert/strict');
 const source = readFileSync('docs/threshold.js', 'utf8');
 function setup({ reduced = false, stored = false, blocked = false, width = 1280, height = 720,
   hash = '', noThreshold = false, noEnter = false, unrelatedFocus = false, noFocusTarget = false,
-  arrival = null, overflow = '' } = {}) {
+  arrival = null, overflow = '', skipFocus = false, noSvg = false, alreadyInert = false } = {}) {
   const nodes = new Map();
   function element(name) {
     if (!nodes.has(name)) nodes.set(name, {
       style: {}, attrs: {}, events: {}, hidden: false, inert: false,
       clientWidth: width, clientHeight: height, offsetWidth: Math.min(width * .52, 520),
       classList: { values: new Set(), add(x) { this.values.add(x); }, contains(x) { return this.values.has(x); } },
-      querySelector(selector) { return noEnter && selector === '.threshold-hole' ? null : element(selector); },
+      querySelector(selector) { return (noEnter && selector === '.threshold-hole') || (noSvg && selector === '.threshold-peel') ? null : element(selector); },
       setAttribute(k,v) { this.attrs[k] = v; },
       addEventListener(k,v) { this.events[k] = v; }, removeEventListener(k) { delete this.events[k]; },
       getAnimations: () => arrival ? [arrival] : [], focus() { this.focused = true; }
@@ -19,22 +19,26 @@ function setup({ reduced = false, stored = false, blocked = false, width = 1280,
     return nodes.get(name);
   }
   const content = [element('.skip-link'), element('header'), element('main'), element('footer')];
+  if (alreadyInert) content[2].inert = true;
   const root = element('html'); root.style.overflow = overflow;
   const motion = element('motion'); motion.matches = reduced;
   const window = element('window'); window.location = {hash};
+  window.CustomEvent = class { constructor(type) { this.type = type; } };
+  const dispatched = [];
   let pending, written = false, requests = 0;
   const sandbox = {
     document: { querySelector(selector) {
       if ((noThreshold && selector === '#threshold') || (noFocusTarget && selector === '.site-tab')) return null;
       return element(selector);
-    }, querySelectorAll: () => content, documentElement: root,
-    activeElement: element(unrelatedFocus ? 'other' : '.threshold-hole') },
+    }, querySelectorAll: () => content, documentElement: root, dispatchEvent(event) { dispatched.push(event.type); },
+    activeElement: element(unrelatedFocus ? 'other' : skipFocus ? '.threshold-skip' : '.threshold-hole') },
     window, matchMedia: () => motion,
     sessionStorage: { getItem() { if(blocked) throw Error(); return stored ? '1' : null; }, setItem() { if(blocked) throw Error(); written = true; } },
     requestAnimationFrame(fn) { pending = fn; return ++requests; }, cancelAnimationFrame() { pending = null; },
   };
   vm.runInNewContext(source, sandbox);
-  return { element, content, root, motion, window, click() { element('.threshold-hole').events.click(); },
+  return { element, content, root, motion, window, dispatched, click() { element('.threshold-hole').events.click?.(); },
+    skip() { element('.threshold-skip').events.click?.(); },
     escape(key = 'Escape') { let prevented = false; window.events.keydown({key, preventDefault() {prevented = true;}}); return prevented; },
     step(t) { const fn = pending; pending = null; assert.equal(typeof fn, 'function'); fn(t); },
     pending: () => pending, written: () => written, requests: () => requests };
@@ -43,6 +47,7 @@ function setup({ reduced = false, stored = false, blocked = false, width = 1280,
   for (const size of [[1280,720],[360,640],[390,844],[1920,1080]]) {
     const s = setup({width:size[0],height:size[1],overflow:'auto'});
     assert(s.content.every(e => e.inert));
+    assert(s.element('.threshold-hole').focused,'opening starts on its keyboard-operable Enter button');
     s.click(); s.click(); assert.equal(s.requests(),1, 'rapid click creates one clock');
     s.step(0);
     for (const time of [300,800,1036,1400,1800]) {
@@ -60,22 +65,26 @@ function setup({ reduced = false, stored = false, blocked = false, width = 1280,
     assert.equal(s.root.style.overflow,'auto');
     assert.equal(s.pending(),null);
     assert(s.written());
+    assert.deepEqual(s.dispatched,['tonantzintla:entered']);
     assert(s.element('.site-tab').focused);
     assert.equal(s.window.events.resize, undefined);
     assert.equal(s.window.events.keydown, undefined);
     assert.equal(s.motion.events.change, undefined);
     s.click(); assert.equal(s.pending(),null, 'completed entrance cannot restart');
+    assert.deepEqual(s.dispatched,['tonantzintla:entered'],'completion event is only emitted once');
   }
   for (const blocked of [false,true]) {
     const s=setup({reduced:true,blocked});s.click();
-    assert(s.element('#threshold').hidden);assert.equal(s.requests(),0);
+    assert(s.element('#threshold').hidden);assert.equal(s.requests(),0);assert(s.content.every(e => !e.inert));
+    assert.equal(s.root.style.overflow,'');
   }
   for (const options of [{stored:true}, {hash:'#install'}, {hash:'#panel-parallax', blocked:true}]) {
     const resumed=setup(options);assert(resumed.element('#threshold').hidden);
+    assert(!resumed.element('.threshold-hole').focused,'bypassed opening never steals focus');
     assert.equal(resumed.root.style.overflow,'');assert(resumed.content.every(e => !e.inert));
     assert.equal(resumed.window.events.keydown, undefined);assert.equal(resumed.written(),false);
   }
-  for (const options of [{noThreshold:true}, {noEnter:true}]) {
+  for (const options of [{noThreshold:true}, {noEnter:true}, {noSvg:true}]) {
     const missing=setup(options);assert.equal(missing.requests(),0);assert.equal(missing.root.style.overflow,'');
   }
   const changed=setup();changed.click();changed.motion.matches=true;changed.motion.events.change();
@@ -91,11 +100,25 @@ function setup({ reduced = false, stored = false, blocked = false, width = 1280,
   }
   const other=setup({unrelatedFocus:true});other.escape();assert(!other.element('.site-tab').focused);
   const absent=setup({noFocusTarget:true});absent.escape();assert(absent.element('#threshold').hidden);
+  const buttonSkip=setup({skipFocus:true});buttonSkip.skip();assert(buttonSkip.element('#threshold').hidden);
+  assert(buttonSkip.element('.site-tab').focused);assert.equal(buttonSkip.pending(),null);
+  assert.equal(buttonSkip.window.events.hashchange,undefined);
+  const hashChanged=setup();hashChanged.window.location.hash='#install';hashChanged.window.events.hashchange();
+  assert(hashChanged.element('#threshold').hidden);assert(hashChanged.content.every(e => !e.inert));
+  assert(!hashChanged.element('.site-tab').focused,'direct links do not steal destination focus');
+  const departed=setup();departed.window.events.pagehide();assert(departed.element('#threshold').hidden);
+  const inert=setup({alreadyInert:true});inert.skip();assert(inert.content[2].inert,'pre-existing inert state is restored');
   let resolveArrival;
   const arrival={playState:'running',finished:new Promise(resolve => {resolveArrival=resolve;})};
-  const arriving=setup({arrival});arriving.click();assert.equal(arriving.requests(),0);assert(arriving.element('.threshold-hole').disabled);
+  const arriving=setup({arrival});arriving.click();arriving.click();assert.equal(arriving.requests(),0);
+  assert(!arriving.element('.threshold-hole').disabled,'arrival waiting never disables the focused button');
   arrival.playState='finished';resolveArrival();await Promise.resolve();
-  assert.equal(arriving.requests(),1);assert.equal(arriving.element('.threshold-hole').disabled,false);arriving.escape();
+  assert.equal(arriving.requests(),1);assert(!arriving.element('.threshold-hole').disabled);arriving.escape();
+  let resolveSkippedArrival;
+  const skippedArrival={playState:'running',finished:new Promise(resolve => {resolveSkippedArrival=resolve;})};
+  const skippedWhileArriving=setup({arrival:skippedArrival});skippedWhileArriving.click();skippedWhileArriving.skip();
+  skippedArrival.playState='finished';resolveSkippedArrival();await Promise.resolve();
+  assert(skippedWhileArriving.element('#threshold').hidden);assert.equal(skippedWhileArriving.requests(),0);
   const rejected=setup({arrival:{playState:'running',finished:Promise.reject(Error('animation cancelled'))}});
   rejected.click();await Promise.resolve();await Promise.resolve();assert(rejected.element('#threshold').hidden);
   console.log('Threshold: geometry, rapid clicks, resize, cleanup/focus, reduced motion, storage/hash bypass, Escape, missing elements, and arrival completion/cancellation passed.');

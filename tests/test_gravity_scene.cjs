@@ -37,7 +37,8 @@ function setup(options = {}) {
     TRIANGLES:4, TRIANGLE_STRIP:5, COLOR_BUFFER_BIT:16384, NO_ERROR:0};
   const gl = new Proxy(constants, {get(target, name) {
     if (name in target) return target[name];
-    if (name === 'getShaderParameter') return () => !options.compileFail;
+    if (name === 'getShaderParameter') return shader => !options.compileFail &&
+      !(options.fragmentCompileFail && shader.args[0] === constants.FRAGMENT_SHADER);
     if (name === 'getProgramParameter') return () => !options.linkFail;
     if (name === 'getShaderInfoLog' || name === 'getProgramInfoLog') return () => 'fixture shader error';
     if (name === 'getAttribLocation') return () => 0;
@@ -48,7 +49,7 @@ function setup(options = {}) {
     if (name === 'getError') return () => options.glError ? 1282 : 0;
     return (...args) => {
       calls.push([name, ...args]);
-      if (name.startsWith('create')) return {type:name};
+      if (name.startsWith('create')) return {type:name,args};
       if (options.drawFail && (name === 'drawArrays' || name === 'drawElements')) throw Error('fixture draw failure');
     };
   }});
@@ -59,6 +60,7 @@ function setup(options = {}) {
   const motion = node('motion'); motion.matches = !!options.reduced;
   const document = node('document'); document.hidden = !!options.hidden;
   document.visibilityState = options.hidden ? 'hidden' : 'visible';
+  const threshold = node('threshold'); threshold.hidden = !options.intro;
   document.getElementById = id => options.missing && id === 'gravity-canvas' ? null : node(id);
   document.querySelector = selector => document.getElementById(selector.replace(/^#/, ''));
   const window = node('window'); window.devicePixelRatio = options.dpr || 1;
@@ -107,13 +109,13 @@ assert.equal(normal.draws().length, 1, 'ready follows a completed draw');
 assert(normal.calls.some(c => c[0] === 'getContext' && c[1] === 'webgl2'));
 assert.equal(normal.calls.filter(c => c[0] === 'compileShader').length, 2);
 assert.equal(normal.calls.filter(c => c[0] === 'linkProgram').length, 1);
-assert(normal.calls.some(c => c[0] === 'shaderSource' && c[2].includes('for(int i=0;i<96;i++)')), 'bounded GLSL ray-march is submitted');
+assert(normal.calls.some(c => c[0] === 'shaderSource' && c[2].includes('for(int i=0;i<192;i++)')), 'bounded GLSL ray-march is submitted');
 assert.equal(normal.pending(), 1, 'one animation clock');
 normal.step(100); assert.equal(normal.pending(), 1);
 const at100 = normal.draws().length;
 normal.step(116); assert.equal(normal.draws().length, at100, '30fps frame budget');
 normal.step(140); assert.equal(normal.draws().length, at100 + 1);
-for(const options of [{noWebGL:true}, {contextThrows:true}, {compileFail:true}, {linkFail:true}, {drawFail:true}, {glError:true}]) {
+for(const options of [{noWebGL:true}, {contextThrows:true}, {compileFail:true}, {fragmentCompileFail:true}, {linkFail:true}, {drawFail:true}, {glError:true}]) {
   const failed = setup(options);
   assert.equal(failed.canvas.dataset.state, 'fallback');
   assert.equal(failed.pending(), 0);
@@ -123,12 +125,21 @@ for(const options of [{noWebGL:true}, {contextThrows:true}, {compileFail:true}, 
   assert(failed.node('gravity-motion').disabled);
   assert(failed.node('gravity-reset').disabled);
   assert(failed.node('gravity-status').textContent.startsWith('Still view')); 
+  for(const resource of ['Shader','Program','Buffer']) {
+    assert.equal(failed.calls.filter(c => c[0] === 'delete'+resource).length,
+      failed.calls.filter(c => c[0] === 'create'+resource).length,
+      'failed initialization releases every allocated '+resource.toLowerCase());
+  }
 }
 assert.equal(setup({missing:true}).pending(), 0, 'suite pages without a scene are safe');
 const lateOptions = {}, late = setup(lateOptions); lateOptions.drawFail = true;
 assert.doesNotThrow(() => late.step(100));
 assert.equal(late.canvas.dataset.state, 'fallback');
 assert.equal(late.pending(), 0, 'late draw failure stops its clock and exposes fallback');
+assert.equal(late.calls.filter(c => c[0] === 'deleteProgram').length, 1,
+  'late draw failure releases its linked program');
+assert.equal(late.calls.filter(c => c[0] === 'deleteBuffer').length, 1,
+  'late draw failure releases its vertex buffer');
 
 const legacy = setup({webgl1:true});
 assert.equal(legacy.canvas.dataset.context, 'webgl');
@@ -179,6 +190,34 @@ interrupted.dispatch(interrupted.window, 'pagehide', {persisted:true}); assert.e
 interrupted.dispatch(interrupted.window, 'pageshow', {persisted:true}); assert.equal(interrupted.pending(), 1);
 interrupted.dispatch(interrupted.window, 'pagehide', {persisted:false}); assert.equal(interrupted.pending(), 0);
 interrupted.dispatch(interrupted.window, 'resize'); assert.equal(interrupted.pending(), 0, 'disposed page cannot restart');
+const contextsBeforeRestore = interrupted.calls.filter(c => c[0] === 'getContext').length;
+const drawsBeforeRestore = interrupted.draws().length;
+interrupted.dispatch(interrupted.canvas, 'webglcontextrestored');
+assert.equal(interrupted.calls.filter(c => c[0] === 'getContext').length, contextsBeforeRestore,
+  'context restoration after final pagehide cannot allocate a new renderer');
+assert.equal(interrupted.draws().length, drawsBeforeRestore);
+assert.equal(interrupted.pending(), 0);
+const disposed = setup();
+disposed.dispatch(disposed.window, 'pagehide', {persisted:false});
+assert.equal(disposed.calls.filter(c => c[0] === 'deleteProgram').length, 1);
+assert.equal(disposed.calls.filter(c => c[0] === 'deleteBuffer').length, 1,
+  'final pagehide releases GPU resources while BFCache pagehide retains them');
+
+const entrance = setup({intro:true});
+assert.equal(entrance.draws().length, 1, 'one complete still frame is allowed behind the entrance');
+assert.equal(entrance.pending(), 0, 'covered scene must not animate behind the intro');
+entrance.dispatch(entrance.document, 'tonantzintla:instrument', {detail:{id:'parallax'}});
+entrance.dispatch(entrance.window, 'resize');
+assert.equal(entrance.pending(), 0, 'background updates cannot restart covered motion');
+entrance.node('threshold').hidden = true;
+entrance.dispatch(entrance.document, 'tonantzintla:entered');
+assert.equal(entrance.pending(), 1, 'finishing or skipping the intro starts exactly one scene clock');
+entrance.dispatch(entrance.document, 'tonantzintla:entered');
+assert.equal(entrance.pending(), 1, 'repeated completion events do not duplicate motion');
+const quietEntrance = setup({intro:true,reduced:true});
+quietEntrance.node('threshold').hidden = true;
+quietEntrance.dispatch(quietEntrance.document, 'tonantzintla:entered');
+assert.equal(quietEntrance.pending(), 0, 'entrance completion respects reduced motion');
 
 const reduced = setup({reduced:true});
 assert.equal(reduced.draws().length, 1);
@@ -196,9 +235,12 @@ assert.equal(changed.pending(), 0);
 assert.equal(changed.node('gravity-motion').attrs['aria-pressed'], 'true');
 assert(changed.node('gravity-status').textContent.includes('reduced motion'));
 const huge = setup({width:3840,height:2160,dpr:3});
-assert(huge.canvas.width * huge.canvas.height < 722000, 'pixel work remains bounded');
+assert(huge.canvas.width * huge.canvas.height < 361000, 'curved-ray pixel work remains bounded');
 const tiny = setup({width:360,height:640,dpr:3});
-assert(tiny.canvas.width <= 360 * 1.65);
+assert(tiny.canvas.width <= 360 * 1.35);
+assert(tiny.canvas.width * tiny.canvas.height < 181000, 'compact stages use the lower pixel budget');
+const compactWide = setup({width:599,height:900,dpr:3});
+assert(compactWide.canvas.width * compactWide.canvas.height < 181000);
+assert(compactWide.canvas.width <= 599 * 1.35);
 assert(!normal.stage.events.wheel, 'scene must not consume page scrolling');
-console.log('Gravity scene: submitted GLSL/draw lifecycle, fallback, frame budget, pause/drag/reset, visibility, context recovery, reduced motion and pixel cap passed. Browser shader compilation and hardware backing are separate checks.');
-
+console.log('Gravity scene: submitted GLSL/draw lifecycle, fallback, frame budget, pause/drag/reset, intro suspension, visibility, context recovery/disposal, reduced motion and pixel cap passed. Browser shader compilation and hardware backing are separate checks.');

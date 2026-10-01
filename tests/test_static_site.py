@@ -180,13 +180,20 @@ class StaticWebsiteTests(unittest.TestCase):
 
     def test_observatory_progressive_enhancement(self):
         home = self.pages[str((DOCS / "index.html").resolve())]
-        self.assertNotIn("threshold", home.ids, "the operable observatory must not block access behind an entrance")
+        threshold_tag, threshold = home.ids["threshold"]
+        self.assertEqual(threshold_tag, "div")
+        self.assertIn("hidden", threshold, "opening remains hidden without its controller")
+        self.assertEqual(threshold.get("role"), "region")
+        self.assertTrue(home.find("button", **{"class": "threshold-skip", "type": "button"}), "opening has a visible skip button")
+        self.assertTrue(home.find("button", **{"class": "threshold-hole", "type": "button"}))
         canvas_tag, canvas = home.ids["gravity-canvas"]
         self.assertEqual(canvas_tag, "canvas")
         self.assertEqual(canvas.get("aria-hidden"), "true", "decorative pixels must not replace readable content")
         fallback = [attrs for tag, attrs, _ in home.nodes if tag == "img" and "gravity-fallback" in attrs.get("class", "").split()]
         self.assertEqual(len(fallback), 1)
-        self.assertEqual(fallback[0]["src"], "assets/gravity-study.webp", "fallback presents the original scene study")
+        self.assertEqual(urlsplit(fallback[0]["src"]).path, "assets/gravity-study.webp", "fallback presents the same black-hole study")
+        fallback_revision = hashlib.sha256((DOCS / "assets/gravity-study.webp").read_bytes()).hexdigest()[:12]
+        self.assertEqual(parse_qs(urlsplit(fallback[0]["src"]).query).get("v"), [fallback_revision], "fallback asset must refresh with the scene")
         self.assertTrue(home.find("img", src="wabi-sabi-black-hole-mark.svg"), "the real project mark remains the brand")
         self.assertEqual(home.ids["gravity-stage"][1].get("tabindex"), "-1", "only an initialized renderer enables keyboard exploration")
         for name in ("gravity-motion", "gravity-reset"):
@@ -199,6 +206,7 @@ class StaticWebsiteTests(unittest.TestCase):
         self.assertIsNotNone(noscript)
         self.assertIn(".deck-panel[hidden]", noscript.group(1), "all instruments remain readable without JavaScript")
         self.assertIn(".gravity-controls", noscript.group(1), "unavailable scene controls must not promise inert actions")
+        self.assertIn(".threshold", noscript.group(1), "intro never blocks the no-JavaScript site")
 
     def test_css_assets_and_sitemap(self):
         for stylesheet in DOCS.glob("*.css"):
