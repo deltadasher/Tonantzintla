@@ -12,3 +12,9 @@
     @keyframes threshold-arrive { 0%{transform:translateX(-110vw) rotate(-22deg)} 72%{transform:translateX(4vw) rotate(3deg)} 100%{transform:translateX(0) rotate(0)} }
 
 @media(prefers-reduced-motion:reduce){.threshold-hole,.threshold-hole img{animation:none;transition:none}.threshold-hole{transform:none}}
+
+/* Always available, including during arrival and the unfolding transition. */
+.threshold-skip { position:absolute; top:24px; right:28px; z-index:4; min-height:44px; padding:10px 18px; border:1px solid var(--line); border-radius:40px; background:#0b0b0ddd; color:var(--ink); font-size:12px; }
+.threshold-skip:hover { border-color:var(--accent); background:#17171d; }
+.threshold-skip span { margin-left:12px; }
+@media(max-width:600px) { .threshold-hole { width:min(76vw,520px); } .threshold-skip { top:16px; right:16px; } }
