@@ -4,45 +4,18 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="theme-color" content="#0b0b0d">
-    <meta name="description" content="A desktop with a little gravitational pull. Tonantzintla is an expressive Linux desktop shell built with Quickshell for Niri.">
-    <meta property="og:title" content="Tonantzintla — A little gravitational pull">
+    <meta name="description" content="An observatory you operate. An expressive Quickshell desktop for Niri, with orbital wallpapers, fluid instruments and a little gravitational pull.">
+    <meta property="og:title" content="Tonantzintla — An observatory you operate">
     <meta property="og:description" content="Five instruments. One expressive Linux desktop. Built with Quickshell for Niri.">
     <meta property="og:image" content="https://deltadasher.github.io/Tonantzintla/assets/desktop.webp">
     <link rel="icon" href="wabi-sabi-black-hole-mark.svg" type="image/svg+xml">
     <link rel="canonical" href="https://deltadasher.github.io/Tonantzintla/">
-    <link rel="stylesheet" href="site.css?v=9fde53f1cca8">
-    <link rel="stylesheet" href="threshold.css?v=d4a589ff32fa">
-    <title>Tonantzintla — A little gravitational pull</title>
-    <noscript><style>.threshold,.deck-tabs,.watch-button,#copy-install{display:none!important}.deck-panel[hidden]{display:grid!important}.deck-panel{margin-bottom:48px}.deck-display{display:block!important}</style></noscript>
+    <link rel="stylesheet" href="site.css?v=83e60abde916">
+    <title>Tonantzintla — An observatory you operate</title>
+    <noscript><style>.gravity-controls,.deck-orbit,.watch-button,#copy-install{display:none!important}.deck-panel[hidden]{display:grid!important}.deck-panel{margin-bottom:48px}.deck-display{display:block!important}</style></noscript>
   </head>
   <body class="home-page" id="top">
     <a class="skip-link" href="#main-content">Skip to content</a>
-    <div class="threshold" id="threshold" hidden aria-label="Enter Tonantzintla">
-      <svg class="threshold-peel" aria-hidden="true" preserveAspectRatio="none">
-        <defs>
-          <linearGradient id="threshold-surface" gradientUnits="userSpaceOnUse"
-            x2="100%" y2="100%">
-            <stop stop-color="#07080c" />
-            <stop offset=".63" stop-color="#0d0e16" />
-            <stop offset="1" stop-color="#13111a" />
-          </linearGradient>
-          <linearGradient id="threshold-fold" x2="0" y2="1">
-            <stop stop-color="#e9b872" stop-opacity=".2" />
-            <stop offset=".5" stop-color="#b7b8e8" stop-opacity=".08" />
-            <stop offset="1" stop-color="#07080c" stop-opacity=".6" />
-          </linearGradient>
-        </defs>
-        <path class="threshold-sheet top" fill="url(#threshold-surface)" />
-        <path class="threshold-sheet bottom" fill="url(#threshold-surface)" />
-        <path class="threshold-fold top" fill="url(#threshold-fold)" />
-        <path class="threshold-fold bottom" fill="url(#threshold-fold)" />
-        <path class="threshold-edge top" />
-        <path class="threshold-edge bottom" />
-      </svg>
-      <p class="threshold-hint mono">ENTER YOUR ORBIT <span>Click the black hole · Escape to skip</span></p>
-      <button class="threshold-hole" type="button"
-        aria-label="Open Tonantzintla"><img src="wabi-sabi-black-hole-mark.svg" width="640" height="534" alt=""></button>
-    </div>
     <header class="site-header wrap">
       <a class="site-tab brand" href="./" aria-label="Tonantzintla home">
         <img src="wabi-sabi-black-hole-mark.svg" width="42" height="35" alt="">
@@ -56,33 +29,24 @@
     </header>
 
     <main id="main-content">
-      <section class="hero wrap" aria-labelledby="hero-title">
-        <div class="hero-topline mono">
-          <span><span class="status-dot" aria-hidden="true"></span>TONANTZINTLA / 1.1</span>
-          <span>A LINUX DESKTOP SHELL</span>
+      <section class="hero observatory" aria-labelledby="hero-title">
+        <div class="hero-topline wrap mono"><span>TONANTZINTLA 1.1 <span class="version-rule" aria-hidden="true"></span> A DESKTOP WITH CHARACTER</span><a href="https://github.com/deltadasher/Tonantzintla">QUICKSHELL / NIRI <span class="icon-arrow" aria-hidden="true"></span></a></div>
+        <div class="gravity-stage" id="gravity-stage" role="group" tabindex="0" aria-label="Explore the black hole. Drag or use arrow keys to change the view.">
+          <canvas id="gravity-canvas" aria-hidden="true"></canvas>
+          <img class="gravity-fallback" src="wabi-sabi-black-hole-mark.svg" width="640" height="534" alt="" aria-hidden="true">
+          <div class="scene-axis scene-axis-top mono" aria-hidden="true"><span>+ </span> THE GRAVITY STUDY</div>
+          <div class="scene-axis scene-axis-right mono" aria-hidden="true">ECCENTRICITY BELONGS HERE</div>
         </div>
-        <div class="hero-composition">
+        <div class="hero-composition wrap">
           <div class="hero-copy">
-            <h1 id="hero-title">A desktop with<br>a little<br><em>gravitational pull.</em></h1>
-            <p class="hero-lede">Orbiting wallpapers. Fluid surfaces. Music you can bend.<br class="desktop-break"> A desktop that feels a little more like you.</p>
-            <div class="hero-actions">
-              <a class="button primary" href="#install">Get Tonantzintla <span aria-hidden="true" class="icon-arrow"></span></a>
-              <button class="button watch-button hero-watch" type="button" data-watch><span class="small-play" aria-hidden="true"></span> Watch the desktop</button>
-            </div>
-          </div>
-          <div class="hero-art" aria-hidden="true">
-            <div class="orbit orbit-one"></div>
-            <div class="orbit orbit-two"></div>
-            <div class="orbit orbit-three"></div>
-            <span class="orbit-point"></span>
-            <img src="wabi-sabi-black-hole-mark.svg" width="640" height="534" alt="">
-            <span class="art-plus">+</span>
-            <span class="art-caption mono">ECCENTRICITY BELONGS HERE</span>
+            <h1 id="hero-title">An observatory<br>you <span>operate.</span></h1>
+            <p class="hero-lede">Strange shapes. Ordinary tasks.<br>A Linux desktop with a little gravitational pull.</p>
+            <div class="hero-actions"><a class="button primary" href="#instruments">Explore the instruments <span class="icon-arrow" aria-hidden="true"></span></a><button class="button watch-button hero-watch" type="button" data-watch><span class="small-play" aria-hidden="true"></span>See the real desktop</button></div>
           </div>
         </div>
-        <div class="hero-foot">
-          <p>Built with Quickshell.<br><span>Made for your own orbit.</span></p>
-          <a class="text-link" href="#instruments">Explore the five instruments <span aria-hidden="true" class="icon-arrow icon-arrow-down"></span></a>
+        <div class="hero-foot wrap">
+          <div class="gravity-readout"><span class="scene-index mono">01 / AN EXPLORATION IN GRAVITY</span><p id="gravity-status" role="status">The black hole, in its own orbit</p></div>
+          <div class="gravity-controls"><span class="gravity-hint">Drag the view to turn it</span><button type="button" id="gravity-motion" aria-pressed="false">Pause motion</button><button type="button" id="gravity-reset">Reset view <span aria-hidden="true">↺</span></button></div>
         </div>
       </section>
 
@@ -97,8 +61,8 @@
 
       <section class="showcase wrap" id="desktop" aria-labelledby="showcase-title">
         <div class="section-heading" data-reveal>
-          <div><span class="eyebrow">01 / IN ITS ELEMENT</span><h2 id="showcase-title">Yes, this is<br>someone’s desktop.</h2></div>
-          <p>These are real captures of Tonantzintla.<br>No browser mockup. Just the shell, doing its thing.</p>
+          <div><span class="eyebrow">01 / IN ITS ELEMENT</span><h2 id="showcase-title">A working desktop.<br>With its own gravity.</h2></div>
+          <p>The sculpture above is a browser experiment.<br>This is Tonantzintla, running in a real Wayland session.</p>
         </div>
         <div class="desktop-cinema" data-reveal>
           <div class="cinema-top mono"><span>TONANTZINTLA / DESKTOP RECORDING</span><span>13 SECONDS <span aria-hidden="true" class="icon-arrow icon-arrow-downright"></span></span></div>
@@ -111,16 +75,20 @@
       <section id="instruments" class="instrument-section" aria-labelledby="instruments-title">
         <div class="wrap">
           <div class="section-heading" data-reveal>
-            <div><span class="eyebrow">02 / THE INSTRUMENT DECK</span><h2 id="instruments-title">Five instruments.<br><em>One strange, lovely desktop.</em></h2></div>
-            <p>From the things you reach for every minute to the view behind it all. Every instrument has a job.</p>
+            <div><span class="eyebrow">02 / THE INSTRUMENT DECK</span><h2 id="instruments-title">One shell.<br><em>Five ways into your day.</em></h2></div>
+            <p>Choose an instrument in the orbit. Every destination has a purpose, from the bar at your fingertips to the view behind it all.</p>
           </div>
           <div class="deck" data-reveal>
-            <div class="deck-tabs" role="tablist" aria-label="Explore the instruments">
+            <div class="deck-orbit">
+              <svg class="instrument-orbit" viewBox="0 0 480 520" aria-hidden="true"><ellipse cx="240" cy="260" rx="182" ry="211" transform="rotate(-23 240 260)"/><ellipse class="inner" cx="240" cy="260" rx="105" ry="145" transform="rotate(27 240 260)"/><path d="M228 260h24M240 248v24"/></svg>
+              <div class="orbit-center" aria-hidden="true"><img src="wabi-sabi-black-hole-mark.svg" width="160" height="134" alt=""><span class="mono">ONE SHARED RUNTIME</span></div>
+              <div class="deck-tabs" role="tablist" aria-label="Explore the instruments">
               <button type="button" role="tab" id="tab-aperture" aria-controls="panel-aperture" aria-selected="true" tabindex="0" data-instrument="aperture"><span class="tab-number mono">01</span><span>Aperture<small>The everyday bar</small></span><span class="tab-arrow icon-arrow" aria-hidden="true"></span></button>
               <button type="button" role="tab" id="tab-ephemeris" aria-controls="panel-ephemeris" aria-selected="false" tabindex="-1" data-instrument="ephemeris"><span class="tab-number mono">02</span><span>Ephemeris<small>Tools on demand</small></span><span class="tab-arrow icon-arrow" aria-hidden="true"></span></button>
               <button type="button" role="tab" id="tab-parallax" aria-controls="panel-parallax" aria-selected="false" tabindex="-1" data-instrument="parallax"><span class="tab-number mono">03</span><span>Parallax<small>The wallpaper orbit</small></span><span class="tab-arrow icon-arrow" aria-hidden="true"></span></button>
               <button type="button" role="tab" id="tab-resonance" aria-controls="panel-resonance" aria-selected="false" tabindex="-1" data-instrument="resonance"><span class="tab-number mono">04</span><span>Resonance<small>The audio console</small></span><span class="tab-arrow icon-arrow" aria-hidden="true"></span></button>
               <button type="button" role="tab" id="tab-umbra" aria-controls="panel-umbra" aria-selected="false" tabindex="-1" data-instrument="umbra"><span class="tab-number mono">05</span><span>Umbra<small>The session veil</small></span><span class="tab-arrow icon-arrow" aria-hidden="true"></span></button>
+            </div>
             </div>
             <div class="deck-display">
               <section class="deck-panel" role="tabpanel" id="panel-aperture" aria-labelledby="tab-aperture" tabindex="0">
@@ -151,11 +119,11 @@
       <section class="manifesto wrap" id="philosophy" aria-labelledby="philosophy-title">
         <div class="manifesto-aside"><span class="eyebrow">03 / THE ATTITUDE</span><img src="wabi-sabi-black-hole-mark.svg" width="150" height="125" alt="" loading="lazy"></div>
         <div class="manifesto-main" data-reveal>
-          <h2 id="philosophy-title">Eccentricity belongs<br><em>on the desktop.</em></h2>
-          <p class="manifesto-lede">An observatory you operate. Strange shapes, ordinary tasks, and a point of view that doesn’t disappear the moment you get to work.</p>
+          <h2 id="philosophy-title">Keep the strange.<br><em>Make it useful.</em></h2>
+          <p class="manifesto-lede">Astronomy gives Tonantzintla its identity. Everyday controls remain legible, predictable and useful. Open orbits, imperfect silhouettes and flowing surfaces are intentional.</p>
           <div class="principles">
             <div><span class="mono">01 / USEFUL FIRST</span><h3>It has a job.</h3><p>Controls you can find. Tools that say what they do. Space for the things you use every day.</p></div>
-            <div><span class="mono">02 / STILL A LITTLE STRANGE</span><h3>Keep the character.</h3><p>Open orbits, flowing surfaces, and imperfect silhouettes. Useful doesn’t have to mean boring as hell.</p></div>
+            <div><span class="mono">02 / STILL A LITTLE STRANGE</span><h3>Keep the character.</h3><p>Open orbits, flowing surfaces, and imperfect silhouettes. Let the surface flow. Keep the controls steady.</p></div>
             <div><span class="mono">03 / YOUR OWN ORBIT</span><h3>Make it yours.</h3><p>Your apps, fonts, wallpaper, bar layout, and motion. Your desktop should fit how you actually use it.</p></div>
           </div>
         </div>
@@ -164,7 +132,7 @@
       <section class="install-section" id="install" aria-labelledby="install-title">
         <div class="wrap install-layout">
           <div class="install-copy" data-reveal>
-            <span class="eyebrow">04 / COME ON IN</span><h2 id="install-title">Find your<br><em>own orbit.</em></h2>
+            <span class="eyebrow">04 / COME ON IN</span><h2 id="install-title">Your desktop.<br><em>Your own orbit.</em></h2>
             <p>Tonantzintla 1.1 is built with Quickshell for Niri. Start with the supported setup: Arch Linux, similar derivatives, or Obarun.</p>
             <a class="button primary" href="https://github.com/deltadasher/Tonantzintla#install">Read the installation guide <span aria-hidden="true" class="icon-arrow"></span></a>
             <div class="install-links"><a href="https://github.com/deltadasher/Tonantzintla/releases">Release history <span aria-hidden="true" class="icon-arrow"></span></a><a href="https://github.com/deltadasher/Tonantzintla/blob/main/docs/dependencies.md">Dependencies <span aria-hidden="true" class="icon-arrow"></span></a></div>
@@ -203,7 +171,7 @@ cd Tonantzintla
       <div class="dialog-head mono"><span>TONANTZINTLA / IN MOTION</span><button type="button" data-close-demo aria-label="Close desktop recording">CLOSE <span aria-hidden="true">×</span></button></div>
       <video controls playsinline muted preload="none" poster="assets/desktop.webp"><source src="assets/desktop-demo.mp4" type="video/mp4">Your browser does not support embedded video. <a href="assets/desktop-demo.mp4">Watch the recording.</a></video>
     </dialog>
-    <script src="threshold.js?v=cf21edee1063"></script>
-    <script src="site.js?v=6bf8791aab5e"></script>
+    <script src="gravity-scene.js?v=4539fb39edc5" defer></script>
+    <script src="site.js?v=28ee3d1ba3ac"></script>
   </body>
 </html>

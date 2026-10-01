@@ -14,12 +14,21 @@ direct panel links, every demo trigger, native modal cleanup and focus return,
 clipboard success/denial feedback, and optional in-view decoration. The FAQ uses
 native HTML disclosure elements and needs no JavaScript.
 
-The black-hole entrance is isolated in `threshold.css` and `threshold.js`.
-It starts only when JavaScript is working, uses one animation clock, accepts
-Escape, respects reduced motion, and bypasses itself for direct content links.
-Its session marker is optional; blocked storage does not prevent entrance.
-Without JavaScript, content and installation commands remain visible, all five
-instrument descriptions are exposed, and the recording has a direct link.
+The homepage opens immediately. `gravity-scene.js` adds an optional WebGL2
+material study: an asymmetric, ray-marched accretion stream derived from the
+project's actual mark. This is an artistic browser interpretation, not a
+simulation or a claim about the shell's own renderer. Drag or use focused arrow
+keys to rotate, pause its motion or reset the view. Instrument selection gently
+changes its material. Native controls and essential content remain stationary.
+
+The renderer compiles and links its own GLSL shaders, caps its pixel budget,
+and suspends animation offscreen, in hidden documents and on page departure.
+Reduced motion draws a still view. Context loss, missing WebGL2 or a shader
+failure restores the real SVG mark with a readable unavailable status. No FPS,
+hardware-acceleration or benchmark claims are made. There is no entrance gate.
+The retired threshold controller remains in source only for historical coverage.
+Without JavaScript, the real mark, every instrument description, installation
+commands and a direct recording link remain available; inactive controls hide.
 
 Local stylesheet and controller URLs carry content-hash revisions so cached
 assets cannot drift behind updated markup. The static validator checks these
@@ -33,8 +42,10 @@ Preview from the repository root:
 ```sh
 python3 -m http.server 8765 --directory docs
 node --check docs/site.js
+node --check docs/gravity-scene.js
 node --check docs/threshold.js
 node tests/test_site.cjs
+node tests/test_gravity_scene.cjs
 node tests/test_threshold.cjs
 python3 tests/test_static_site.py
 ```

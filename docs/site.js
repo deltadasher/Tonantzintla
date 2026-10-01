@@ -14,6 +14,9 @@
             if (panel) panel.hidden = !selected;
         });
         if (focus) tab.focus();
+        if (typeof window.CustomEvent === 'function') {
+            document.dispatchEvent(new window.CustomEvent('tonantzintla:instrument', { detail: { id: tab.dataset.instrument } }));
+        }
     }
 
     tabs.forEach((tab, index) => {
