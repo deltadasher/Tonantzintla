@@ -14,7 +14,7 @@ direct panel links, every demo trigger, native modal cleanup and focus return,
 clipboard success/denial feedback, and optional in-view decoration. The FAQ uses
 native HTML disclosure elements and needs no JavaScript.
 
-The homepage opens immediately. `gravity-scene.js` adds an optional WebGL2
+The homepage opens immediately. `gravity-scene.js` adds an optional WebGL2/WebGL
 material study: an asymmetric, ray-marched accretion stream derived from the
 project's actual mark. This is an artistic browser interpretation, not a
 simulation or a claim about the shell's own renderer. Drag or use focused arrow
@@ -23,11 +23,13 @@ changes its material. Native controls and essential content remain stationary.
 
 The renderer compiles and links its own GLSL shaders, caps its pixel budget,
 and suspends animation offscreen, in hidden documents and on page departure.
-Reduced motion draws a still view. Context loss, missing WebGL2 or a shader
-failure restores the real SVG mark with a readable unavailable status. No FPS,
+Reduced motion draws a still view. Context loss, missing WebGL or a shader
+failure restores the same-scene still study with a readable unavailable status. No FPS,
 hardware-acceleration or benchmark claims are made. There is no entrance gate.
+The still WebP is reproduced from the scene equations by the CPU asset script
+`tools/render_gravity_study.py`; producing it does not verify browser rendering.
 The retired threshold controller remains in source only for historical coverage.
-Without JavaScript, the real mark, every instrument description, installation
+Without JavaScript, the sculpture, real mark, every instrument description, installation
 commands and a direct recording link remain available; inactive controls hide.
 
 Local stylesheet and controller URLs carry content-hash revisions so cached

@@ -10,7 +10,7 @@
     <meta property="og:image" content="https://deltadasher.github.io/Tonantzintla/assets/desktop.webp">
     <link rel="icon" href="wabi-sabi-black-hole-mark.svg" type="image/svg+xml">
     <link rel="canonical" href="https://deltadasher.github.io/Tonantzintla/">
-    <link rel="stylesheet" href="site.css?v=83e60abde916">
+    <link rel="stylesheet" href="site.css?v=6b5b1452da0c">
     <title>Tonantzintla — An observatory you operate</title>
     <noscript><style>.gravity-controls,.deck-orbit,.watch-button,#copy-install{display:none!important}.deck-panel[hidden]{display:grid!important}.deck-panel{margin-bottom:48px}.deck-display{display:block!important}</style></noscript>
   </head>
@@ -31,9 +31,9 @@
     <main id="main-content">
       <section class="hero observatory" aria-labelledby="hero-title">
         <div class="hero-topline wrap mono"><span>TONANTZINTLA 1.1 <span class="version-rule" aria-hidden="true"></span> A DESKTOP WITH CHARACTER</span><a href="https://github.com/deltadasher/Tonantzintla">QUICKSHELL / NIRI <span class="icon-arrow" aria-hidden="true"></span></a></div>
-        <div class="gravity-stage" id="gravity-stage" role="group" tabindex="0" aria-label="Explore the black hole. Drag or use arrow keys to change the view.">
+        <div class="gravity-stage" id="gravity-stage" role="group" tabindex="-1" aria-label="Still black-hole view">
           <canvas id="gravity-canvas" aria-hidden="true"></canvas>
-          <img class="gravity-fallback" src="wabi-sabi-black-hole-mark.svg" width="640" height="534" alt="" aria-hidden="true">
+          <img class="gravity-fallback" src="assets/gravity-study.webp" width="1440" height="900" alt="" aria-hidden="true">
           <div class="scene-axis scene-axis-top mono" aria-hidden="true"><span>+ </span> THE GRAVITY STUDY</div>
           <div class="scene-axis scene-axis-right mono" aria-hidden="true">ECCENTRICITY BELONGS HERE</div>
         </div>
@@ -45,8 +45,8 @@
           </div>
         </div>
         <div class="hero-foot wrap">
-          <div class="gravity-readout"><span class="scene-index mono">01 / AN EXPLORATION IN GRAVITY</span><p id="gravity-status" role="status">The black hole, in its own orbit</p></div>
-          <div class="gravity-controls"><span class="gravity-hint">Drag the view to turn it</span><button type="button" id="gravity-motion" aria-pressed="false">Pause motion</button><button type="button" id="gravity-reset">Reset view <span aria-hidden="true">↺</span></button></div>
+          <div class="gravity-readout"><span class="scene-index mono">01 / AN EXPLORATION IN GRAVITY</span><p id="gravity-status" role="status">A still study of the black hole</p></div>
+          <div class="gravity-controls"><span class="gravity-hint" id="gravity-hint">Drag the view to turn it</span><button type="button" id="gravity-motion" aria-pressed="false">Pause motion</button><button type="button" id="gravity-reset">Reset view <span aria-hidden="true">↺</span></button></div>
         </div>
       </section>
 
@@ -171,7 +171,7 @@ cd Tonantzintla
       <div class="dialog-head mono"><span>TONANTZINTLA / IN MOTION</span><button type="button" data-close-demo aria-label="Close desktop recording">CLOSE <span aria-hidden="true">×</span></button></div>
       <video controls playsinline muted preload="none" poster="assets/desktop.webp"><source src="assets/desktop-demo.mp4" type="video/mp4">Your browser does not support embedded video. <a href="assets/desktop-demo.mp4">Watch the recording.</a></video>
     </dialog>
-    <script src="gravity-scene.js?v=4539fb39edc5" defer></script>
+    <script src="gravity-scene.js?v=e13bddd6e05f" defer></script>
     <script src="site.js?v=28ee3d1ba3ac"></script>
   </body>
 </html>

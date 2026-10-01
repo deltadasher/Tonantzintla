@@ -11,6 +11,7 @@
   const motionButton = document.getElementById('gravity-motion');
   const resetButton = document.getElementById('gravity-reset');
   const status = document.getElementById('gravity-status');
+  const hint = document.getElementById('gravity-hint');
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   const vertexSource = `#version 300 es
   in vec2 position;
@@ -31,17 +32,18 @@
     float angle = atan(p.z, p.x);
     float radial = length(p.xz);
     float wave = sin(angle*3.+.65)*.055 + sin(angle*5.-.8)*.025;
-    float rise = .72 * smoothstep(-.25, 1.05, p.z);
+    float rise = (.78 + instrument*.012) * .5 * (sqrt(p.z*p.z+.035)-p.z);
     float center = 1.47 + wave + sin(angle+1.2)*.10;
-    float width = .36 + .08*sin(angle*2.-.7);
-    float height = .065 + .035*(.5+.5*cos(angle*3.));
+    float width = .26 + instrument*.012 + .06*sin(angle*2.-.7);
+    float height = .025 + .012*(.5+.5*cos(angle*3.));
     float y = p.y + .19 - rise - sin(angle*2.+time*.085)*.035;
-    vec2 q = vec2(abs(radial-center)-width, abs(y)-height);
-    float slab = length(max(q,0.)) + min(max(q.x,q.y),0.) - .018;
+    vec2 q = abs(vec2(radial-center,y)) - vec2(width-.02,height-.02);
+    float slab = length(max(q,0.)) + min(max(q.x,q.y),0.) - .02;
     // A small, separated lower lens is part of the original mark's identity.
     vec3 l=p; l.y += .69;
     float lower = length(vec2((length(l.xz)-1.16)*.70,l.y))-.027;
-    lower = max(lower, -.12-l.z);
+    lower = max(lower, .35-l.z);
+    lower = max(lower, -.35-l.x);
     return min(slab, lower);
   }
   vec3 normalAt(vec3 p) {
@@ -64,7 +66,7 @@
     vec3 fw=normalize(target-ro);
     vec3 right=normalize(cross(fw,vec3(0.,1.,0.)));
     vec3 up=cross(right,fw);
-    vec3 rd=normalize(fw*1.82+right*screen.x*2.+up*screen.y*2.);
+    vec3 rd=normalize(fw*2.95+right*screen.x*2.+up*screen.y*2.);
     float horizon=sphereHit(ro,rd);
     // Bound work to the sculpted stream's bounding sphere.
     float b=dot(ro,rd),h=b*b-dot(ro,ro)+2.55*2.55;
@@ -97,22 +99,24 @@
       float a=atan(p.z,p.x);
       float r=length(p.xz);
       vec3 n=normalAt(p);
-      vec3 light=normalize(vec3(-1.5,3.,3.));
+      vec3 light=normalize(vec3(-1.5,3.,-1.8));
       float diffuse=.26+.74*max(dot(n,light),0.);
       float fresnel=pow(1.-abs(dot(n,-rd)),2.);
       // Concentric lanes shear with angle, carrying texture around the fold.
-      float shear=a*1.2-time*.09;
-      float turbulence=sin(a*7.+r*13.-time*.11)*.032+sin(a*13.-r*8.)*.018;
-      float lanes=.5+.5*sin((r+turbulence)*157.+sin(shear*3.)*3.);
-      lanes=pow(lanes,7.);
+      float shear=a-time*.03;
+      float turbulence=sin(a*3.+r*7.-time*.11)*.012+sin(a*7.-r*5.)*.008;
+      float lanes=.5+.5*sin((r+turbulence)*112.+sin(shear*3.)*1.3);
+      lanes=pow(lanes,10.);
       float fine=.5+.5*sin(r*357.+a*6.+sin(a*9.)*2.-time*.2);
       float mottled=.5+.5*sin(r*38.+a*5.+sin(a*11.+r*6.));
       float temperature=clamp((1.9-r)*.95,0.,1.);
-      vec3 base=mix(vec3(.28,.13,.045),amber,.48+mottled*.36);
+      vec3 base=mix(vec3(.18,.075,.025),amber,.30+mottled*.24);
       base=mix(base,pale,temperature*.45);
       float doppler=.55+.45*pow(.5+.5*sin(a-.6),2.);
       result=base*(diffuse*.72+lanes*.58+fine*.085)*doppler;
       result+=pale*lanes*temperature*.36;
+      float polished=pow(max(dot(n,normalize(light-rd)),0.),16.);
+      result+=pale*polished*.72;
       result+=mix(amber,violet,instrument*.04)*fresnel*.19;
       result+=amber*glow*.12;
       result=1.-exp(-result*1.65);
@@ -136,16 +140,21 @@
   function updateControls() {
     if (motionButton) {
       motionButton.setAttribute('aria-pressed', String(frozen));
-      motionButton.textContent = reduced.matches ? 'Reduced motion' : frozen ? 'Resume motion' : 'Pause motion';
+      motionButton.textContent = !program || lost ? 'Still view' : reduced.matches ? 'Reduced motion' : frozen ? 'Resume motion' : 'Pause motion';
       motionButton.disabled = reduced.matches || lost || !program;
     }
     if (resetButton) resetButton.disabled = lost || !program;
   }
   function fallback(message) {
     cancelAnimationFrame(raf); raf = 0;
+    drag = null;
+    stage.classList.remove('is-dragging');
     stage.classList.remove('is-rendered');
+    stage.tabIndex = -1;
+    stage.setAttribute('aria-label','Still black-hole view');
     canvas.dataset.state = 'fallback';
     canvas.dataset.renderer = 'fallback';
+    if (hint) hint.hidden = true;
     program = null;
     setStatus(message || 'Still view · interactive 3D is unavailable');
     updateControls();
@@ -162,10 +171,16 @@
   }
   function initialize() {
     try {
-      gl = canvas.getContext('webgl2', { alpha: false, antialias: false, depth: false, stencil: false, powerPreference: 'low-power', preserveDrawingBuffer: false });
+      const attributes = { alpha: false, antialias: false, depth: false, stencil: false, powerPreference: 'low-power', preserveDrawingBuffer: false };
+      gl = canvas.getContext('webgl2', attributes);
+      const modern = Boolean(gl);
+      if (!gl) gl = canvas.getContext('webgl', attributes);
       if (!gl) { fallback(); return; }
-      const vs = compile(gl.VERTEX_SHADER, vertexSource);
-      const fs = compile(gl.FRAGMENT_SHADER, fragmentSource);
+      // The same geometry also works on browsers with WebGL 1 only.
+      const vsSource = modern ? vertexSource : vertexSource.replace('#version 300 es','').replace('in vec2 position','attribute vec2 position').replace('out vec2 uv','varying vec2 uv');
+      const fsSource = modern ? fragmentSource : fragmentSource.replace('#version 300 es','').replace('in vec2 uv','varying vec2 uv').replace('out vec4 color;','').replace(/\bcolor\b/g,'gl_FragColor');
+      const vs = compile(gl.VERTEX_SHADER, vsSource);
+      const fs = compile(gl.FRAGMENT_SHADER, fsSource);
       program = gl.createProgram();
       gl.attachShader(program, vs); gl.attachShader(program, fs); gl.linkProgram(program);
       gl.deleteShader(vs); gl.deleteShader(fs);
@@ -179,11 +194,15 @@
       locations = {};
       ['resolution','rotation','time','instrument'].forEach(key => { locations[key] = gl.getUniformLocation(program,key); });
       lost = false;
-      resize(); draw();
+      resize(); if (!draw()) return;
       if (gl.getError() !== gl.NO_ERROR) throw new Error('The first frame could not be drawn');
       // Mark ready only after the first complete draw, never just context creation.
       canvas.dataset.state = 'ready'; canvas.dataset.renderer = 'webgl';
+      canvas.dataset.context = modern ? 'webgl2' : 'webgl';
       stage.classList.add('is-rendered');
+      if (hint) hint.hidden = false;
+      stage.tabIndex = 0;
+      stage.setAttribute('aria-label','Explore the black hole. Drag or use arrow keys to change the view.');
       updateControls();
       setStatus(reduced.matches ? 'Still view · reduced motion' : 'Drag to change your view');
       schedule();
@@ -207,14 +226,21 @@
     }
   }
   function draw() {
-    if (!gl || !program || lost || disposed) return;
-    gl.useProgram(program);
-    gl.uniform2f(locations.resolution,width,height);
-    gl.uniform2f(locations.rotation,yaw,pitch);
-    gl.uniform1f(locations.time,elapsed);
-    gl.uniform1f(locations.instrument,selected);
-    gl.drawArrays(gl.TRIANGLES,0,6);
-    canvas.dataset.frames = String(++frames);
+    if (!gl || !program || lost || disposed) return false;
+    try {
+      gl.useProgram(program);
+      gl.uniform2f(locations.resolution,width,height);
+      gl.uniform2f(locations.rotation,yaw,pitch);
+      gl.uniform1f(locations.time,elapsed);
+      gl.uniform1f(locations.instrument,selected);
+      gl.drawArrays(gl.TRIANGLES,0,6);
+      canvas.dataset.frames = String(++frames);
+      return true;
+    } catch (error) {
+      console.warn('Tonantzintla: 3D rendering stopped; showing the still view.',error);
+      fallback(frames ? 'Still view · 3D rendering paused' : undefined);
+      return false;
+    }
   }
   function schedule() {
     if (canAnimate() && program && !raf) raf=requestAnimationFrame(tick);
