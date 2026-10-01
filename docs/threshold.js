@@ -12,7 +12,8 @@
     edge: svg.querySelector(`.threshold-edge.${side}`),
   }));
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
-  const key = 'tonantzintla-entered';
+  // Show the restored opening once even in sessions that saw its old version.
+  const key = 'tonantzintla-entered-v2';
   const clamp = value => Math.max(0, Math.min(1, value));
   const smooth = value => { const t = clamp(value); return t * t * (3 - 2 * t); };
   const content = [...document.querySelectorAll('body > .skip-link, body > header, body > main, body > footer')];
