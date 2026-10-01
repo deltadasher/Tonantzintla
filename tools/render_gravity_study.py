@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
-"""Create the still fallback from gravity-scene.js's 3D equations using NumPy.
+"""Render the still view with gravity-scene.js's curved-light equations.
 
-This is CPU asset production. It neither compiles GLSL nor validates a browser GPU.
+This is CPU asset production, not GLSL compilation or browser GPU validation.
+The shader and this renderer share the camera, velocity-Verlet ray integration,
+zero-thickness disk, gas noise, emissivity, optical-depth and tone-map equations.
+The saved still adds a mild photographic glare and offline supersampling.
 SPDX-License-Identifier: GPL-3.0-or-later
 """
 import argparse
 from pathlib import Path
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
+
+HORIZON = .72
+STEPS = 192
 
 
 def smooth(a, b, x):
@@ -16,7 +22,7 @@ def smooth(a, b, x):
 
 
 def normalize(v):
-    return v / np.maximum(np.linalg.norm(v, axis=-1, keepdims=True), 1e-8)
+    return v/np.maximum(np.linalg.norm(v, axis=-1, keepdims=True), 1e-9)
 
 
 def turn(pair, angle):
@@ -24,106 +30,118 @@ def turn(pair, angle):
     return np.stack([c*pair[..., 0]+s*pair[..., 1], -s*pair[..., 0]+c*pair[..., 1]], axis=-1)
 
 
-def stream(p):
-    angle = np.arctan2(p[..., 2], p[..., 0])
-    radial = np.linalg.norm(p[..., [0,2]], axis=-1)
-    wave = np.sin(angle*3+.65)*.055 + np.sin(angle*5-.8)*.025
-    rise = .78*.5*(np.sqrt(p[..., 2]**2+.035)-p[..., 2])
-    center = 1.47+wave+np.sin(angle+1.2)*.10
-    width = .26+.06*np.sin(angle*2-.7)
-    height = .025+.012*(.5+.5*np.cos(angle*3))
-    y = p[..., 1]+.19-rise-np.sin(angle*2)*.035
-    q = np.stack([np.abs(radial-center)-width+.02, np.abs(y)-height+.02], axis=-1)
-    slab = np.linalg.norm(np.maximum(q,0),axis=-1)+np.minimum(np.max(q,axis=-1),0)-.02
-    lower = np.hypot((radial-1.16)*.70,p[..., 1]+.69)-.027
-    lower = np.maximum(lower,.35-p[..., 2])
-    lower = np.maximum(lower,-.35-p[..., 0])
-    return np.minimum(slab,lower)
+def fract(x):
+    return x-np.floor(x)
 
 
-def render(width, height):
-    ro = np.array([0.,1.35,5.35],dtype=np.float32)
-    ro[1:]=turn(ro[1:],-.06)
-    ro[[0,2]]=turn(ro[[0,2]],-.16)
-    target=np.array([0.,.12,0.],dtype=np.float32)
-    fw=normalize(target-ro)
-    right=normalize(np.cross(fw,[0.,1.,0.]))
-    up=np.cross(right,fw)
-    amber=np.array([1.,.58,.23]); pale=np.array([1.,.88,.65]); violet=np.array([.60,.55,.78])
-    result=np.empty((height,width,3),dtype=np.uint8)
-    for row in range(0,height,40):
-        rows=min(40,height-row)
-        yy,xx=np.mgrid[row:row+rows,0:width]
-        screen=np.stack([((xx+.5)/width-.5)*(width/height), .5-(yy+.5)/height],axis=-1).astype(np.float32)
-        rd=normalize(fw*2.95+right*screen[...,0,None]*2+up*screen[...,1,None]*2).astype(np.float32)
-        oc=ro-np.array([.035,.15,0.])
-        b=np.sum(oc*rd,axis=-1); c=np.sum(oc*oc)-.83*.83; hs=b*b-c
-        horizon=np.where(hs<0,100,np.maximum(0,-b-np.sqrt(np.maximum(hs,0))))
-        b=np.sum(ro*rd,axis=-1); h=b*b-np.sum(ro*ro)+2.55*2.55
-        t=np.maximum(0,-b-np.sqrt(np.maximum(h,0)))
-        end=np.minimum(-b+np.sqrt(np.maximum(h,0)),horizon)
-        glow=np.zeros_like(t); hit=np.zeros_like(t,dtype=bool); active=h>=0
-        p=ro+rd*t[...,None]
-        for _ in range(96):
-            p=ro+rd*t[...,None]
-            d=stream(p)
-            glow+=np.where(active,np.exp(-np.abs(d)*22)*.005,0)
-            hit |= active & (d<.0045)
-            active &= ~hit
-            t+=np.where(active,np.maximum(d*.76,.009),0)
-            active &= t<=end
-            if not np.any(active): break
-        p=ro+rd*t[...,None]
-        bg=np.zeros_like(rd)+[.0431,.0431,.0510]
-        ambient=np.exp(-np.sum((screen*[.7,1])**2,axis=-1)*3)
-        bg+=ambient[...,None]*[.014,.009,.008]
-        rgb=bg+amber*glow[...,None]*.36
-        tc=np.array([.035,.15,0.])-ro
-        impact=np.linalg.norm(tc-np.sum(tc*rd,axis=-1)[...,None]*rd,axis=-1)
-        halo=np.exp(-np.abs(impact-.846)*42)
-        rgb+=(amber*.78+violet*.22)*halo[...,None]*.20
-        rgb=np.where((horizon<100)[...,None], np.array([.004,.004,.006])+amber*halo[...,None]*.055, rgb)
-        a=np.arctan2(p[...,2],p[...,0]); r=np.linalg.norm(p[..., [0,2]],axis=-1)
-        normals=[]
-        for i in range(3):
-            e=np.zeros(3); e[i]=.006
-            normals.append(stream(p+e)-stream(p-e))
-        n=normalize(np.stack(normals,axis=-1))
-        light=normalize(np.array([-1.5,3.,-1.8]))
-        diffuse=.26+.74*np.maximum(np.sum(n*light,axis=-1),0)
-        fresnel=(1-np.abs(np.sum(n*-rd,axis=-1)))**2
-        shear=a
-        turbulence=np.sin(a*3+r*7)*.012+np.sin(a*7-r*5)*.008
-        lanes=(.5+.5*np.sin((r+turbulence)*112+np.sin(shear*3)*1.3))**10
-        fine=.5+.5*np.sin(r*357+a*6+np.sin(a*9)*2)
-        mottled=.5+.5*np.sin(r*38+a*5+np.sin(a*11+r*6))
-        temp=np.clip((1.9-r)*.95,0,1)
-        blend=.30+mottled*.24
-        base=np.array([.18,.075,.025])*(1-blend[...,None])+amber*blend[...,None]
-        base=base*(1-temp[...,None]*.45)+pale*temp[...,None]*.45
-        doppler=.55+.45*(.5+.5*np.sin(a-.6))**2
-        material=base*(diffuse*.72+lanes*.58+fine*.085)[...,None]*doppler[...,None]
-        material+=pale*(lanes*temp*.36)[...,None]+amber*(fresnel*.19)[...,None]+amber*glow[...,None]*.12
-        polished=np.maximum(np.sum(n*normalize(light-rd),axis=-1),0)**16
-        material+=pale*polished[...,None]*.72
-        material=1-np.exp(-material*1.65)
-        rgb=np.where((hit & (t<end))[...,None],material,rgb)
-        vignette=1-smooth(.45,1.10,np.linalg.norm(screen,axis=-1))
-        rgb=bg*(1-vignette[...,None])+rgb*vignette[...,None]
-        grain=np.mod(np.sin((xx+.5)*12.9898+(height-yy-.5)*78.233)*43758.5453,1)
-        rgb+=(grain[...,None]-.5)/255
-        result[row:row+rows]=np.uint8(np.clip(rgb*255,0,255))
-    return Image.fromarray(result)
+def noise(q):
+    i, f = np.floor(q), fract(q)
+    f = f*f*(3-2*f)
+
+    def hash_value(p):
+        p = fract(p*np.array([123.34, 456.21]))
+        p += np.sum(p*(p+45.32), axis=-1)[..., None]
+        return fract(p[..., 0]*p[..., 1])
+
+    a, b = hash_value(i), hash_value(i+[1, 0])
+    c, d = hash_value(i+[0, 1]), hash_value(i+[1, 1])
+    return ((a*(1-f[..., 0])+b*f[..., 0])*(1-f[..., 1])
+            +(c*(1-f[..., 0])+d*f[..., 0])*f[..., 1])
 
 
-if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--width',type=int,default=1440)
-    parser.add_argument('--height',type=int,default=900)
-    parser.add_argument('--supersample',type=float,default=1.5)
-    parser.add_argument('--output',type=Path,default=Path('docs/assets/gravity-study.webp'))
-    args=parser.parse_args()
-    args.output.parent.mkdir(parents=True,exist_ok=True)
-    image=render(round(args.width*args.supersample),round(args.height*args.supersample))
-    image.resize((args.width,args.height),Image.Resampling.LANCZOS).save(args.output,quality=92,method=6)
-    print(f'CPU-rendered still asset: {args.output} ({args.width} × {args.height})')
+def gas(q):
+    value, weight = np.zeros(q.shape[:-1]), .55
+    for _ in range(4):
+        value += weight*noise(q)
+        # GLSL mat2 is column-major; row-vector NumPy uses its transpose.
+        q = q@np.array([[1.6, 1.2], [-1.2, 1.6]])+np.array([4.7, 9.2])
+        weight *= .5
+    return value
+
+
+def acceleration(p, momentum):
+    radius = np.linalg.norm(p, axis=-1)
+    return -1.5*HORIZON*momentum[:, None]*p/np.maximum(radius[:, None]**5, .001)
+
+
+def trace(screen, yaw, pitch, time):
+    ro = np.array([0., 2.32, 12.])
+    ro[1:] = turn(ro[1:], pitch)
+    ro[[0, 2]] = turn(ro[[0, 2]], yaw)
+    forward = normalize(-ro)
+    right = normalize(np.cross(forward, [0., 1., 0.]))
+    up = np.cross(right, forward)
+    velocity = normalize(forward*1.35+right*screen[:, 0, None]+up*screen[:, 1, None])
+    p = np.broadcast_to(ro, velocity.shape).copy()
+    momentum = np.sum(np.cross(p, velocity)**2, axis=-1)
+    radiance, opacity = np.zeros_like(p), np.zeros(len(p))
+    active = np.ones(len(p), dtype=bool)
+    for _ in range(STEPS):
+        ids = np.flatnonzero(active)
+        if not len(ids):
+            break
+        point, v, h2 = p[ids], velocity[ids], momentum[ids]
+        radius = np.linalg.norm(point, axis=-1)
+        step = .045+.048*radius
+        acc = acceleration(point, h2)
+        next_point = point+v*step[:, None]+.5*acc*step[:, None]**2
+        next_v = v+.5*(acc+acceleration(next_point, h2))*step[:, None]
+        crossings = np.flatnonzero(point[:, 1]*next_point[:, 1] < 0)
+        if len(crossings):
+            start, end = point[crossings], next_point[crossings]
+            fraction = np.clip(start[:, 1]/(start[:, 1]-end[:, 1]), 0, 1)
+            hit = start+(end-start)*fraction[:, None]
+            rad = np.linalg.norm(hit[:, [0, 2]], axis=-1)
+            disk = (rad > 2.15) & (rad < 5.4)
+            if np.any(disk):
+                hit, rad = hit[disk], rad[disk]
+                disk_ids = ids[crossings[disk]]
+                angle = np.arctan2(hit[:, 2], hit[:, 0])
+                edge = smooth(2.15, 2.42, rad)*(1-smooth(3.4, 5.4, rad))
+                heat = (2.5/np.maximum(rad, 2.15))**2.7
+                shear = angle+rad*.58-time*.035/rad**1.5
+                q = np.stack([np.cos(shear), np.sin(shear)], axis=-1)*rad[:, None]*1.8
+                cloud = .38+.9*gas(q)
+                beaming = (1+.38*(-hit[:, 0]/rad))**3
+                emission = np.array([1., .26, .055])*(1-heat[:, None]*.8)+np.array([1., .9, .68])*heat[:, None]*.8
+                power = heat*edge*cloud*beaming*1.3
+                radiance[disk_ids] += emission*power[:, None]*(1-opacity[disk_ids, None])
+                opacity[disk_ids] += (1-opacity[disk_ids])*.88*edge
+        p[ids], velocity[ids] = next_point, next_v
+        distance = np.linalg.norm(next_point, axis=-1)
+        active[ids] = (distance >= HORIZON) & (distance <= 15.5) & (opacity[ids] <= .99)
+    return radiance
+
+
+def render(width, height, yaw=-.16, pitch=-.06, time=0):
+    result = np.zeros((height, width, 3), dtype=np.float32)
+    for row in range(0, height, 32):
+        end = min(height, row+32)
+        yy, xx = np.mgrid[row:end, 0:width]
+        screen = np.stack([((xx+.5)/width-.5)*(width/height), .5-(yy+.5)/height], axis=-1)
+        rgb = trace(screen.reshape(-1, 2), yaw, pitch, time)
+        result[row:end] = (1-np.exp(-rgb*.85)).reshape(end-row, width, 3)
+    light = Image.fromarray(np.uint8(np.clip(result*255, 0, 255)))
+    # Very mild glare from emitted light; never a metallic/specular material.
+    for radius, amount in [(height/300, .18), (height/90, .10), (height/30, .05)]:
+        result += np.asarray(light.filter(ImageFilter.GaussianBlur(radius)), dtype=np.float32)/255*amount
+    result = np.maximum(result, np.array([.0431, .0431, .0510]))
+    return Image.fromarray(np.uint8(np.clip(result*255, 0, 255)))
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--width', type=int, default=1440)
+    parser.add_argument('--height', type=int, default=900)
+    parser.add_argument('--supersample', type=float, default=1.5)
+    parser.add_argument('--yaw', type=float, default=-.16)
+    parser.add_argument('--pitch', type=float, default=-.06)
+    parser.add_argument('--time', type=float, default=0)
+    parser.add_argument('--output', type=Path, default=Path('docs/assets/gravity-study.webp'))
+    args = parser.parse_args()
+    if args.width < 1 or args.height < 1 or args.supersample <= 0:
+        parser.error('Dimensions and supersampling must be positive')
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    image = render(round(args.width*args.supersample), round(args.height*args.supersample), args.yaw, args.pitch, args.time)
+    image.resize((args.width, args.height), Image.Resampling.LANCZOS).save(args.output, quality=92, method=6)
+    print(f'CPU-rendered bent-light still: {args.output} ({args.width} × {args.height})')

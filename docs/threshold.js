@@ -2,8 +2,10 @@
   const threshold = document.querySelector('#threshold');
   if (!threshold) return;
   const enter = threshold.querySelector('.threshold-hole');
+  const skip = threshold.querySelector('.threshold-skip');
   if (!enter) return;
   const svg = threshold.querySelector('.threshold-peel');
+  if (!svg) return;
   const halves = ['top', 'bottom'].map(side => ({
     sheet: svg.querySelector(`.threshold-sheet.${side}`),
     fold: svg.querySelector(`.threshold-fold.${side}`),
@@ -16,6 +18,8 @@
   const content = [...document.querySelectorAll('body > .skip-link, body > header, body > main, body > footer')];
   let started = null;
   let frame = 0;
+  let completed = false;
+  let waitingForArrival = false;
   let width, height, radius;
   const duration = 1850;
   const cutEnd = 0.56;
@@ -25,22 +29,34 @@
   try { threshold.hidden = sessionStorage.getItem(key) === '1'; } catch {}
   // Shared links should take visitors straight to the requested content.
   if (window.location?.hash) threshold.hidden = true;
+  // Motion preferences bypass both the arrival and the unfolding scene.
+  if (motion.matches) threshold.hidden = true;
   if (threshold.hidden) return;
   const previousOverflow = document.documentElement.style.overflow;
   document.documentElement.style.overflow = 'hidden';
+  const previousInert = content.map(element => element.inert);
   content.forEach(element => { element.inert = true; });
 
-  const finish = () => {
+  const finish = ({ restoreFocus = true } = {}) => {
+    if (completed) return;
+    completed = true;
     cancelAnimationFrame(frame);
     threshold.hidden = true;
     document.documentElement.style.overflow = previousOverflow;
-    content.forEach(element => { element.inert = false; });
+    content.forEach((element, index) => { element.inert = previousInert[index]; });
+    if (typeof window.CustomEvent === 'function') {
+      document.dispatchEvent(new window.CustomEvent('tonantzintla:entered'));
+    }
     try { sessionStorage.setItem(key, '1'); } catch {}
-    if (document.activeElement === enter) {
+    if (restoreFocus && (document.activeElement === enter || document.activeElement === skip)) {
       document.querySelector('.site-tab')?.focus({ preventScroll: true });
     }
     window.removeEventListener('resize', resize);
     window.removeEventListener('keydown', onKeyDown);
+    window.removeEventListener('hashchange', onHashChange);
+    window.removeEventListener('pagehide', onPageHide);
+    enter.removeEventListener('click', dismiss);
+    skip?.removeEventListener('click', finish);
     motion.removeEventListener('change', onMotionChange);
   };
 
@@ -95,13 +111,13 @@
   }
   function onMotionChange() { if (motion.matches) finish(); }
   function dismiss() {
-    if (threshold.hidden || threshold.classList.contains('departing')) return;
+    if (completed || waitingForArrival || threshold.hidden || threshold.classList.contains('departing')) return;
     if (motion.matches) { finish(); return; }
     // Finish the brief arrival first rather than replacing an in-flight transform.
-    const arrival = enter.getAnimations().find(animation => animation.playState === 'running');
+    const arrival = enter.getAnimations?.().find(animation => animation.playState === 'running');
     if (arrival) {
-      enter.disabled = true;
-      arrival.finished.then(() => { enter.disabled = false; dismiss(); }).catch(finish);
+      waitingForArrival = true;
+      arrival.finished.then(() => { waitingForArrival = false; dismiss(); }).catch(finish);
       return;
     }
     resize();
@@ -112,8 +128,14 @@
   function onKeyDown(event) {
     if (event.key === 'Escape') { event.preventDefault(); finish(); }
   }
+  function onHashChange() { if (window.location?.hash) finish({ restoreFocus: false }); }
+  function onPageHide() { finish({ restoreFocus: false }); }
   enter.addEventListener('click', dismiss);
+  skip?.addEventListener('click', finish);
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('resize', resize);
+  window.addEventListener('hashchange', onHashChange);
+  window.addEventListener('pagehide', onPageHide);
   motion.addEventListener('change', onMotionChange);
+  enter.focus({ preventScroll: true });
 })();

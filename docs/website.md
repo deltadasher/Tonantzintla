@@ -14,22 +14,31 @@ direct panel links, every demo trigger, native modal cleanup and focus return,
 clipboard success/denial feedback, and optional in-view decoration. The FAQ uses
 native HTML disclosure elements and needs no JavaScript.
 
-The homepage opens immediately. `gravity-scene.js` adds an optional WebGL2/WebGL
-material study: an asymmetric, ray-marched accretion stream derived from the
-project's actual mark. This is an artistic browser interpretation, not a
-simulation or a claim about the shell's own renderer. Drag or use focused arrow
-keys to rotate, pause its motion or reset the view. Instrument selection gently
-changes its material. Native controls and essential content remain stationary.
+The original black-hole mark arrival and unfolding opening are restored. Click
+the mark to open the observatory; the visible Skip intro button and Escape dismiss
+it immediately, including while it is arriving or unfolding. Reduced motion,
+session revisits and direct fragment links bypass it. Underlying content is only
+inert while the opening is shown; dismissal restores its prior state and returns
+focus from either intro button to the stable home link. Tab is never intercepted.
+Blocked storage does not prevent entry, and no JavaScript shows the site directly.
+
+`gravity-scene.js` adds an optional WebGL2/WebGL black-hole study: a dark central shadow, a thin luminous accretion disk,
+and light bent into a photon ring and lensed back of the disk. This is an artistic
+browser interpretation, not a simulation or a claim about the shell's renderer. Drag or use focused arrow
+keys to rotate, pause its motion or reset the view. Native controls and essential
+content remain stationary.
 
 The renderer compiles and links its own GLSL shaders, caps its pixel budget,
+keeps its animation clock paused behind the opening,
 and suspends animation offscreen, in hidden documents and on page departure.
 Reduced motion draws a still view. Context loss, missing WebGL or a shader
 failure restores the same-scene still study with a readable unavailable status. No FPS,
-hardware-acceleration or benchmark claims are made. There is no entrance gate.
+hardware-acceleration or benchmark claims are made. The decorative opening uses
+its own brief, finite transition.
 The still WebP is reproduced from the scene equations by the CPU asset script
 `tools/render_gravity_study.py`; producing it does not verify browser rendering.
-The retired threshold controller remains in source only for historical coverage.
-Without JavaScript, the sculpture, real mark, every instrument description, installation
+The opening controller and its integration have regression coverage.
+Without JavaScript, the black hole, real mark, every instrument description, installation
 commands and a direct recording link remain available; inactive controls hide.
 
 Local stylesheet and controller URLs carry content-hash revisions so cached

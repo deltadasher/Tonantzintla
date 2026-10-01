@@ -7,8 +7,8 @@ preview rather than a real session-lock or authentication test.
 
 The MP4 has no audio track and loads only when the visitor requests playback.
 
-`gravity-study.webp` is an original artistic 3D material study derived from
-Tonantzintla's imperfect black-hole silhouette. It is the still fallback for the
+`gravity-study.webp` is an original artistic black-hole study with a dark shadow, a thin
+luminous accretion disk and lensed light. It is the still fallback for the
 optional browser shader; it is not a screenshot of the shell or an astronomical
 simulation. `tools/render_gravity_study.py` reproduces the scene equations on the
 CPU using NumPy and Pillow. Producing this asset does not validate browser GLSL,

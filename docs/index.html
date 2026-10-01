@@ -11,11 +11,39 @@
     <link rel="icon" href="wabi-sabi-black-hole-mark.svg" type="image/svg+xml">
     <link rel="canonical" href="https://deltadasher.github.io/Tonantzintla/">
     <link rel="stylesheet" href="site.css?v=47467fb367e4">
+    <link rel="stylesheet" href="threshold.css?v=f26c42ae21ef">
     <title>Tonantzintla — An observatory you operate</title>
-    <noscript><style>.gravity-controls,.deck-orbit,.watch-button,#copy-install{display:none!important}.deck-panel[hidden]{display:grid!important}.deck-panel{margin-bottom:48px}.deck-display{display:block!important}</style></noscript>
+    <noscript><style>.threshold,.gravity-controls,.deck-orbit,.watch-button,#copy-install{display:none!important}.deck-panel[hidden]{display:grid!important}.deck-panel{margin-bottom:48px}.deck-display{display:block!important}</style></noscript>
   </head>
   <body class="home-page" id="top">
     <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="threshold" id="threshold" hidden role="region" aria-label="Enter Tonantzintla">
+      <svg class="threshold-peel" aria-hidden="true" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="threshold-surface" gradientUnits="userSpaceOnUse"
+            x2="100%" y2="100%">
+            <stop stop-color="#07080c" />
+            <stop offset=".63" stop-color="#0d0e16" />
+            <stop offset="1" stop-color="#13111a" />
+          </linearGradient>
+          <linearGradient id="threshold-fold" x2="0" y2="1">
+            <stop stop-color="#e9b872" stop-opacity=".2" />
+            <stop offset=".5" stop-color="#b7b8e8" stop-opacity=".08" />
+            <stop offset="1" stop-color="#07080c" stop-opacity=".6" />
+          </linearGradient>
+        </defs>
+        <path class="threshold-sheet top" fill="url(#threshold-surface)" />
+        <path class="threshold-sheet bottom" fill="url(#threshold-surface)" />
+        <path class="threshold-fold top" fill="url(#threshold-fold)" />
+        <path class="threshold-fold bottom" fill="url(#threshold-fold)" />
+        <path class="threshold-edge top" />
+        <path class="threshold-edge bottom" />
+      </svg>
+      <p class="threshold-hint mono">ENTER YOUR ORBIT <span>Click the black hole to unfold · Escape to skip</span></p>
+      <button class="threshold-hole" type="button"
+        aria-label="Open Tonantzintla"><img src="wabi-sabi-black-hole-mark.svg" width="640" height="534" alt=""></button>
+      <button class="threshold-skip" type="button" aria-keyshortcuts="Escape">Skip intro <span class="icon-arrow" aria-hidden="true"></span></button>
+    </div>
     <header class="site-header wrap">
       <a class="site-tab brand" href="./" aria-label="Tonantzintla home">
         <img src="wabi-sabi-black-hole-mark.svg" width="42" height="35" alt="">
@@ -33,7 +61,7 @@
         <div class="hero-topline wrap mono"><span>TONANTZINTLA 1.1 <span class="version-rule" aria-hidden="true"></span> A DESKTOP WITH CHARACTER</span><a href="https://github.com/deltadasher/Tonantzintla">QUICKSHELL / NIRI <span class="icon-arrow" aria-hidden="true"></span></a></div>
         <div class="gravity-stage" id="gravity-stage" role="group" tabindex="-1" aria-label="Still black-hole view">
           <canvas id="gravity-canvas" aria-hidden="true"></canvas>
-          <img class="gravity-fallback" src="assets/gravity-study.webp" width="1440" height="900" alt="" aria-hidden="true">
+          <img class="gravity-fallback" src="assets/gravity-study.webp?v=9364cf64536d" width="1440" height="900" alt="" aria-hidden="true">
           <div class="scene-axis scene-axis-top mono" aria-hidden="true"><span>+ </span> THE GRAVITY STUDY</div>
           <div class="scene-axis scene-axis-right mono" aria-hidden="true">ECCENTRICITY BELONGS HERE</div>
         </div>
@@ -62,7 +90,7 @@
       <section class="showcase wrap" id="desktop" aria-labelledby="showcase-title">
         <div class="section-heading" data-reveal>
           <div><span class="eyebrow">01 / IN ITS ELEMENT</span><h2 id="showcase-title">A working desktop.<br>With its own gravity.</h2></div>
-          <p>The sculpture above is a browser experiment.<br>This is Tonantzintla, running in a real Wayland session.</p>
+          <p>The black hole above is a browser study.<br>This is Tonantzintla, running in a real Wayland session.</p>
         </div>
         <div class="desktop-cinema" data-reveal>
           <div class="cinema-top mono"><span>TONANTZINTLA / DESKTOP RECORDING</span><span>13 SECONDS <span aria-hidden="true" class="icon-arrow icon-arrow-downright"></span></span></div>
@@ -171,7 +199,8 @@ cd Tonantzintla
       <div class="dialog-head mono"><span>TONANTZINTLA / IN MOTION</span><button type="button" data-close-demo aria-label="Close desktop recording">CLOSE <span aria-hidden="true">×</span></button></div>
       <video controls playsinline muted preload="none" poster="assets/desktop.webp"><source src="assets/desktop-demo.mp4" type="video/mp4">Your browser does not support embedded video. <a href="assets/desktop-demo.mp4">Watch the recording.</a></video>
     </dialog>
-    <script src="gravity-scene.js?v=e13bddd6e05f" defer></script>
+    <script src="threshold.js?v=e3771eceb34c" defer></script>
+    <script src="gravity-scene.js?v=0132eeccef8a" defer></script>
     <script src="site.js?v=28ee3d1ba3ac" defer></script>
   </body>
 </html>
