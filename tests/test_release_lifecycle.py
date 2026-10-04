@@ -34,7 +34,10 @@ class ReleaseLifecycleTests(unittest.TestCase):
             fake.write_text(f"#!{sys.executable}\nimport time\ntime.sleep(120)\n")
             fake.chmod(0o755)
             env = dict(os.environ, XDG_RUNTIME_DIR=folder, WAYLAND_DISPLAY="wayland-test",
+                       XDG_CONFIG_HOME=str(base / "config"),
                        PATH=folder + os.pathsep + os.environ["PATH"])
+            (base / "config/niri").mkdir(parents=True)
+            (base / "config/niri/config.kdl").write_text('binds { Mod+D { spawn "blackhole"; } }\n')
             command = [sys.executable, str(ROOT / "src/libexec/session-daemon.py")]
             try:
                 subprocess.run(command + ["start"], env=env, check=True, timeout=10)

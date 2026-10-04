@@ -581,6 +581,29 @@ fn install_niri(
         journal,
     )?;
     let target = plan.machine.config_home.join("niri/config.kdl");
+    // Preserve a verified, versioned ownership snapshot before the managed
+    // replacement. The transaction journal backup remains the immediate
+    // rollback mechanism; this snapshot is the user-facing recovery point.
+    if target.is_file() {
+        let ownership = plan.install_root.join("src/libexec/niri-ownership.py");
+        if ownership.is_file() {
+            let python = command_path(plan, "python3")
+                .context("python3 is required for Niri ownership snapshots")?;
+            run_recorded(
+                python,
+                vec![
+                    ownership.display().to_string(),
+                    "snapshot".into(),
+                    "--label".into(),
+                    "installer-before-replace".into(),
+                    "--config".into(),
+                    target.display().to_string(),
+                ],
+                store,
+                journal,
+            )?;
+        }
+    }
     backup_existing(&target, store, journal)?;
     if let Some(parent) = target.parent() {
         fs::create_dir_all(parent)?;
@@ -592,8 +615,29 @@ fn install_niri(
         )
     })?;
     fs::set_permissions(&target, fs::Permissions::from_mode(0o644))?;
-    journal.created_paths.push(target);
+    journal.created_paths.push(target.clone());
     store.save(journal)?;
+    // The newly installed candidate is now the explicitly authorized
+    // Tonantzintla configuration. This closes the transaction without
+    // treating our own managed write as an external edit on next start.
+    let ownership = plan.install_root.join("src/libexec/niri-ownership.py");
+    if ownership.is_file() {
+        let python = command_path(plan, "python3")
+            .context("python3 is required to record Niri ownership")?;
+        run_recorded(
+            python,
+            vec![
+                ownership.display().to_string(),
+                "accept".into(),
+                "--shell".into(),
+                "tonantzintla".into(),
+                "--config".into(),
+                target.display().to_string(),
+            ],
+            store,
+            journal,
+        )?;
+    }
     complete("niri-config", store, journal)
 }
 

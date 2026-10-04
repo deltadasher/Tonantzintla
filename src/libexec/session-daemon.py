@@ -13,6 +13,18 @@ import time
 
 
 ROOT = Path(__file__).resolve().parents[2]
+OWNERSHIP = ROOT / "src/libexec/niri-ownership.py"
+
+
+def ownership_allows_start():
+    if not OWNERSHIP.is_file():
+        return True, ""
+    result = subprocess.run([sys.executable, str(OWNERSHIP), "check", "--quiet"],
+                            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                            stderr=subprocess.PIPE, text=True)
+    if result.returncode:
+        return False, result.stderr.strip()
+    return True, ""
 
 
 def runtime():
@@ -83,6 +95,12 @@ def serve(directory):
         try:
             while not stopping:
                 if not display_path.exists() or display_path.stat().st_ino != identity:
+                    break
+                allowed, reason = ownership_allows_start()
+                if not allowed:
+                    log.write(("Tonantzintla supervisor stopped: " + reason + "\n").encode())
+                    terminate(child)
+                    child = None
                     break
                 if child is None:
                     child = subprocess.Popen(["qs", "-n", "-p", str(ROOT / "src/quickshell")],
@@ -159,6 +177,9 @@ def main():
         if state["root"] != str(ROOT):
             raise RuntimeError("Another checkout owns this session; stop it first")
         return
+    allowed, reason = ownership_allows_start()
+    if not allowed:
+        raise RuntimeError(reason or "Niri ownership needs attention")
     with (directory / "supervisor.log").open("w") as log:
         process = subprocess.Popen([sys.executable, __file__, "serve"],
             stdin=subprocess.DEVNULL, stdout=log, stderr=log, start_new_session=True)

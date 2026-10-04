@@ -10,4 +10,5 @@ Scope {
     ApertureBar { modelData: root.modelData; edge: "right" }
     ApertureBar { modelData: root.modelData; edge: "bottom" }
     ApertureBar { modelData: root.modelData; edge: "left" }
+    ApertureDock { modelData: root.modelData }
 }
