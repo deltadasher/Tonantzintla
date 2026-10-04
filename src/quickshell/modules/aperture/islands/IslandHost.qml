@@ -22,6 +22,7 @@ Loader {
             case "status": return Qt.resolvedUrl("StatusIsland.qml");
             case "tray": return Qt.resolvedUrl("TrayIsland.qml");
             case "controls": return Qt.resolvedUrl("ControlsIsland.qml");
+            case "dock": return Qt.resolvedUrl("DockIsland.qml");
             default: return "";
         }
     }

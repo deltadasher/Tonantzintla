@@ -42,7 +42,8 @@ PanelWindow {
     // The bottom drawer is part of the studio input mask. Keep it clear of the
     // live bar when the bar is docked at the bottom; otherwise it intercepts
     // presses before the real islands can start a drag.
-    readonly property real bottomDrawerClearance: currentEdge === "bottom" ? barThickness : 0
+    readonly property real bottomDrawerClearance: Settings.edgeHasIslands(outputName, "bottom")
+        ? barThickness + Settings.barMargin * 2 : 0
     readonly property var currentLayout: {
         Settings.layoutRevision;
         return Settings.getEdgeBarLayout(outputName, currentEdge);
@@ -58,6 +59,8 @@ PanelWindow {
     property string undoLayout: ""
     property string undoPlacements: ""
     property bool hasUndo: false
+    property bool undoDockEnabled: true
+    property string undoDockOutput: ""
 
     Component.onCompleted: {
         bottomDrawerRevealed = true;
@@ -73,7 +76,8 @@ PanelWindow {
         { id: "system_stats", name: "System Stats", glyph: "▤", desc: "Processor, memory, and temperature" },
         { id: "status",       name: "Status Array", glyph: "◉", desc: "Battery, network, Bluetooth, brightness" },
         { id: "tray",         name: "System Tray",  glyph: "⋯", desc: "StatusNotifier tray icons" },
-        { id: "controls",     name: "Controls",     glyph: "⚙", desc: "Quick actions and lock" }
+        { id: "controls",     name: "Controls",     glyph: "⚙", desc: "Quick actions and lock" },
+        { id: "dock",         name: "Dock",         glyph: "⊞", desc: "Pinned and running applications" }
     ]
 
     readonly property var colorSwatches: [
@@ -89,6 +93,8 @@ PanelWindow {
     function rememberUndo() {
         undoLayout = rawLayout;
         undoPlacements = Settings.barIslandPlacements;
+        undoDockEnabled = Settings.dockEnabled;
+        undoDockOutput = Settings.dockOutput;
         hasUndo = true;
     }
 
@@ -97,6 +103,8 @@ PanelWindow {
         if (isVertical) Settings.barLayoutVertical = undoLayout;
         else Settings.barLayoutHorizontal = undoLayout;
         Settings.barIslandPlacements = undoPlacements;
+        Settings.dockEnabled = undoDockEnabled;
+        Settings.dockOutput = undoDockOutput;
         hasUndo = false;
         showToast("Layout reverted");
     }
@@ -112,6 +120,12 @@ PanelWindow {
 
     function addIsland(zone, id) {
         rememberUndo();
+        if (id === "dock") {
+            Settings.dockEnabled = true;
+            Settings.dockOutput = outputName;
+            Settings.placeIsland(outputName, id, currentEdge, zone, [id]);
+            return;
+        }
         // The placement map only repositions islands that exist in the base
         // layout. Add the widget to that layout first, then pin it to the
         // edge/output being edited so it becomes visible immediately.
@@ -128,6 +142,7 @@ PanelWindow {
 
     function removeIsland(id) {
         rememberUndo();
+        if (id === "dock") { Settings.dockEnabled = false; return; }
         Settings.clearIslandPlacement(outputName, id);
         Settings.removeIslandFromLayout(isVertical, id);
         showToast("Removed " + id);
@@ -883,12 +898,13 @@ PanelWindow {
                                 border.color: Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.1)
 
                                 readonly property var loc: BarLayout.locate(root.currentLayout, modelData.id)
-                                readonly property var placement: Settings.getIslandPlacement(root.outputName, modelData.id)
+                                readonly property var placement: modelData.id === "dock" && Settings.dockEnabled
+                                    ? Settings.getDockPlacement(root.outputName) : Settings.getIslandPlacement(root.outputName, modelData.id)
                                 // An island may already live on another edge.
                                 // The shelf is global, so placement—not just
                                 // the layout projected onto this edge—defines
                                 // whether it has already been spawned.
-                                readonly property bool present: loc !== null || placement !== null
+                                readonly property bool present: modelData.id === "dock" ? Settings.dockEnabled : loc !== null || placement !== null
                                 readonly property string effectiveZone: placement && placement.zone
                                     ? placement.zone : loc ? loc.zone : ""
 
@@ -1000,7 +1016,8 @@ PanelWindow {
     Item {
         id: sideDrawer
         anchors.right: parent.right
-        anchors.rightMargin: root.sideDrawerOpen ? 0 : -width + 12
+        anchors.rightMargin: root.sideDrawerOpen
+            ? (Settings.edgeHasIslands(root.outputName, "right") ? root.barThickness + Settings.barMargin * 2 : 0) : -width + 12
         anchors.verticalCenter: parent.verticalCenter
         width: 292
         // Keep the appearance controls together rather than clipping the

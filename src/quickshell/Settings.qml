@@ -51,6 +51,18 @@ QtObject {
     // below. These aliases keep the public Settings.<name> surface stable;
     // writes flow into the adapter, which debounces a save to disk.
     property alias compact: settingsAdapter.compact
+    property alias dockEnabled: settingsAdapter.dockEnabled
+    property alias dockEdge: settingsAdapter.dockEdge
+    property alias dockOutput: settingsAdapter.dockOutput
+    property alias dockAlignment: settingsAdapter.dockAlignment
+    property alias dockIconSize: settingsAdapter.dockIconSize
+    property alias dockShowDelay: settingsAdapter.dockShowDelay
+    property alias dockHideDelay: settingsAdapter.dockHideDelay
+    property alias dockHoverLift: settingsAdapter.dockHoverLift
+    property alias dockShowRunning: settingsAdapter.dockShowRunning
+    property alias dockPins: settingsAdapter.dockPins
+    property alias dockShowLauncher: settingsAdapter.dockShowLauncher
+    property alias dockIconOverrides: settingsAdapter.dockIconOverrides
     property alias motion: settingsAdapter.motion
     property alias barIconMotion: settingsAdapter.barIconMotion
     property alias osdVolume: settingsAdapter.osdVolume
@@ -241,8 +253,37 @@ QtObject {
         const primaryEdge = getEffectiveBarPosition(outputName);
         const primaryVertical = primaryEdge === "left" || primaryEdge === "right";
         const base = getEffectiveBarLayout(outputName, primaryVertical);
-        return BarPlacement.layoutFor(base, primaryEdge, edge,
+        const layout = BarPlacement.layoutFor(base, primaryEdge, edge,
             barIslandPlacements, outputName);
+        // Dock has the same placement record as other islands, but keeps a
+        // hover-reveal host outside edit mode. Legacy edge settings are only
+        // a fallback until its first shared-placement edit.
+        const dock = getDockPlacement(outputName);
+        ["start", "center", "end"].forEach(function(zone) {
+            layout[zone] = layout[zone].filter(id => id !== "dock");
+        });
+        if (dockEnabled && dockOnOutput(outputName) && dock.edge === edge) {
+            const list = layout[dock.zone];
+            list.splice(Math.max(0, Math.min(list.length, Number(dock.order) || 0)), 0, "dock");
+        }
+        return layout;
+    }
+
+    function dockOnOutput(name) {
+        const screens = Quickshell.screens;
+        return dockOutput === "*" || dockOutput === name
+            || ((!dockOutput || !screens.some(s => s.name === dockOutput))
+                && screens.length > 0 && screens[0].name === name);
+    }
+
+    function getDockPlacement(outputName) {
+        const saved = getIslandPlacement(outputName, "dock");
+        return saved && BarPlacement.edges.indexOf(saved.edge) >= 0
+            && BarPlacement.zones.indexOf(saved.zone) >= 0 ? saved : {
+                edge: BarPlacement.edges.indexOf(dockEdge) >= 0 ? dockEdge : "bottom",
+                zone: dockAlignment < 1 / 3 ? "start" : dockAlignment > 2 / 3 ? "end" : "center",
+                order: 0
+            };
     }
 
     function edgeHasIslands(outputName, edge) {
@@ -488,6 +529,18 @@ QtObject {
         adapter: JsonAdapter {
             id: settingsAdapter
             property bool compact: false
+            property bool dockEnabled: true
+            property string dockEdge: "bottom"
+            property string dockOutput: ""
+            property real dockAlignment: 0.5
+            property int dockIconSize: 44
+            property int dockShowDelay: 140
+            property int dockHideDelay: 550
+            property bool dockHoverLift: true
+            property bool dockShowRunning: true
+            property string dockPins: "[]"
+            property bool dockShowLauncher: true
+            property string dockIconOverrides: "{}"
             property bool motion: true
             property bool barIconMotion: true
             property bool osdVolume: true

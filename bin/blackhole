@@ -25,6 +25,7 @@ Lifecycle:
   restart                 Stop and start Tonantzintla
   status                  Show matching Quickshell instances
   daemon ACTION           Session supervisor: status or logs
+  niri ACTION             Inspect, accept, restore, or hand off Niri ownership
 
 Surfaces:
   open TAB                Open an Ephemeris surface
@@ -119,6 +120,18 @@ require_argument() {
 }
 
 settings_file="${TONANTZINTLA_SETTINGS:-${XDG_CONFIG_HOME:-${HOME:?}/.config}/tonantzintla/settings.json}"
+niri_ownership="$libexec/niri-ownership.py"
+
+check_niri_start_allowed() {
+    # Older installed runtimes predate the ownership ledger. Preserve their
+    # existing lifecycle until the next transactional update installs it.
+    [[ -f "$niri_ownership" ]] || return 0
+    if ! python3 "$niri_ownership" check --quiet; then
+        printf 'Tonantzintla did not start because Niri ownership needs attention.\n' >&2
+        printf 'Run: blackhole niri status\n' >&2
+        return 1
+    fi
+}
 
 setting_value() {
     local key="$1"
@@ -387,10 +400,12 @@ case "$command_name" in
         exec qs -p "$shell_root"
         ;;
     start)
+        check_niri_start_allowed
         retire_legacy_session
         exec python3 "$libexec/session-daemon.py" start
         ;;
     session-start)
+        check_niri_start_allowed
         retire_legacy_session
         export TONANTZINTLA_SESSION_INGRESS=1
         if [[ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/bus" ]]; then
@@ -416,6 +431,7 @@ case "$command_name" in
         qs -p "$shell_root" kill
         ;;
     restart)
+        check_niri_start_allowed
         retire_legacy_session
         python3 "$libexec/session-daemon.py" stop
         qs -p "$shell_root" kill >/dev/null 2>&1 || true
@@ -425,6 +441,36 @@ case "$command_name" in
         case "${2:-status}" in
             status|logs) exec python3 "$libexec/session-daemon.py" "${2:-status}" ;;
             *) printf 'Usage: blackhole daemon [status|logs]\n' >&2; exit 2 ;;
+        esac
+        ;;
+    niri)
+        action="${2:-status}"
+        case "$action" in
+            status|inspect)
+                exec python3 "$niri_ownership" inspect ;;
+            check)
+                exec python3 "$niri_ownership" check ;;
+            accept)
+                exec python3 "$niri_ownership" accept --shell "${3:-}" ;;
+            restore)
+                exec python3 "$niri_ownership" restore ;;
+            handoff)
+                require_argument "blackhole niri handoff" "${3:-}"
+                exec python3 "$niri_ownership" handoff --shell "$3" ;;
+            disable|enable)
+                python3 "$niri_ownership" "$action"
+                if [[ "$action" == "disable" ]]; then
+                    python3 "$libexec/session-daemon.py" stop || true
+                    qs -p "$shell_root" kill >/dev/null 2>&1 || true
+                fi
+                ;;
+            snapshot)
+                exec python3 "$niri_ownership" snapshot --label "${3:-manual}"
+                ;;
+            *)
+                printf 'Usage: blackhole niri [status|check|accept [shell]|restore|handoff <shell>|disable|enable|snapshot [label]]\n' >&2
+                exit 2
+                ;;
         esac
         ;;
     status)
