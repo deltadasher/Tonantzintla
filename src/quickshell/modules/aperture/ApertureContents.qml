@@ -40,9 +40,15 @@ Item {
 
     readonly property var activeLayout: {
         Settings.layoutRevision;
-        return previewMode
+        const layout = previewMode
             ? (window.isVertical ? Settings.activeLayoutVertical : Settings.activeLayoutHorizontal)
             : Settings.getEdgeBarLayout(window.outputName, window.effectivePosition);
+        // In normal use the dock owns only a thin hover target. It must not
+        // reserve an empty bar strip; in Studio it is a normal draggable island.
+        if (ShellState.barEditMode && !previewMode) return layout;
+        return { start: layout.start.filter(id => id !== "dock"),
+            center: layout.center.filter(id => id !== "dock"),
+            end: layout.end.filter(id => id !== "dock") };
     }
     readonly property bool hasIslands: activeLayout.start.length + activeLayout.center.length
         + activeLayout.end.length > 0

@@ -6,12 +6,16 @@ import "../.."
 import "../../components"
 import "../../components/BarLayout.js" as BarLayout
 import "../../services"
+import "."
 
 PanelWindow {
     id: root
 
     required property var modelData
     screen: modelData
+    readonly property bool isDock: ShellState.activeIslandSettingsId === "dock"
+    focusable: true
+    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
 
     // Flipped once the window exists so the scrim and card animate in from the
     // island rather than snapping into place fully formed.
@@ -43,7 +47,7 @@ PanelWindow {
         system_stats: "▤",
         status: "◉",
         tray: "⋯",
-        controls: "⚙"
+        controls: "⚙", dock: "⊞"
     })
 
     readonly property var islandTitles: ({
@@ -55,7 +59,7 @@ PanelWindow {
         system_stats: "System stats",
         status: "Status and controls",
         tray: "System tray",
-        controls: "Quick controls"
+        controls: "Quick controls", dock: "Dock"
     })
 
     readonly property real popoverX: {
@@ -112,10 +116,10 @@ PanelWindow {
     // Main Popover Card
     Rectangle {
         id: card
-        x: root.popoverX
-        y: root.popoverY
-        width: 308
-        height: contentCol.implicitHeight + 24
+        x: root.isDock ? (root.width - width) / 2 : root.popoverX
+        y: root.isDock ? (root.height - height) / 2 : root.popoverY
+        width: root.isDock ? Math.min(860, root.width - 48) : 308
+        height: root.isDock ? Math.min(710, root.height - 64) : contentCol.implicitHeight + 24
         radius: 10
         color: Qt.rgba(Theme.mantle.r, Theme.mantle.g, Theme.mantle.b, 0.96)
         border.width: 0
@@ -153,8 +157,19 @@ PanelWindow {
             border.width: 0
         }
 
+        Loader {
+            anchors.fill: parent
+            anchors.margins: 24
+            active: root.isDock
+            sourceComponent: DockSettings {
+                outputName: root.modelData.name
+                onCloseRequested: ShellState.closeIslandSettings()
+            }
+        }
+
         ColumnLayout {
             id: contentCol
+            visible: !root.isDock
             anchors.top: parent.top
             anchors.topMargin: 12
             anchors.left: parent.left

@@ -288,7 +288,7 @@ Item {
         selectedDate = new Date(target.getFullYear(), target.getMonth(), day);
         viewYear = target.getFullYear();
         viewMonth = target.getMonth();
-        deploy();
+        moonFace.requestPaint();
     }
 
     function moveYear(amount) {
@@ -897,8 +897,6 @@ Item {
                 width: index === root.viewMonth ? 36 : 28; height: width
                 x: watch.width / 2 + Math.cos(angle) * watch.width * 0.325 - width / 2
                 y: watch.height / 2 + Math.sin(angle) * watch.height * 0.325 - height / 2
-                Behavior on x { enabled: Settings.motion && ringSpinner.activeRing !== "month"; NumberAnimation { duration: 470; easing.type: Easing.OutBack; easing.overshoot: 1.10 } }
-                Behavior on y { enabled: Settings.motion && ringSpinner.activeRing !== "month"; NumberAnimation { duration: 470; easing.type: Easing.OutBack; easing.overshoot: 1.10 } }
                 opacity: root.calendarFaceReveal
                 scale: 0.72 + root.calendarFaceReveal * 0.28
                 Behavior on width { enabled: Settings.motion; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
@@ -912,13 +910,12 @@ Item {
                     anchors.centerIn: parent; text: root.monthNames[monthMark.index]
                     color: monthMark.current || monthMark.index === root.viewMonth ? Theme.void_ : Theme.muted
                     font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Black
-                    visible: monthMark.index === root.viewMonth || monthMark.current || monthMark.distance <= 1
-                    opacity: monthMark.index === root.viewMonth ? 1 : 0.58
+                    opacity: monthMark.index === root.viewMonth ? 1 : 0.78
                 }
                 Rectangle {
                     anchors.centerIn: parent
                     width: 3; height: 3; radius: 2
-                    visible: monthMark.distance > 1 && !monthMark.current
+                    visible: false
                     color: Theme.muted; opacity: 0.22
                 }
             }
@@ -941,8 +938,6 @@ Item {
                 z: chosen ? 8 : 3
                 opacity: root.calendarFaceReveal
                 scale: 0.68 + root.calendarFaceReveal * 0.32
-                Behavior on x { enabled: Settings.motion && ringSpinner.activeRing !== "day"; NumberAnimation { duration: 420; easing.type: Easing.OutBack; easing.overshoot: 1.08 } }
-                Behavior on y { enabled: Settings.motion && ringSpinner.activeRing !== "day"; NumberAnimation { duration: 420; easing.type: Easing.OutBack; easing.overshoot: 1.08 } }
                 Behavior on width { enabled: Settings.motion; NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
                 Behavior on height { enabled: Settings.motion; NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
                 Rectangle {
@@ -954,13 +949,12 @@ Item {
                     anchors.centerIn: parent; text: dayMark.day
                     color: dayMark.chosen || dayMark.isToday ? Theme.void_ : Theme.moon
                     font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Black
-                    visible: dayMark.chosen || dayMark.isToday || dayMark.distance <= 5
-                    opacity: dayMark.chosen || dayMark.isToday ? 1 : dayMark.distance <= 2 ? 0.84 : 0.42
+                    opacity: dayMark.chosen || dayMark.isToday ? 1 : 0.78
                 }
                 Rectangle {
                     anchors.centerIn: parent
                     width: 2; height: 2; radius: 1
-                    visible: dayMark.distance > 5 && !dayMark.isToday
+                    visible: false
                     color: Theme.muted; opacity: 0.16
                 }
                 MouseArea {
@@ -1052,12 +1046,73 @@ Item {
             hoverEnabled: true
             cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
             property string activeRing: ""
-            property real pressAngle: 0
             property real lastAngle: 0
-            property real cumulativeAngle: 0
-            property int pressDay: 1
-            property int pressMonth: 0
-            property int pendingSteps: 0
+            property real dayVelocity: 0
+            property real monthVelocity: 0
+            property double lastSample: 0
+
+            function tick(ring, dt) {
+                if (activeRing === ring) return;
+                let velocity = ring === "day" ? dayVelocity : monthVelocity;
+                let angle = ring === "day" ? root.daySpinAngle : root.monthSpinAngle;
+                const step = Math.PI * 2 / (ring === "day" ? root.daysInMonth : 12);
+                if (!Settings.motion || Math.abs(velocity) < step * 0.8) {
+                    // The residual already identifies the nearest selected label.
+                    // Settle geometry only: don't restart deployment or selection.
+                    velocity = 0;
+                    angle = Settings.motion ? angle * Math.exp(-14 * dt) : 0;
+                    if (Math.abs(angle) < 0.0001) angle = 0;
+                    if (ring === "day") root.daySpinAngle = angle;
+                    else root.monthSpinAngle = angle;
+                } else {
+                    const decay = Math.exp(-2.4 * dt);
+                    advance(ring, velocity * (1 - decay) / 2.4);
+                    velocity *= decay;
+                }
+                if (ring === "day") dayVelocity = velocity;
+                else monthVelocity = velocity;
+            }
+
+            // Rebase the residual as the top marker crosses each label. The
+            // label geometry stays continuous while selection changes live.
+            function advance(ring, movement) {
+                const count = ring === "day" ? root.daysInMonth : 12;
+                const step = Math.PI * 2 / count;
+                const angle = (ring === "day" ? root.daySpinAngle : root.monthSpinAngle) + movement;
+                const steps = Math.round(angle / step);
+                const residual = angle - steps * step;
+                if (ring === "day") {
+                    if (steps)
+                        root.selectDay(((root.selectedIndex - steps) % count + count) % count + 1);
+                    root.daySpinAngle = residual;
+                } else {
+                    if (steps) root.moveMonth(-steps);
+                    root.monthSpinAngle = residual;
+                }
+            }
+
+            function ringAt(x, y) {
+                const radius = Math.hypot(x - width / 2, y - height / 2) / width;
+                return radius >= 0.18 && radius <= 0.275 ? "day"
+                    : radius >= 0.285 && radius <= 0.35 ? "month" : "";
+            }
+
+            onEnabledChanged: if (!enabled) {
+                dayVelocity = 0;
+                monthVelocity = 0;
+                activeRing = "";
+            }
+
+            onWheel: function(wheel) {
+                const ring = ringAt(wheel.x, wheel.y);
+                if (!ring) { wheel.accepted = false; return; }
+                const delta = wheel.angleDelta.y || wheel.angleDelta.x;
+                const movement = -delta / 120 * Math.PI * 2 / (ring === "day" ? root.daysInMonth : 12);
+                advance(ring, movement);
+                if (ring === "day") dayVelocity = Settings.motion ? movement * 5 : 0;
+                else monthVelocity = Settings.motion ? movement * 5 : 0;
+                wheel.accepted = true;
+            }
 
             function pointerAngle(mouse) {
                 return Math.atan2(mouse.y - height / 2, mouse.x - width / 2);
@@ -1076,16 +1131,10 @@ Item {
                     mouse.accepted = false;
                     return;
                 }
-                pressAngle = pointerAngle(mouse);
-                lastAngle = pressAngle;
-                cumulativeAngle = 0;
-                pressDay = root.selectedDate.getDate();
-                pressMonth = root.viewMonth;
-                pendingSteps = 0;
-                settleDay.stop();
-                settleMonth.stop();
-                root.daySpinAngle = 0;
-                root.monthSpinAngle = 0;
+                lastAngle = pointerAngle(mouse);
+                lastSample = Date.now();
+                if (activeRing === "day") dayVelocity = 0;
+                else monthVelocity = 0;
             }
 
             onPositionChanged: function(mouse) {
@@ -1094,53 +1143,45 @@ Item {
                 let movement = angle - lastAngle;
                 while (movement > Math.PI) movement -= Math.PI * 2;
                 while (movement < -Math.PI) movement += Math.PI * 2;
-                cumulativeAngle += movement;
                 lastAngle = angle;
-                const delta = cumulativeAngle;
-                if (activeRing === "day") {
-                    root.daySpinAngle = delta;
-                    pendingSteps = Math.round(delta / (Math.PI * 2 / root.daysInMonth));
-                } else {
-                    root.monthSpinAngle = delta;
-                    pendingSteps = Math.round(delta / (Math.PI * 2 / 12));
-                }
+                const now = Date.now();
+                const velocity = Math.max(-12, Math.min(12, movement * 1000 / Math.max(8, now - lastSample)));
+                lastSample = now;
+                advance(activeRing, movement);
+                if (activeRing === "day") dayVelocity = velocity;
+                else monthVelocity = velocity;
             }
 
             onReleased: function() {
                 const ring = activeRing;
-                const steps = pendingSteps;
                 activeRing = "";
-                if (ring === "day") {
-                    const stepAngle = Math.PI * 2 / root.daysInMonth;
-                    const residual = root.daySpinAngle - steps * stepAngle;
-                    const day = ((pressDay - 1 - steps) % root.daysInMonth + root.daysInMonth) % root.daysInMonth + 1;
-                    root.selectDay(day);
-                    root.daySpinAngle = residual;
-                    settleDay.restart();
-                } else if (ring === "month") {
-                    const stepAngle = Math.PI * 2 / 12;
-                    const residual = root.monthSpinAngle - steps * stepAngle;
-                    root.selectMonth(pressMonth - steps);
-                    root.monthSpinAngle = residual;
-                    settleMonth.restart();
+                if (!Settings.motion || Date.now() - lastSample > 120) {
+                    if (ring === "day") dayVelocity = 0;
+                    else monthVelocity = 0;
                 }
             }
             onCanceled: {
                 activeRing = "";
-                settleDay.restart();
-                settleMonth.restart();
+                dayVelocity = 0;
+                monthVelocity = 0;
             }
         }
 
-        NumberAnimation {
-            id: settleDay
-            target: root; property: "daySpinAngle"; to: 0
-            duration: Settings.motion ? 150 : 0; easing.type: Easing.OutCubic
-        }
-        NumberAnimation {
-            id: settleMonth
-            target: root; property: "monthSpinAngle"; to: 0
-            duration: Settings.motion ? 150 : 0; easing.type: Easing.OutCubic
+        Timer {
+            interval: 16
+            repeat: true
+            running: root.visible && ringSpinner.enabled
+                && ((ringSpinner.activeRing !== "day" && (ringSpinner.dayVelocity !== 0 || root.daySpinAngle !== 0))
+                    || (ringSpinner.activeRing !== "month" && (ringSpinner.monthVelocity !== 0 || root.monthSpinAngle !== 0)))
+            property double previousTime: 0
+            onRunningChanged: previousTime = Date.now()
+            onTriggered: {
+                const now = Date.now();
+                const dt = Math.min(0.05, (now - previousTime) / 1000);
+                previousTime = now;
+                ringSpinner.tick("day", dt);
+                ringSpinner.tick("month", dt);
+            }
         }
 
         Item {
