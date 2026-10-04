@@ -7,6 +7,16 @@ import unittest
 
 
 class BarControlsTests(unittest.TestCase):
+    def test_dock_editor_handle_uses_project_logo_not_an_app_cluster(self):
+        repo = Path(__file__).resolve().parents[1]
+        island = (repo / 'src/quickshell/modules/aperture/islands/DockIsland.qml').read_text()
+        self.assertIn('BarIsland {', island)
+        self.assertIn('islandId: "dock"', island)
+        self.assertIn('WabiSabiBlackHole {', island)
+        self.assertNotIn('Repeater {', island)
+        self.assertNotIn('DesktopEntries', island)
+        self.assertNotIn('MouseArea {', island)
+
     def test_bar_buttons_scale_inside_their_owning_island(self):
         repo = Path(__file__).resolve().parents[1]
         button = (repo / 'src/quickshell/components/BarButton.qml').read_text()

@@ -30,6 +30,11 @@ class SurfaceCompileTests(unittest.TestCase):
         sources += [qml / "modules/ephemeris/widgets/catalog/QuickInstrument.qml",
                     qml / "modules/osd/OsdBody.qml",
                     qml / "modules/auth/AuthenticationCard.qml"]
+        # PanelWindow hosts need a real Wayland backend; this offscreen harness
+        # checks their reusable contents, not native surface construction.
+        sources += [qml / "modules/aperture/DockSettings.qml",
+                    qml / "modules/aperture/DockAppButton.qml",
+                    qml / "components/DockFluidSurface.qml"]
         with tempfile.TemporaryDirectory(prefix="tonantzintla-compile-") as directory:
             env = dict(os.environ, XDG_RUNTIME_DIR=directory,
                        QT_QPA_PLATFORM="offscreen", QT_QUICK_BACKEND="software",
