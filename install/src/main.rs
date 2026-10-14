@@ -109,7 +109,7 @@ fn canonical_source(path: &std::path::Path) -> Result<PathBuf> {
         .canonicalize()
         .with_context(|| format!("source checkout does not exist: {}", path.display()))?;
     if !is_source(&path) {
-        bail!("{} is not an Tonantzintla source checkout", path.display());
+        bail!("{} is not a Tonantzintla source checkout", path.display());
     }
     Ok(path)
 }
