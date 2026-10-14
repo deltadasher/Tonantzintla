@@ -21,7 +21,6 @@ from pathlib import Path
 
 
 SHELL = "tonantzintla"
-FOREIGN = ("serpantinum", "serpantinumd")
 SCHEMA = 1
 
 
@@ -189,8 +188,6 @@ def inspection(state: dict, path: Path) -> dict:
         classification = "intentional-switch"
     elif shell == "serpantinum":
         classification = "unexpected-overwrite"
-    elif shell == SHELL:
-        classification = "user-edit"
     else:
         classification = "user-edit"
     return {
@@ -310,8 +307,8 @@ def cmd_restore(args: argparse.Namespace) -> int:
     target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile("wb", dir=target.parent, prefix=".tonantzintla-restore-", delete=False) as staged:
         staged_path = Path(staged.name)
-        staged.write_bytes(source.read_bytes())
     try:
+        staged_path.write_bytes(source.read_bytes())
         valid, detail = validate(staged_path)
         if not valid:
             print(f"Staged restoration failed validation: {detail}", file=os.sys.stderr)
@@ -343,7 +340,6 @@ def main() -> int:
     if args.action == "accept": return cmd_accept(args)
     if args.action == "handoff": return cmd_handoff(args)
     if args.action in ("disable", "enable"):
-        args.action = args.action
         return cmd_disabled(args)
     if args.action == "snapshot": return cmd_snapshot(args)
     if args.action == "restore": return cmd_restore(args)

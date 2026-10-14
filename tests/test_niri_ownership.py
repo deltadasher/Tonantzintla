@@ -1,5 +1,4 @@
 import importlib.util
-import json
 import os
 from pathlib import Path
 import stat
@@ -118,6 +117,15 @@ class NiriOwnershipTests(unittest.TestCase):
         self.config.write_text('include "other-shell.kdl"\n')
         self.assertEqual(self.invoke("restore"), 1)
         self.assertIn("other-shell", self.config.read_text())
+
+    def test_verified_snapshot_is_restored(self):
+        self.accept_tonantzintla()
+        original = self.config.read_text()
+        self.config.write_text('include "other-shell.kdl"\n')
+        self.assertEqual(self.invoke("restore"), 0)
+        self.assertEqual(self.config.read_text(), original)
+        self.assertEqual(list(self.config.parent.glob(".tonantzintla-restore-*")), [])
+        self.assertEqual(self.invoke("check", "--quiet"), 0)
 
 
 if __name__ == "__main__":

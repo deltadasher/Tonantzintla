@@ -6,7 +6,7 @@ script_path="$(readlink -f -- "${BASH_SOURCE[0]}")"
 script_dir="$(cd -- "$(dirname -- "$script_path")" && pwd)"
 project_root="$(cd -- "$script_dir/../.." && pwd)"
 
-instance_output="$(qs -p "$project_root" list 2>/dev/null || true)"
+instance_output="$(qs -p "$project_root/src/quickshell" list 2>/dev/null || true)"
 mapfile -t roots < <(awk '/Process ID:/ { print $3 }' <<<"$instance_output")
 
 if (( ${#roots[@]} == 0 )); then
