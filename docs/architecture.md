@@ -170,7 +170,7 @@ The intended contract is shared bounds for backing and rounded masking with
 fixed-size content. Integrate and validate that contract before restoring the
 experimental settings toggle. It is not a general SDF metaball renderer.
 Compact widgets may expose `preferredSurfaceHeight`; the live host clamps it to
-the registry's screen bounds. See gemini-roadmap-1.1.md for the integration gate.
+the registry's screen bounds.
 
 `output-preview.py` owns session-only Niri scaling previews. Its independent
 watchdog has a runtime-directory lock and per-preview confirmation token. It
