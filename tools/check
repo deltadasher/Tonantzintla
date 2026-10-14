@@ -35,9 +35,10 @@ declare -A tool_hint=(
     [python3]="python"
     [qmllint]="qt6-declarative (Arch keeps it in /usr/lib/qt6/bin)"
     [cargo]="rust"
+    [node]="nodejs"
 )
 missing_tools=()
-for tool in python3 qmllint cargo; do
+for tool in python3 qmllint cargo node; do
     command -v "$tool" >/dev/null 2>&1 || missing_tools+=("$tool")
 done
 
@@ -71,10 +72,16 @@ if has_tool qmltestrunner; then
 else
     printf 'SKIP qmltestrunner is unavailable; transition tests were not run.\n'
 fi
+if has_tool node; then
+    node --test tests/*.cjs
+else
+    printf 'SKIP node is unavailable; website and dock model tests were not run.\n'
+fi
 bash tests/test_cli.sh
 bash -n bin/blackhole tools/check \
     src/libexec/tonantzintla-profile src/libexec/snipping-tool src/libexec/umbra-greeter \
-    src/libexec/umbra-greeter-portable src/libexec/wallpaper-apply tests/test_cli.sh
+    src/libexec/umbra-greeter-portable src/libexec/wallpaper-apply src/libexec/audio-recover \
+    src/libexec/obarun-audit tests/test_cli.sh
 sh -n src/libexec/tonantzintla-notify
 if has_tool cargo; then
     cargo fmt --manifest-path install/Cargo.toml -- --check
@@ -127,6 +134,7 @@ if ((${#missing_tools[@]})); then
         case "$tool" in
             qmllint) printf '  - validate any QML file\n' ;;
             cargo) printf '  - build or test the installer crate\n' ;;
+            node) printf '  - run the website and dock model tests\n' ;;
             *) printf '  - run the %s checks\n' "$tool" ;;
         esac
     done

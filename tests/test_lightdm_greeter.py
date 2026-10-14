@@ -1,10 +1,12 @@
 """Unit tests for Umbra LightDM web-greeter state machine."""
 from pathlib import Path
+import shutil
 import subprocess
 import unittest
 
 
 class LightDmGreeterTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which("node"), "Node.js is not installed")
     def test_greeter_state_machine_with_node_harness(self):
         project_root = Path(__file__).resolve().parents[1]
         greeter_js = project_root / "src/quickshell/modules/umbra/greeter/lightdm/index.js"

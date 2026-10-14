@@ -139,5 +139,57 @@ class WallpaperValidationTests(unittest.TestCase):
                 self.assertEqual(self.online.cached_search("nebula"), entries)
 
 
+class ParallaxImportTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.library = load_script("wallpaper-library.py")
+
+    def test_import_preserves_source_and_existing_names(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "sky.png"
+            source.write_bytes(b"original")
+            with mock.patch.object(self.library, "library_home", return_value=root / "library"), \
+                 mock.patch.object(self.library, "validate_import"):
+                first = self.library.import_files([source.as_uri()])
+                second = self.library.import_files([str(source)])
+            self.assertTrue(first["ok"] and second["ok"])
+            self.assertNotEqual(first["imported"], second["imported"])
+            self.assertEqual(source.read_bytes(), b"original")
+            self.assertEqual(Path(first["imported"][0]).read_bytes(), b"original")
+
+    def test_remote_paths_rejected(self):
+        for path in ("https://example.com/a.png", "file://server/a.png", "relative.png"):
+            with self.assertRaises(ValueError):
+                self.library.local_path(path)
+
+    def test_invalid_import_copies_nothing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "fake.png"
+            source.write_text("not an image")
+            with mock.patch.object(self.library, "library_home", return_value=root / "library"):
+                result = self.library.import_files([str(source)])
+            self.assertFalse(result["ok"])
+            self.assertEqual(result["imported"], [])
+            self.assertFalse((root / "library").exists())
+
+    def test_favorites_persist_and_malformed_state_is_preserved(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            image = root / "sky.png"
+            image.write_bytes(b"image")
+            state = root / "state.json"
+            with mock.patch.object(self.library, "state_file", return_value=state):
+                self.library.set_favorite(str(image), True)
+                self.assertIn(str(image), self.library.read_favorites())
+                self.library.set_favorite(str(image), False)
+                self.assertEqual(self.library.read_favorites(), set())
+                state.write_text("broken")
+                with self.assertRaises(ValueError):
+                    self.library.set_favorite(str(image), True)
+                self.assertEqual(state.read_text(), "broken")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -26,15 +26,15 @@ system_telemetry = load_script("system-telemetry.py")
 
 
 class NetworkSummaryTests(unittest.TestCase):
-    def test_iw_link_fallback_recognizes_obarun_wifi(self) -> None:
-        output = """Connected to 10:e1:77:20:b7:c0 (on wlp0s20f3)
-\tSSID: SETUP-B7BB
+    def test_iw_link_fallback_reads_connected_network(self) -> None:
+        output = """Connected to 02:00:00:00:00:01 (on wlp0s20f3)
+\tSSID: ExampleNet
 \tfreq: 5220.0
 \tsignal: -47 dBm
 """
         row = network_state.parse_iw_link(output)
         self.assertIsNotNone(row)
-        self.assertEqual("SETUP-B7BB", row["ssid"])
+        self.assertEqual("ExampleNet", row["ssid"])
         self.assertEqual("5220", row["frequency"])
         self.assertEqual(100, row["signal"])
         self.assertTrue(row["connected"])

@@ -19,7 +19,7 @@ def load(name):
     return module
 
 
-class ReleaseLifecycleTests(unittest.TestCase):
+class SessionDaemonTests(unittest.TestCase):
     def test_real_supervisor_restart_and_session_exit(self):
         module = load("session-daemon")
         with tempfile.TemporaryDirectory() as folder:
