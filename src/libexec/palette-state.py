@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate and cache an Tonantzintla Matugen palette for an image or video."""
+"""Generate and cache a Tonantzintla Matugen palette for an image or video."""
 
 from __future__ import annotations
 

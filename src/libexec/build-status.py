@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Compare installed runtime files with their recorded source checkout."""
 from pathlib import Path
-import sys
 
 
 def differences(source, installed):
