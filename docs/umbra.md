@@ -75,8 +75,7 @@ before `sddm.login` is called, because SDDM begins the session immediately after
 accepting that request. LightDM's web theme waits for the same bounded capture
 window after `authentication_complete` before calling `start_session_sync`.
 This LightDM delay is a prototype, not a tested prompt/retry state machine;
-completion-event gating and failed-session recovery remain P0 handoff work in
-[the Gemini roadmap](gemini-roadmap-1.1.md). SDDM has a rejection recoil; LightDM
+completion-event gating and failed-session recovery remain open work. SDDM has a rejection recoil; LightDM
 currently reports rejection as text and clears the password. A successful Niri session starts
 Tonantzintla through `session-start`, which holds an opaque Umbra veil and opens
 a circular aperture onto the desktop.

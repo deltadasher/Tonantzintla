@@ -2,9 +2,6 @@
 
 Updated: 2026-09-05. Audience: coding and design agents working on this repository.
 
-For the current Gemini handoff, start with
-[the dated 1.1 roadmap](gemini-roadmap-1.1.md), including its P0 integration gaps.
-
 ## 1. The product, in one sentence
 
 An observatory you operate: astronomy gives the interface its identity, while
