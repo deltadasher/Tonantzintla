@@ -22,7 +22,7 @@ import urllib.parse
 import urllib.request
 
 
-USER_AGENT = "Tonantzintla/1.0 wallpaper-browser (https://github.com/deltadasher/Astralith)"
+USER_AGENT = "Tonantzintla/1.0 wallpaper-browser (https://github.com/deltadasher/Tonantzintla)"
 MAX_RESULTS = 24
 QUERY_LIMIT = 32
 MAX_DOWNLOAD = 64 * 1024 * 1024
