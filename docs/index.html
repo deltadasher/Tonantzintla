@@ -4,14 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="theme-color" content="#0b0b0d">
-    <meta name="description" content="An observatory you operate. An expressive Quickshell desktop for Niri, with orbital wallpapers, fluid instruments and a little gravitational pull.">
+    <meta name="description" content="Tonantzintla is a Quickshell desktop shell for Niri: a bar you arrange yourself, on-demand tools, an orbiting wallpaper library, a music console and a lock screen.">
     <meta property="og:title" content="Tonantzintla — An observatory you operate">
-    <meta property="og:description" content="Five instruments. One expressive Linux desktop. Built with Quickshell for Niri.">
+    <meta property="og:description" content="A Quickshell desktop shell for Niri, with a little gravitational pull.">
     <meta property="og:image" content="https://deltadasher.github.io/Tonantzintla/assets/desktop.webp">
     <link rel="icon" href="wabi-sabi-black-hole-mark.svg" type="image/svg+xml">
     <link rel="canonical" href="https://deltadasher.github.io/Tonantzintla/">
-    <link rel="stylesheet" href="site.css?v=47467fb367e4">
-    <link rel="stylesheet" href="threshold.css?v=f26c42ae21ef">
+    <link rel="stylesheet" href="site.css?v=cbbef128c001">
+    <link rel="stylesheet" href="threshold.css?v=203726d4f4bb">
     <title>Tonantzintla — An observatory you operate</title>
     <noscript><style>.threshold,.gravity-controls,.deck-orbit,.watch-button,#copy-install{display:none!important}.deck-panel[hidden]{display:grid!important}.deck-panel{margin-bottom:48px}.deck-display{display:block!important}</style></noscript>
   </head>
@@ -50,94 +50,82 @@
         <span>tonantzintla</span>
       </a>
       <nav aria-label="Main navigation">
-        <a href="#instruments">The instruments</a>
-        <a href="#philosophy">The attitude</a>
-        <a class="nav-install" href="#install">Get the shell <span aria-hidden="true" class="icon-arrow"></span></a>
+        <a href="#instruments">Instruments</a>
+        <a href="#philosophy">Design</a>
+        <a href="https://github.com/deltadasher/Tonantzintla">GitHub</a>
+        <a class="nav-install" href="#install">Install</a>
       </nav>
     </header>
 
     <main id="main-content">
       <section class="hero observatory" aria-labelledby="hero-title">
-        <div class="hero-topline wrap mono"><span>TONANTZINTLA 1.1 <span class="version-rule" aria-hidden="true"></span> A DESKTOP WITH CHARACTER</span><a href="https://github.com/deltadasher/Tonantzintla">QUICKSHELL / NIRI <span class="icon-arrow" aria-hidden="true"></span></a></div>
         <div class="gravity-stage" id="gravity-stage" role="group" tabindex="-1" aria-label="Still black-hole view">
           <canvas id="gravity-canvas" aria-hidden="true"></canvas>
           <img class="gravity-fallback" src="assets/gravity-study.webp?v=9364cf64536d" width="1440" height="900" alt="" aria-hidden="true">
-          <div class="scene-axis scene-axis-top mono" aria-hidden="true"><span>+ </span> THE GRAVITY STUDY</div>
-          <div class="scene-axis scene-axis-right mono" aria-hidden="true">ECCENTRICITY BELONGS HERE</div>
         </div>
         <div class="hero-composition wrap">
           <div class="hero-copy">
             <h1 id="hero-title">An observatory<br>you <span>operate.</span></h1>
-            <p class="hero-lede">Strange shapes. Ordinary tasks.<br>A Linux desktop with a little gravitational pull.</p>
+            <p class="hero-lede">A Linux desktop with a little gravitational pull.<br>Built with Quickshell for Niri.</p>
             <div class="hero-actions"><a class="button primary" href="#instruments">Explore the instruments <span class="icon-arrow" aria-hidden="true"></span></a><button class="button watch-button hero-watch" type="button" data-watch><span class="small-play" aria-hidden="true"></span>See the real desktop</button></div>
           </div>
         </div>
         <div class="hero-foot wrap">
-          <div class="gravity-readout"><span class="scene-index mono">01 / AN EXPLORATION IN GRAVITY</span><p id="gravity-status" role="status">A still study of the black hole</p></div>
+          <div class="gravity-readout"><p id="gravity-status" role="status">A still study of the black hole</p></div>
           <div class="gravity-controls"><span class="gravity-hint" id="gravity-hint">Drag the view to turn it</span><button type="button" id="gravity-motion" aria-pressed="false">Pause motion</button><button type="button" id="gravity-reset">Reset view <span aria-hidden="true">↺</span></button></div>
         </div>
       </section>
 
-      <div class="spec-strip">
-        <div class="wrap mono">
-          <span>BUILT FOR NIRI</span>
-          <span>ARCH DERIVATIVES + OBARUN</span>
-          <span>QUICKSHELL + QT 6</span>
-          <span>OPEN SOURCE / GPL-3.0</span>
-        </div>
-      </div>
-
       <section class="showcase wrap" id="desktop" aria-labelledby="showcase-title">
         <div class="section-heading" data-reveal>
-          <div><span class="eyebrow">01 / IN ITS ELEMENT</span><h2 id="showcase-title">A working desktop.<br>With its own gravity.</h2></div>
-          <p>The black hole above is a browser study.<br>This is Tonantzintla, running in a real Wayland session.</p>
+          <h2 id="showcase-title">Yes, this is<br>someone’s desktop.</h2>
+          <p>The black hole above is drawn by your browser. This is Tonantzintla itself, recorded in a Niri session.</p>
         </div>
         <div class="desktop-cinema" data-reveal>
-          <div class="cinema-top mono"><span>TONANTZINTLA / DESKTOP RECORDING</span><span>13 SECONDS <span aria-hidden="true" class="icon-arrow icon-arrow-downright"></span></span></div>
           <img src="assets/desktop.webp" width="1600" height="900" alt="Tonantzintla’s Aperture bar across a desktop with a deep blue cosmic wallpaper" loading="eager" fetchpriority="high">
-          <button class="watch-button cinema-watch" type="button" data-watch><span class="play-icon" aria-hidden="true"></span><span>See it move<small>A little time inside the shell</small></span><span class="watch-arrow icon-arrow" aria-hidden="true"></span></button>
+          <button class="watch-button cinema-watch" type="button" data-watch><span class="play-icon" aria-hidden="true"></span><span>Play the recording<small>13 seconds, no sound</small></span><span class="watch-arrow icon-arrow" aria-hidden="true"></span></button>
         </div>
-        <div class="showcase-foot mono"><span>ACTUAL DESKTOP CAPTURE / SEPTEMBER 2026</span><a href="assets/desktop-demo.mp4">Open the recording <span aria-hidden="true" class="icon-arrow"></span></a></div>
+        <div class="showcase-foot"><span>Recorded September 2026.</span><a href="assets/desktop-demo.mp4">Open the video file <span aria-hidden="true" class="icon-arrow"></span></a></div>
       </section>
 
       <section id="instruments" class="instrument-section" aria-labelledby="instruments-title">
         <div class="wrap">
           <div class="section-heading" data-reveal>
-            <div><span class="eyebrow">02 / THE INSTRUMENT DECK</span><h2 id="instruments-title">One shell.<br><em>Five ways into your day.</em></h2></div>
-            <p>Choose an instrument in the orbit. Every destination has a purpose, from the bar at your fingertips to the view behind it all.</p>
+            <h2 id="instruments-title">Five instruments, one shell.</h2>
+            <p>Each part of the shell does one job. Pick one to see it.</p>
           </div>
           <div class="deck" data-reveal>
             <div class="deck-orbit">
               <svg class="instrument-orbit" viewBox="0 0 480 520" aria-hidden="true"><ellipse cx="240" cy="260" rx="182" ry="211" transform="rotate(-23 240 260)"/><ellipse class="inner" cx="240" cy="260" rx="105" ry="145" transform="rotate(27 240 260)"/><path d="M228 260h24M240 248v24"/></svg>
-              <div class="orbit-center" aria-hidden="true"><img src="wabi-sabi-black-hole-mark.svg" width="160" height="134" alt=""><span class="mono">ONE SHARED RUNTIME</span></div>
+              <div class="orbit-center" aria-hidden="true"><img src="wabi-sabi-black-hole-mark.svg" width="160" height="134" alt=""></div>
               <div class="deck-tabs" role="tablist" aria-label="Explore the instruments">
-              <button type="button" role="tab" id="tab-aperture" aria-controls="panel-aperture" aria-selected="true" tabindex="0" data-instrument="aperture"><span class="tab-number mono">01</span><span>Aperture<small>The everyday bar</small></span><span class="tab-arrow icon-arrow" aria-hidden="true"></span></button>
-              <button type="button" role="tab" id="tab-ephemeris" aria-controls="panel-ephemeris" aria-selected="false" tabindex="-1" data-instrument="ephemeris"><span class="tab-number mono">02</span><span>Ephemeris<small>Tools on demand</small></span><span class="tab-arrow icon-arrow" aria-hidden="true"></span></button>
-              <button type="button" role="tab" id="tab-parallax" aria-controls="panel-parallax" aria-selected="false" tabindex="-1" data-instrument="parallax"><span class="tab-number mono">03</span><span>Parallax<small>The wallpaper orbit</small></span><span class="tab-arrow icon-arrow" aria-hidden="true"></span></button>
-              <button type="button" role="tab" id="tab-resonance" aria-controls="panel-resonance" aria-selected="false" tabindex="-1" data-instrument="resonance"><span class="tab-number mono">04</span><span>Resonance<small>The audio console</small></span><span class="tab-arrow icon-arrow" aria-hidden="true"></span></button>
-              <button type="button" role="tab" id="tab-umbra" aria-controls="panel-umbra" aria-selected="false" tabindex="-1" data-instrument="umbra"><span class="tab-number mono">05</span><span>Umbra<small>The session veil</small></span><span class="tab-arrow icon-arrow" aria-hidden="true"></span></button>
+              <button type="button" role="tab" id="tab-aperture" aria-controls="panel-aperture" aria-selected="true" tabindex="0" data-instrument="aperture"><span>Aperture<small>The everyday bar</small></span><span class="tab-arrow icon-arrow" aria-hidden="true"></span></button>
+              <button type="button" role="tab" id="tab-ephemeris" aria-controls="panel-ephemeris" aria-selected="false" tabindex="-1" data-instrument="ephemeris"><span>Ephemeris<small>Tools on demand</small></span><span class="tab-arrow icon-arrow" aria-hidden="true"></span></button>
+              <button type="button" role="tab" id="tab-parallax" aria-controls="panel-parallax" aria-selected="false" tabindex="-1" data-instrument="parallax"><span>Parallax<small>The wallpaper orbit</small></span><span class="tab-arrow icon-arrow" aria-hidden="true"></span></button>
+              <button type="button" role="tab" id="tab-resonance" aria-controls="panel-resonance" aria-selected="false" tabindex="-1" data-instrument="resonance"><span>Resonance<small>The audio console</small></span><span class="tab-arrow icon-arrow" aria-hidden="true"></span></button>
+              <button type="button" role="tab" id="tab-umbra" aria-controls="panel-umbra" aria-selected="false" tabindex="-1" data-instrument="umbra"><span>Umbra<small>The session veil</small></span><span class="tab-arrow icon-arrow" aria-hidden="true"></span></button>
             </div>
             </div>
             <div class="deck-display">
               <section class="deck-panel" role="tabpanel" id="panel-aperture" aria-labelledby="tab-aperture" tabindex="0">
-                <div class="deck-copy"><span class="eyebrow">APERTURE / THE EVERYDAY BAR</span><h3>Everything within reach.<br>Nothing in your way.</h3><p>Workspaces, media, time, and system readings, kept together in a bar you can arrange around the way you work.</p><ul class="instrument-points"><li>Move and reorder your islands</li><li>Choose horizontal or vertical layouts</li><li>Open a tool on the display you’re using</li></ul><a class="text-link" href="suite/aperture.html">Inside Aperture <span aria-hidden="true" class="icon-arrow"></span></a></div>
-                <div class="deck-image"><img src="assets/desktop.webp" width="1600" height="900" alt="Aperture’s workspaces, media, clock, and system islands along the top edge of the desktop" loading="lazy"><span class="image-label mono">01 / THE EVERYDAY BAR</span></div>
+                <div class="deck-copy"><h3>A bar you arrange yourself.</h3><p>Workspaces, media, time, and system readings, kept together in a bar you can arrange around the way you work.</p><ul class="instrument-points"><li>Move and reorder your islands</li><li>Choose horizontal or vertical layouts</li><li>Open a tool on the display you’re using</li></ul><a class="text-link" href="suite/aperture.html">Inside Aperture <span aria-hidden="true" class="icon-arrow"></span></a></div>
+                <div class="deck-image"><img src="assets/desktop.webp" width="1600" height="900" alt="Aperture’s workspaces, media, clock, and system islands along the top edge of the desktop" loading="lazy"></div>
               </section>
               <section class="deck-panel" role="tabpanel" id="panel-ephemeris" aria-labelledby="tab-ephemeris" tabindex="0" hidden>
-                <div class="deck-copy"><span class="eyebrow">EPHEMERIS / TOOLS ON DEMAND</span><h3>A little more room<br>for the important stuff.</h3><p>Search, calendar, settings, network, clipboard, and the tools that deserve more than a tiny dropdown. Open what you need, then get back to it.</p><ul class="instrument-points"><li>Find apps and shell actions by name</li><li>Keep everyday tools in one place</li><li>Set your appearance, controls, and motion</li></ul><a class="text-link" href="suite/ephemeris.html">Inside Ephemeris <span aria-hidden="true" class="icon-arrow"></span></a></div>
-                <div class="deck-image"><img src="assets/ephemeris.webp" width="1440" height="810" alt="An Ephemeris instrument open over the recorded desktop" loading="lazy"><span class="image-label mono">02 / TOOLS ON DEMAND</span></div>
+                <div class="deck-copy"><h3>Bigger tools, opened when you need them.</h3><p>Search, calendar, settings, network, clipboard, and the tools that deserve more than a tiny dropdown. Open what you need, then get back to it.</p><ul class="instrument-points"><li>Find apps and shell actions by name</li><li>Keep everyday tools in one place</li><li>Set your appearance, controls, and motion</li></ul><a class="text-link" href="suite/ephemeris.html">Inside Ephemeris <span aria-hidden="true" class="icon-arrow"></span></a></div>
+                <div class="deck-image"><img src="assets/ephemeris.webp" width="1440" height="810" alt="An Ephemeris instrument open over the recorded desktop" loading="lazy"></div>
               </section>
               <section class="deck-panel" role="tabpanel" id="panel-parallax" aria-labelledby="tab-parallax" tabindex="0" hidden>
-                <div class="deck-copy"><span class="eyebrow">PARALLAX / THE WALLPAPER ORBIT</span><h3>A different view.<br>Your same universe.</h3><p>Your wallpaper library, with a little gravitational pull of its own. Browse an open orbit, preview the view, and apply it when it feels right.</p><ul class="instrument-points"><li>Browse local and bundled wallpapers</li><li>Preview before applying</li><li>Choose the output you want to change</li></ul><a class="text-link" href="suite/parallax.html">Inside Parallax <span aria-hidden="true" class="icon-arrow"></span></a></div>
-                <div class="deck-image"><img src="assets/parallax.webp" width="1440" height="810" alt="Parallax’s circular wallpaper previews orbiting a selected image against the desktop" loading="lazy"><span class="image-label mono">03 / THE WALLPAPER ORBIT</span></div>
+                <div class="deck-copy"><h3>Your wallpapers, in orbit.</h3><p>Your wallpaper library, laid out as an orbit instead of a grid.</p><ul class="instrument-points"><li>Browse local and bundled wallpapers</li><li>Preview before applying</li><li>Choose the output you want to change</li></ul><a class="text-link" href="suite/parallax.html">Inside Parallax <span aria-hidden="true" class="icon-arrow"></span></a></div>
+                <div class="deck-image"><img src="assets/parallax.webp" width="1440" height="810" alt="Parallax’s circular wallpaper previews orbiting a selected image against the desktop" loading="lazy"></div>
               </section>
               <section class="deck-panel" role="tabpanel" id="panel-resonance" aria-labelledby="tab-resonance" tabindex="0" hidden>
-                <div class="deck-copy"><span class="eyebrow">RESONANCE / THE AUDIO CONSOLE</span><h3>Good music.<br>A little room to bend it.</h3><p>Playback, lyrics, spectrum, and pitch controls live beside the music. Switch between the players your session exposes and shape what you hear.</p><ul class="instrument-points"><li>Play, pause, skip, and seek</li><li>Read lyrics when available</li><li>Explore audio routing and effects</li></ul><a class="text-link" href="suite/resonance.html">Inside Resonance <span aria-hidden="true" class="icon-arrow"></span></a></div>
-                <div class="deck-image"><img src="assets/resonance.webp" width="1440" height="810" alt="Resonance’s Pitcher interface with semitone, fine-tune, and mix controls inside its rounded audio surface" loading="lazy"><span class="image-label mono">04 / THE AUDIO CONSOLE</span></div>
+                <div class="deck-copy"><h3>Music you can bend.</h3><p>Playback, lyrics, spectrum, and pitch controls live beside the music. Switch between the players your session exposes and shape what you hear.</p><ul class="instrument-points"><li>Play, pause, skip, and seek</li><li>Read lyrics when available</li><li>Explore audio routing and effects</li></ul><a class="text-link" href="suite/resonance.html">Inside Resonance <span aria-hidden="true" class="icon-arrow"></span></a></div>
+                <div class="deck-image"><img src="assets/resonance.webp" width="1440" height="810" alt="Resonance’s Pitcher interface with semitone, fine-tune, and mix controls inside its rounded audio surface" loading="lazy"></div>
               </section>
               <section class="deck-panel" role="tabpanel" id="panel-umbra" aria-labelledby="tab-umbra" tabindex="0" hidden>
-                <div class="deck-copy"><span class="eyebrow">UMBRA / THE SESSION VEIL</span><h3>Your own eclipse.<br>A proper session lock.</h3><p>A dedicated Wayland session-lock process with PAM authentication and an independently customizable interface. Start with the visual preview, then validate locking on your system.</p><ul class="instrument-points"><li>Separate lock and preview processes</li><li>Customize motion and atmosphere</li><li>Read the first-lock guidance before use</li></ul><a class="text-link" href="suite/umbra.html">Inside Umbra <span aria-hidden="true" class="icon-arrow"></span></a></div>
-                <div class="deck-image"><img src="assets/umbra-preview.png" width="2559" height="1440" alt="Umbra’s visual preview with an asymmetric clock and an off-center event horizon" loading="lazy"><span class="image-label mono">05 / VISUAL PREVIEW</span></div>
+                <div class="deck-copy"><h3>A real session lock with its own look.</h3><p>A separate lock process that uses the Wayland session-lock protocol and PAM, with an interface you can customize. Try the preview before your first real lock.</p><ul class="instrument-points"><li>Separate lock and preview processes</li><li>Customize motion and atmosphere</li><li>Read the first-lock guidance before use</li></ul><a class="text-link" href="suite/umbra.html">Inside Umbra <span aria-hidden="true" class="icon-arrow"></span></a></div>
+                <div class="deck-image"><img src="assets/umbra-preview.png" width="2559" height="1440" alt="Umbra’s visual preview with an asymmetric clock and an off-center event horizon" loading="lazy"><span class="image-label">Lock preview</span></div>
               </section>
             </div>
           </div>
@@ -145,14 +133,14 @@
       </section>
 
       <section class="manifesto wrap" id="philosophy" aria-labelledby="philosophy-title">
-        <div class="manifesto-aside"><span class="eyebrow">03 / THE ATTITUDE</span><img src="wabi-sabi-black-hole-mark.svg" width="150" height="125" alt="" loading="lazy"></div>
+        <div class="manifesto-aside"><img src="wabi-sabi-black-hole-mark.svg" width="150" height="125" alt="" loading="lazy"></div>
         <div class="manifesto-main" data-reveal>
-          <h2 id="philosophy-title">Keep the strange.<br><em>Make it useful.</em></h2>
-          <p class="manifesto-lede">Astronomy gives Tonantzintla its identity. Everyday controls remain legible, predictable and useful. Open orbits, imperfect silhouettes and flowing surfaces are intentional.</p>
+          <h2 id="philosophy-title">Strange to look at.<br>Predictable to use.</h2>
+          <p class="manifesto-lede">Astronomy gives Tonantzintla its look: open orbits, imperfect silhouettes and surfaces that unfold instead of snapping open. The controls underneath stay legible and stay put.</p>
           <div class="principles">
-            <div><span class="mono">01 / USEFUL FIRST</span><h3>It has a job.</h3><p>Controls you can find. Tools that say what they do. Space for the things you use every day.</p></div>
-            <div><span class="mono">02 / STILL A LITTLE STRANGE</span><h3>Keep the character.</h3><p>Open orbits, flowing surfaces, and imperfect silhouettes. Let the surface flow. Keep the controls steady.</p></div>
-            <div><span class="mono">03 / YOUR OWN ORBIT</span><h3>Make it yours.</h3><p>Your apps, fonts, wallpaper, bar layout, and motion. Your desktop should fit how you actually use it.</p></div>
+            <div><h3>Useful first</h3><p>Every control has one clear destination, and every tool says what it does.</p></div>
+            <div><h3>Motion stays out of the way</h3><p>Surfaces bend and morph, but buttons never move out from under your pointer. Motion can be reduced or turned off in Settings.</p></div>
+            <div><h3>Yours to arrange</h3><p>Choose your apps, fonts, wallpaper, bar layout and motion in Settings.</p></div>
           </div>
         </div>
       </section>
@@ -160,14 +148,14 @@
       <section class="install-section" id="install" aria-labelledby="install-title">
         <div class="wrap install-layout">
           <div class="install-copy" data-reveal>
-            <span class="eyebrow">04 / COME ON IN</span><h2 id="install-title">Your desktop.<br><em>Your own orbit.</em></h2>
-            <p>Tonantzintla 1.1 is built with Quickshell for Niri. Start with the supported setup: Arch Linux, similar derivatives, or Obarun.</p>
+            <h2 id="install-title">Install Tonantzintla</h2>
+            <p>Tonantzintla 1.1 runs on Niri with Quickshell. It is tested on Arch Linux, Arch-based distributions and Obarun.</p>
             <a class="button primary" href="https://github.com/deltadasher/Tonantzintla#install">Read the installation guide <span aria-hidden="true" class="icon-arrow"></span></a>
             <div class="install-links"><a href="https://github.com/deltadasher/Tonantzintla/releases">Release history <span aria-hidden="true" class="icon-arrow"></span></a><a href="https://github.com/deltadasher/Tonantzintla/blob/main/docs/dependencies.md">Dependencies <span aria-hidden="true" class="icon-arrow"></span></a></div>
             <p class="support-note">Artix is intentionally unsupported.</p>
           </div>
           <div class="install-console" data-reveal>
-            <div class="console-head mono"><span><span class="console-dot" aria-hidden="true"></span>TERMINAL / NIRI SETUP</span><button type="button" id="copy-install">Copy commands <span aria-hidden="true" class="icon-arrow"></span></button></div>
+            <div class="console-head"><button type="button" id="copy-install">Copy commands</button></div>
             <pre id="install-commands">sudo pacman -S --needed git rust
 git clone https://github.com/deltadasher/Tonantzintla.git
 cd Tonantzintla
@@ -179,7 +167,7 @@ cd Tonantzintla
       </section>
 
       <section class="faq-section wrap" aria-labelledby="faq-title">
-        <div class="faq-heading"><span class="eyebrow">BEFORE YOU ENTER ORBIT</span><h2 id="faq-title">A few<br>good questions.</h2><a class="text-link" href="https://github.com/deltadasher/Tonantzintla/issues">Something else? Open an issue <span aria-hidden="true" class="icon-arrow"></span></a></div>
+        <div class="faq-heading"><h2 id="faq-title">Questions</h2><a class="text-link" href="https://github.com/deltadasher/Tonantzintla/issues">Something else? Open an issue <span aria-hidden="true" class="icon-arrow"></span></a></div>
         <div class="faq-list">
           <details class="faq-item"><summary>Is this a whole Linux distribution?<span aria-hidden="true">+</span></summary><div><p>It’s a desktop shell built with Quickshell for your Wayland session. It brings together a bar, desktop tools, wallpaper and music interfaces, and the Umbra lock screen. Your applications and operating system stay yours.</p></div></details>
           <details class="faq-item"><summary>Which systems does it support?<span aria-hidden="true">+</span></summary><div><p>Niri is the supported compositor. The project is tested on Arch Linux, similar derivatives, and Obarun. Artix is intentionally unsupported. Optional features need their own backends; check the <a href="https://github.com/deltadasher/Tonantzintla/blob/main/docs/dependencies.md">dependency guide</a> for your setup.</p></div></details>
@@ -191,12 +179,12 @@ cd Tonantzintla
     </main>
 
     <footer>
-      <div class="wrap footer-top"><a class="brand" href="#top" aria-label="Back to top"><img src="wabi-sabi-black-hole-mark.svg" width="45" height="38" alt=""><span>tonantzintla</span></a><p>A little gravitational pull.<br><span>A lot of personality.</span></p><a class="round-link" href="#top" aria-label="Back to top"><span class="icon-arrow icon-arrow-up" aria-hidden="true"></span></a></div>
-      <div class="wrap footer-bottom"><span>BUILT BY <a href="https://github.com/deltadasher">DELTADASHER</a> · 2026</span><div><a href="https://github.com/deltadasher/Tonantzintla">GitHub <span class="icon-arrow" aria-hidden="true"></span></a><a href="https://github.com/deltadasher/Tonantzintla/issues">Issues <span class="icon-arrow" aria-hidden="true"></span></a><a href="https://github.com/deltadasher/Tonantzintla/blob/main/LICENSE">GPL-3.0-or-later <span class="icon-arrow" aria-hidden="true"></span></a></div></div>
+      <div class="wrap footer-top"><a class="brand" href="#top" aria-label="Back to top"><img src="wabi-sabi-black-hole-mark.svg" width="45" height="38" alt=""><span>tonantzintla</span></a><a class="round-link" href="#top" aria-label="Back to top"><span class="icon-arrow icon-arrow-up" aria-hidden="true"></span></a></div>
+      <div class="wrap footer-bottom"><span>Made by <a href="https://github.com/deltadasher">deltadasher</a>, 2026</span><div><a href="https://github.com/deltadasher/Tonantzintla">GitHub <span class="icon-arrow" aria-hidden="true"></span></a><a href="https://github.com/deltadasher/Tonantzintla/issues">Issues <span class="icon-arrow" aria-hidden="true"></span></a><a href="https://github.com/deltadasher/Tonantzintla/blob/main/LICENSE">GPL-3.0-or-later <span class="icon-arrow" aria-hidden="true"></span></a></div></div>
     </footer>
 
     <dialog id="demo-dialog" aria-label="Tonantzintla desktop recording">
-      <div class="dialog-head mono"><span>TONANTZINTLA / IN MOTION</span><button type="button" data-close-demo aria-label="Close desktop recording">CLOSE <span aria-hidden="true">×</span></button></div>
+      <div class="dialog-head"><span>Desktop recording</span><button type="button" data-close-demo aria-label="Close desktop recording">Close <span aria-hidden="true">×</span></button></div>
       <video controls playsinline muted preload="none" poster="assets/desktop.webp"><source src="assets/desktop-demo.mp4" type="video/mp4">Your browser does not support embedded video. <a href="assets/desktop-demo.mp4">Watch the recording.</a></video>
     </dialog>
     <script src="threshold.js?v=c0afab658ebf" defer></script>
