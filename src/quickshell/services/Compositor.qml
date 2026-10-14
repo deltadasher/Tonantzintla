@@ -4,7 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Stable compositor API for the shell. The 1.0 backend uses Niri's
+// Stable compositor API for the shell. The backend uses Niri's
 // newline-delimited JSON event stream and short-lived action sockets.
 QtObject {
     id: root

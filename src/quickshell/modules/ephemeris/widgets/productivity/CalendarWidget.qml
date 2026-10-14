@@ -675,8 +675,8 @@ Item {
                             if (point.visible)
                                 points.push(point);
                         }
-                        // Never bridge a hidden hemisphere with the enormous
-                        // straight polygons the old globe occasionally drew.
+                        // Skip a landmass that is partly on the far side;
+                        // joining its visible points draws chords across the globe.
                         if (points.length !== landmasses[mass].length)
                             continue;
                         ctx.beginPath();

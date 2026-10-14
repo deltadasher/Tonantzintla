@@ -599,10 +599,8 @@ ClippingRectangle {
                 border.color: Theme.barHairlineHover
                 clip: true
 
-                // A track without lyrics carries Tonantzintla's actual mark—not
-                // a second, realistic black-hole interpretation. The original
-                // asymmetric stream stays intact and takes its colour from the
-                // active palette.
+                // A track without lyrics shows the project mark, keeping its
+                // asymmetric stream and taking its colour from the palette.
                 WabiSabiBlackHole {
                     width: parent.width * 0.92
                     height: Math.min(parent.height * 0.52, 350)
@@ -850,8 +848,8 @@ ClippingRectangle {
                     }
 
                     // The needle head breathes with the live signal as a
-                    // scene-graph item: a Canvas repainting at spectrum rate
-                    // is exactly what the performance audit removed.
+                    // scene-graph item; repainting a Canvas at spectrum rate
+                    // is too expensive.
                     Rectangle {
                         readonly property real pitchAngle: -Math.PI / 2
                             + pitchInstrument.shownSemitones / 12 * Math.PI

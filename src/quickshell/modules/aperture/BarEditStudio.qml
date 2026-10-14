@@ -271,7 +271,7 @@ PanelWindow {
         }
     }
 
-    // One edge-attached landing tongue replaces the old cursor circle/tether.
+    // One edge-attached landing tongue marks the drop target.
     // Its location communicates both the chosen edge and aligned third.
     Rectangle {
         id: edgeLanding
