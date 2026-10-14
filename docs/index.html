@@ -10,8 +10,8 @@
     <meta property="og:image" content="https://deltadasher.github.io/Tonantzintla/assets/desktop.webp">
     <link rel="icon" href="wabi-sabi-black-hole-mark.svg" type="image/svg+xml">
     <link rel="canonical" href="https://deltadasher.github.io/Tonantzintla/">
-    <link rel="stylesheet" href="site.css?v=cbbef128c001">
-    <link rel="stylesheet" href="threshold.css?v=203726d4f4bb">
+    <link rel="stylesheet" href="site.css?v=beff5b680cc6">
+    <link rel="stylesheet" href="threshold.css?v=e268fd65d5ff">
     <title>Tonantzintla — An observatory you operate</title>
     <noscript><style>.threshold,.gravity-controls,.deck-orbit,.watch-button,#copy-install{display:none!important}.deck-panel[hidden]{display:grid!important}.deck-panel{margin-bottom:48px}.deck-display{display:block!important}</style></noscript>
   </head>
@@ -39,7 +39,7 @@
         <path class="threshold-edge top" />
         <path class="threshold-edge bottom" />
       </svg>
-      <p class="threshold-hint mono">ENTER YOUR ORBIT <span>Click the black hole to unfold · Escape to skip</span></p>
+      <p class="threshold-hint">Click the black hole to enter</p>
       <button class="threshold-hole" type="button"
         aria-label="Open Tonantzintla"><img src="wabi-sabi-black-hole-mark.svg" width="640" height="534" alt=""></button>
       <button class="threshold-skip" type="button" aria-keyshortcuts="Escape">Skip intro <span class="icon-arrow" aria-hidden="true"></span></button>
@@ -71,7 +71,7 @@
           </div>
         </div>
         <div class="hero-foot wrap">
-          <div class="gravity-readout"><p id="gravity-status" role="status">A still study of the black hole</p></div>
+          <div class="gravity-readout"><p class="visually-hidden" id="gravity-status" role="status">A still study of the black hole</p></div>
           <div class="gravity-controls"><span class="gravity-hint" id="gravity-hint">Drag the view to turn it</span><button type="button" id="gravity-motion" aria-pressed="false">Pause motion</button><button type="button" id="gravity-reset">Reset view <span aria-hidden="true">↺</span></button></div>
         </div>
       </section>
@@ -79,20 +79,18 @@
       <section class="showcase wrap" id="desktop" aria-labelledby="showcase-title">
         <div class="section-heading" data-reveal>
           <h2 id="showcase-title">Yes, this is<br>someone’s desktop.</h2>
-          <p>The black hole above is drawn by your browser. This is Tonantzintla itself, recorded in a Niri session.</p>
         </div>
         <div class="desktop-cinema" data-reveal>
           <img src="assets/desktop.webp" width="1600" height="900" alt="Tonantzintla’s Aperture bar across a desktop with a deep blue cosmic wallpaper" loading="eager" fetchpriority="high">
           <button class="watch-button cinema-watch" type="button" data-watch><span class="play-icon" aria-hidden="true"></span><span>Play the recording<small>13 seconds, no sound</small></span><span class="watch-arrow icon-arrow" aria-hidden="true"></span></button>
         </div>
-        <div class="showcase-foot"><span>Recorded September 2026.</span><a href="assets/desktop-demo.mp4">Open the video file <span aria-hidden="true" class="icon-arrow"></span></a></div>
+        <div class="showcase-foot"><a href="assets/desktop-demo.mp4">Open the video file <span aria-hidden="true" class="icon-arrow"></span></a></div>
       </section>
 
       <section id="instruments" class="instrument-section" aria-labelledby="instruments-title">
         <div class="wrap">
           <div class="section-heading" data-reveal>
             <h2 id="instruments-title">Five instruments, one shell.</h2>
-            <p>Each part of the shell does one job. Pick one to see it.</p>
           </div>
           <div class="deck" data-reveal>
             <div class="deck-orbit">
