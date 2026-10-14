@@ -20,5 +20,4 @@
 @media(max-width:600px) { .threshold-hole { width:min(76vw,520px); } .threshold-skip { top:16px; right:16px; } }
 
 /* The hint is decoration; the mark remains the single target. */
-.threshold-hint { position:absolute; bottom:36px; left:20px; right:20px; z-index:2; text-align:center; color:var(--accent); font-size:9px; }
-.threshold-hint span { display:block; margin-top:10px; color:var(--muted); font-size:8px; letter-spacing:.04em; }
+.threshold-hint { position:absolute; bottom:36px; left:20px; right:20px; z-index:2; text-align:center; color:var(--muted); font-size:13px; }
