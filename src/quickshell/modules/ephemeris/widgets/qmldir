@@ -26,4 +26,3 @@ SystemWidget 1.0 system/SystemWidget.qml
 MediaWaveform 1.0 shared/MediaWaveform.qml
 OrbitSeek 1.0 shared/OrbitSeek.qml
 ResonanceAmbience 1.0 shared/ResonanceAmbience.qml
-EventHorizon 1.0 shared/EventHorizon.qml

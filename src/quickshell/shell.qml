@@ -6,7 +6,6 @@ import Quickshell.Io
 import "modules/aperture"
 import "modules/ephemeris"
 import "modules/osd"
-import "modules/quickactions"
 import "modules/transit"
 import "modules/umbra"
 import "modules/umbra/reveal"
