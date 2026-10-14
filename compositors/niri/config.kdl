@@ -1,14 +1,10 @@
-// ╔════════════════════════════════════════════════════════════════════╗
-// ║  niri · "Neon Mono"  —  dark cyberpunk × minimal mono                ║
-// ║  Behavior re-based on well-tuned community configs so tiling feels   ║
-// ║  smooth, not jumpy:                                                  ║
-// ║    · niri default config (niri-wm/niri)                             ║
-// ║    · github.com/Rouzihiro/dotfiles                                  ║
-// ║    · github.com/marcinjahn/dotfiles                                 ║
-// ║                                                                      ║
-// ║  After editing:  niri validate -c ~/.config/niri/config.kdl          ║
-// ║  niri hot-reloads on save. If a line is flagged, comment it (//).    ║
-// ╚════════════════════════════════════════════════════════════════════╝
+// Niri configuration shipped with Tonantzintla.
+//
+// Layout and input defaults draw on niri's default config and on the
+// dotfiles at github.com/Rouzihiro/dotfiles and github.com/marcinjahn/dotfiles.
+//
+// After editing, check the file with:  niri validate -c ~/.config/niri/config.kdl
+// Niri reloads it on save.
 
 // ── Input ─────────────────────────────────────────────────────────────
 input {
@@ -29,15 +25,12 @@ input {
     }
 
     mouse {
-        // Sensitivity lever: -1.0 (slowest) … 0.0 (raw) … 1.0 (fastest).
-        // You said it was too fast, so we slow it a touch. Nudge to taste.
+        // Sensitivity: -1.0 (slowest) … 0.0 (raw) … 1.0 (fastest).
         accel-speed -0.4
         accel-profile "flat"
     }
 
-    // NOTE: cursor-warp-to-focus and focus-follows-mouse are intentionally
-    // OFF — they're a big part of what made it feel "weird/jumpy". Re-enable
-    // if you decide you like them:
+    // Off by default: both move focus or the pointer without an explicit action.
     // warp-mouse-to-focus mode="center-xy"
     // focus-follows-mouse max-scroll-amount="10%"
 }
@@ -50,14 +43,14 @@ input {
 // ── Layout ────────────────────────────────────────────────────────────
 layout {
     gaps 12
-    background-color "transparent"        // let the wallpaper (swww) show through
+    background-color "transparent"        // let the wallpaper show through
 
-    // ★ The settings that make scroll-tiling feel sane:
+    // Keep the focused column in view without constant scrolling.
     center-focused-column "on-overflow"   // only scroll when a column would go off-screen
     always-center-single-column           // a lone window sits centered, not stuck left
     default-column-display "normal"
 
-    // Windows open at 2/3 width (felt much less cramped than 1/2).
+    // New windows open at two-thirds width.
     default-column-width { proportion 0.66667; }
 
     preset-column-widths {
@@ -146,8 +139,7 @@ spawn-at-startup "sh" "-lc" "exec \"$HOME/.local/bin/blackhole\" session-start"
 // installing with --niri keep. This optional watcher handles display power and
 // requests a lock before sleep; suspend readiness needs separate verification.
 spawn-at-startup "swayidle" "-w" "timeout" "600" "niri msg action power-off-monitors" "resume" "niri msg action power-on-monitors" "before-sleep" "$HOME/.local/bin/blackhole lock"
-// Clipboard capture will be enabled when Transit owns clipboard history.
-// spawn-at-startup "wl-paste" "--watch" "cliphist" "store"
+// Clipboard history capture is started by the shell (services/Clipboard.qml).
 spawn-at-startup "sh" "-c" "exec python3 \"${XDG_DATA_HOME:-$HOME/.local/share}/tonantzintla/src/libexec/auth-agent-bootstrap.py\""
 // For X11 apps (Steam, some games): install 'xwayland-satellite', then:
 // spawn-at-startup "xwayland-satellite"
@@ -187,7 +179,7 @@ window-rule {
 binds {
     Mod+Shift+Slash { show-hotkey-overlay; }
 
-    // Tonantzintla desktop keys. Hyprland remains reference-only.
+    // Tonantzintla desktop keys.
     Alt+F4            { close-window; }
     Mod+Return        { spawn "sh" "-lc" "exec \"$HOME/.local/bin/blackhole\" terminal"; }
     Mod+D             { spawn "sh" "-lc" "exec \"$HOME/.local/bin/blackhole\" toggle apps"; }
@@ -208,7 +200,7 @@ binds {
     // mouse bind overrides it. This is physical mouse button 1.
     Mod+Alt+MouseLeft repeat=false hotkey-overlay-title=null { spawn "sh" "-lc" "exec \"$HOME/.local/bin/blackhole\" bar-edit"; }
 
-    // Alt-tab: jump straight back to the last window you were on (MRU), no mouse
+    // Jump back to the previously focused window.
     Mod+Tab           repeat=false { focus-window-previous; }
 
     // Window / column management
@@ -293,7 +285,7 @@ binds {
     Ctrl+Print { screenshot-screen; }
     Alt+Print  { screenshot-window; }
 
-    // Direct backends until Tonantzintla owns the OSD.
+    // Media keys call the audio and brightness backends directly.
     XF86AudioRaiseVolume  allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ -l 1.0"; }
     XF86AudioLowerVolume  allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"; }
     XF86AudioMute         allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }

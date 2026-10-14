@@ -154,7 +154,7 @@ Item {
             }
         }
 
-        // Serpantinum drop indicator slot
+        // Drop indicator slot
         Rectangle {
             id: startDropSlot
             visible: false // Insertion feedback must not resize the layout being dragged.
@@ -211,7 +211,7 @@ Item {
             }
         }
 
-        // Serpantinum drop indicator slot
+        // Drop indicator slot
         Rectangle {
             id: centerDropSlot
             visible: false // Insertion feedback must not resize the layout being dragged.
@@ -272,7 +272,7 @@ Item {
             }
         }
 
-        // Serpantinum drop indicator slot
+        // Drop indicator slot
         Rectangle {
             id: endDropSlot
             visible: false // Insertion feedback must not resize the layout being dragged.

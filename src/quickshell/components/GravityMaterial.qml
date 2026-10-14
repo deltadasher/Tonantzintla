@@ -32,6 +32,6 @@ Item {
         property color backing: root.backing
         fragmentShader: root.supported ? Qt.resolvedUrl("shaders/gravity.frag.qsb") : ""
         onStatusChanged: if (status === ShaderEffect.Error)
-            console.warn("Gravity material unavailable; retaining classic panel backing:", log)
+            console.warn("[Tonantzintla/Gravity] Material unavailable; using the classic panel backing:", log)
     }
 }

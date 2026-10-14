@@ -247,7 +247,7 @@ QtObject {
     }
 
     function updateIslandDrag(gx, gy, bar, screenX, screenY) {
-        // Retain the old IPC probe as a harmless pointer update. Live dragging
+        // IPC callers pass no bar and only move the pointer. Live dragging
         // passes an ApertureContents object with dropTarget/commitDrop methods.
         if (!bar || typeof bar.dropTarget !== "function") {
             dragGlobalX = gx;
