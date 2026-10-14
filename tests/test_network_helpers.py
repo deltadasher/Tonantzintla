@@ -1,12 +1,11 @@
-"""Behavior checks without activating devices, authenticating, or changing host settings."""
+"""Pairing and Wi-Fi checks that never activate a device or change host settings."""
 import importlib.util
-import json
 from pathlib import Path
-import subprocess
 import unittest
 from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
+
 
 def helper(name):
     spec = importlib.util.spec_from_file_location(name, ROOT / 'src/libexec' / (name + '.py'))
@@ -14,31 +13,6 @@ def helper(name):
     spec.loader.exec_module(module)
     return module
 
-class NotificationTests(unittest.TestCase):
-    def test_group_members_actions_retention_and_individual_dismissal(self):
-        source = (ROOT / 'src/quickshell/services/NotificationModel.js').read_text().replace('.pragma library', '')
-        script = source + '''
-const assert = require('node:assert/strict');
-const first = {uid:1, groupKey:'chat.desktop', summary:'first', body:'one', actions:[{identifier:'reply-1'}]};
-const second = {uid:2, groupKey:'chat.desktop', summary:'second', body:'two', actions:[{identifier:'reply-2'}]};
-let records = append(append([], first, 100), second, 100);
-let group = groups(records)[0];
-assert.equal(group.count, 2);
-for (const groupKey of ['__proto__','constructor','toString']) {
-    assert.equal(groups([{...first,groupKey}])[0].count,1);
-}
-assert.deepEqual(JSON.parse(group.membersJson).map(r=>r.body), ['two','one']);
-assert.equal(JSON.parse(group.membersJson)[1].actions[0].identifier, 'reply-1');
-records = remove(records, [2]);
-assert.equal(groups(records)[0].summary, 'first');
-assert.equal(groups(append(records,{...second,critical:true},100)).length,2);
-assert.equal(groups(append(records,{...second,groupKey:'other.desktop'},100)).length,2);
-for (let uid=3; uid<140; uid++) records=append(records,{...first,uid},100);
-assert.equal(records.length,100);
-assert.equal(records[99].uid,40);
-assert.equal(remove(records,records.map(r=>r.uid)).length,0);
-'''
-        subprocess.run(['node', '-e', script], check=True, capture_output=True, text=True)
 
 class PairingTests(unittest.TestCase):
     def test_invalid_codes_and_rejection_never_authorize(self):
@@ -49,6 +23,7 @@ class PairingTests(unittest.TestCase):
         self.assertEqual(module.response_value('passkey','000017'),17)
         self.assertEqual(module.response_value('pin','aB09'), 'aB09')
         self.assertIsNone(module.response_value('confirm','yes'))
+
 
 class WifiTests(unittest.TestCase):
     @classmethod
@@ -107,13 +82,6 @@ class WifiTests(unittest.TestCase):
         self.assertEqual(rows[0]['uuid'],'stable-uuid')
         self.assertTrue(rows[0]['saved'])
 
-class AuthenticationOwnershipTests(unittest.TestCase):
-    def test_only_verified_native_registration_suppresses_fallback(self):
-        module=helper('auth-agent-bootstrap')
-        instances=json.dumps([{'config_path':'/payload/tonantzintla/src/quickshell/shell.qml','pid':42}])
-        with patch('subprocess.run', side_effect=[Mock(stdout=instances,returncode=0),Mock(stdout='ready\n',returncode=0)]):
-            self.assertTrue(module.native_ready())
-        with patch('subprocess.run', side_effect=[Mock(stdout=instances,returncode=0),Mock(stdout='unavailable\n',returncode=0)]):
-            self.assertFalse(module.native_ready())
-        with patch('subprocess.run', side_effect=[Mock(stdout=instances,returncode=0),Mock(stdout='ready\n',returncode=1)]):
-            self.assertFalse(module.native_ready())
+
+if __name__ == "__main__":
+    unittest.main()

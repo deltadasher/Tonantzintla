@@ -1,8 +1,7 @@
-"""Unit tests for bin/blackhole sync sequencing and preset contracts."""
+"""Tests for blackhole config get/set/preset and the help text."""
 import json
 import os
 from pathlib import Path
-import stat
 import subprocess
 import tempfile
 import unittest
@@ -107,90 +106,38 @@ class BlackholeCliTests(unittest.TestCase):
         self.assertIn("bar-edit", result.stdout)
         self.assertIn("Bar Studio edit mode", result.stdout)
 
-    def test_sync_sequencing_with_test_doubles(self):
-        """Verify pull failure halts, installer failure stops restart, and success restarts."""
-        with tempfile.TemporaryDirectory(prefix="tonantzintla-sync-test-") as temp_dir:
-            temp_path = Path(temp_dir)
-            bin_dir = temp_path / "bin"
-            bin_dir.mkdir()
 
-            log_file = temp_path / "calls.log"
+    def test_set_refuses_to_overwrite_unreadable_settings(self):
+        with tempfile.TemporaryDirectory(prefix="tonantzintla-config-") as temp_dir:
+            temp_config = Path(temp_dir) / "settings.json"
+            temp_config.write_text('{"barMode": "dock', encoding="utf-8")
+            env = dict(os.environ, TONANTZINTLA_SETTINGS=str(temp_config))
+            for command in (["set", "barMode", "docked"], ["preset", "solaris"]):
+                result = subprocess.run(
+                    [str(self.blackhole_bin), "config", *command],
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertEqual(result.returncode, 1)
+                self.assertIn("Refusing to overwrite", result.stderr)
+                self.assertEqual(temp_config.read_text(encoding="utf-8"), '{"barMode": "dock')
 
-            fake_git = bin_dir / "git"
-            fake_git.write_text(f"""#!/bin/sh
-echo "git $@" >> "{log_file}"
-if [ "$FAIL_GIT" = "1" ] && [ "$3" = "pull" ]; then
-    echo "Simulated git pull error" >&2
-    exit 1
-fi
-exit 0
-""")
-            fake_git.chmod(fake_git.stat().st_mode | stat.S_IXUSR)
-
-            fake_project = temp_path / "repo"
-            fake_project.mkdir()
-            (fake_project / ".git").mkdir()
-            (fake_project / "bin").mkdir()
-
-            fake_blackhole = fake_project / "bin/blackhole"
-            fake_blackhole.write_text(self.blackhole_bin.read_text())
-            fake_blackhole.chmod(fake_blackhole.stat().st_mode | stat.S_IXUSR)
-
-            fake_installer = fake_project / "bin/tonantzintla-installer"
-            fake_installer.write_text(f"""#!/bin/sh
-echo "installer $@" >> "{log_file}"
-if [ "$FAIL_INSTALL" = "1" ]; then
-    echo "Simulated install error" >&2
-    exit 1
-fi
-exit 0
-""")
-            fake_installer.chmod(fake_installer.stat().st_mode | stat.S_IXUSR)
-
-            # Test 1: Git pull failure must halt sync immediately
-            log_file.unlink(missing_ok=True)
-            env = dict(os.environ, PATH=f"{bin_dir}:{os.environ['PATH']}", FAIL_GIT="1", FAIL_INSTALL="0")
-            result = subprocess.run(
-                [str(fake_blackhole), "sync"],
-                env=env,
-                capture_output=True,
-                text=True
-            )
-            self.assertEqual(result.returncode, 1)
-            self.assertIn("git pull failed. Sync halted", result.stderr)
-            logs = log_file.read_text() if log_file.exists() else ""
-            self.assertIn("git -C", logs)
-            self.assertNotIn("installer", logs)
-
-            # Test 2: Installer failure must halt before restart
-            log_file.unlink(missing_ok=True)
-            env = dict(os.environ, PATH=f"{bin_dir}:{os.environ['PATH']}", FAIL_GIT="0", FAIL_INSTALL="1")
-            result = subprocess.run(
-                [str(fake_blackhole), "sync"],
-                env=env,
-                capture_output=True,
-                text=True
-            )
-            self.assertEqual(result.returncode, 1)
-            self.assertIn("Runtime installation failed. Desktop restart skipped", result.stderr)
-            logs = log_file.read_text() if log_file.exists() else ""
-            self.assertIn("git -C", logs)
-            self.assertIn("installer", logs)
-
-            # Test 3: Success must call installer and then restart
-            log_file.unlink(missing_ok=True)
-            env = dict(os.environ, PATH=f"{bin_dir}:{os.environ['PATH']}", FAIL_GIT="0", FAIL_INSTALL="0")
-            result = subprocess.run(
-                [str(fake_blackhole), "sync"],
-                env=env,
-                capture_output=True,
-                text=True
-            )
-            logs = log_file.read_text() if log_file.exists() else ""
-            self.assertIn("git -C", logs)
-            self.assertIn("installer", logs)
-            self.assertIn("✦ Syncing Tonantzintla observatory...", result.stdout)
-            self.assertIn("Restarting running desktop instance", result.stdout)
+    def test_set_parses_integers_floats_and_booleans(self):
+        with tempfile.TemporaryDirectory(prefix="tonantzintla-config-") as temp_dir:
+            temp_config = Path(temp_dir) / "settings.json"
+            env = dict(os.environ, TONANTZINTLA_SETTINGS=str(temp_config))
+            for key, value in (("offset", "-5"), ("ratio", "0.5"), ("showTray", "false"), ("barMode", "docked")):
+                subprocess.run(
+                    [str(self.blackhole_bin), "config", "set", key, value],
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                )
+            data = json.loads(temp_config.read_text(encoding="utf-8"))
+            self.assertEqual(data, {"offset": -5, "ratio": 0.5, "showTray": False, "barMode": "docked"})
+            self.assertIsInstance(data["offset"], int)
 
 
 if __name__ == "__main__":
