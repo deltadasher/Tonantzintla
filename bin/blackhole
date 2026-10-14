@@ -38,7 +38,7 @@ Surfaces:
   preview-lock            Preview Umbra without locking the session
   greeter ACTION [TARGET] Manage Umbra adapters for SDDM, LightDM, greetd, Ly, or GDM
   capture ACTION          Run region-copy, region-save, full-copy, or full-save
-  notify SUMMARY [BODY]   Show an Tonantzintla-local notification
+  notify SUMMARY [BODY]   Show a Tonantzintla notification
   terminal                Open the configured terminal, or a system default
   browser                 Open the configured browser, or the system default
   files [PATH]            Open the configured file manager at PATH, or home
@@ -166,6 +166,7 @@ manage_config() {
     python3 - "$settings_file" "$action" "$@" <<'PY'
 import json
 import os
+import re
 import sys
 
 settings_path = sys.argv[1]
@@ -177,8 +178,11 @@ if os.path.exists(settings_path):
     try:
         with open(settings_path, "r", encoding="utf-8") as f:
             data = json.load(f)
-    except Exception as e:
-        print(f"Warning: Failed to parse {settings_path}: {e}", file=sys.stderr)
+    except (OSError, ValueError) as e:
+        print(f"Could not read {settings_path}: {e}", file=sys.stderr)
+        if action != "get":
+            print("Refusing to overwrite it; repair or remove the file first.", file=sys.stderr)
+            sys.exit(1)
 
 def save_data(d):
     os.makedirs(os.path.dirname(settings_path), exist_ok=True)
@@ -212,7 +216,7 @@ elif action == "set":
         val = True
     elif val_raw.lower() == "false":
         val = False
-    elif val_raw.isdigit():
+    elif re.fullmatch(r"-?\d+", val_raw):
         val = int(val_raw)
     else:
         try:
