@@ -471,7 +471,7 @@ PanelWindow {
                 }
             }
 
-            // SYSTEM TELEMETRY SPECIFIC SETTINGS
+            // System telemetry settings
             ColumnLayout {
                 visible: ShellState.activeIslandSettingsId === "system_stats"
                 Layout.fillWidth: true

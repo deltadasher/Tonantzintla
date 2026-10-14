@@ -4,12 +4,10 @@ import ".."
 // Dims the whole screen except one rectangle, so the thing being configured is
 // the only thing still lit.
 //
-// This was a Canvas that punched the hole with destination-out compositing.
-// It rendered nothing at all on the real shell, and Canvas compositing is not
-// something this repository can lint or preview, so the hole is now four plain
-// Rectangles laid around the focus rect. Four solid fills of one colour show no
-// seam where they meet, and a Rectangle either paints or the file fails to
-// load -- there is no third outcome to debug from a screenshot.
+// The hole is four plain Rectangles laid around the focus rect. A Canvas with
+// destination-out compositing rendered nothing on the live shell; four solid
+// fills of one colour show no seam where they meet, and a Rectangle either
+// paints or fails to load.
 Item {
     id: root
 
