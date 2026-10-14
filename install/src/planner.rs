@@ -168,7 +168,7 @@ fn add_runtime_operation(
                 OperationState::Conflict,
                 "Preserve the existing runtime destination".to_string(),
                 format!(
-                    "{} is not an Tonantzintla installation",
+                    "{} is not a Tonantzintla installation",
                     install_root.display()
                 ),
             ),
