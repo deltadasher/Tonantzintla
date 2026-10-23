@@ -21,7 +21,11 @@ Item {
 
     Canvas {
         id: field
-        anchors.fill: parent
+        // Keep this decorative field's backing store independent of monitor
+        // resolution; scale the bounded canvas, not a full-output texture.
+        readonly property real renderScale: Math.min(1, 960 / Math.max(1, root.width), 540 / Math.max(1, root.height))
+        width: root.width * renderScale; height: root.height * renderScale
+        transform: Scale { xScale: 1 / field.renderScale; yScale: 1 / field.renderScale }
         opacity: 0.84
 
         Connections {
@@ -48,8 +52,8 @@ Item {
             ctx.reset();
             const rotation = root.phase * Math.PI * 2;
             const shortSide = Math.min(width, height);
-            const focusX = root.focalX + Math.sin(rotation * 0.31) * shortSide * 0.006;
-            const focusY = root.focalY + Math.cos(rotation * 0.27) * shortSide * 0.004;
+            const focusX = root.focalX * field.renderScale + Math.sin(rotation * 0.31) * shortSide * 0.006;
+            const focusY = root.focalY * field.renderScale + Math.cos(rotation * 0.27) * shortSide * 0.004;
 
             // Long gravitational veins feed the displaced event horizon. They are
             // deliberately incomplete: Umbra should feel spatial, not framed.

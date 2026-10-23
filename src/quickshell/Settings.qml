@@ -6,6 +6,7 @@ import Quickshell
 import Quickshell.Io
 import "components/BarLayout.js" as BarLayout
 import "components/BarPlacement.js" as BarPlacement
+import "components/SpectralPalette.js" as SpectralPalette
 
 QtObject {
     id: root
@@ -20,10 +21,46 @@ QtObject {
     property bool preferencesLoading: false
     property var appearanceCheckpoint: null
     property int checkpointRevision: 0
-    readonly property var appearanceKeys: ["compact", "motion", "barIconMotion", "animateStars", "atmosphereStyle", "adaptivePalette", "motionStyle", "panelMaterial", "motionSpeedProfile", "accentName", "typographyProfile", "fontText", "fontDisplay", "fontMono", "fontIcon", "barMode", "barMargin", "barOpacity", "barHeightProfile", "barPosition", "barLayoutHorizontal", "barLayoutVertical", "barOutputOverrides", "barIslandPlacements", "ephemerisStyle"]
+    readonly property var appearanceKeys: ["umbraBackgroundMode", "umbraBackgroundPath", "umbraClockVariant", "umbraLayout", "opticalControls", "controlMaterialScopes", "barClockFace", "barTelemetryFace", "barTelemetryMetrics", "barMediaWidth", "barMediaShowArt", "barMediaShowControls", "launcherWidth", "launcherVisibleRows", "islandDensity", "controlMaterial", "controlOpacity", "controlRadius", "opticalStrength", "opticalFrost", "opticalDispersion", "umbraFingerprintLook", "umbraFingerprintShowText", "spectralColors", "moduleAppearance", "compact", "motion", "barIconMotion", "animateStars", "atmosphereStyle", "adaptivePalette", "motionStyle", "panelMaterial", "motionSpeedProfile", "accentName", "typographyProfile", "fontText", "fontDisplay", "fontMono", "fontIcon", "barMode", "barMargin", "barOpacity", "barHeightProfile", "barPosition", "barLayoutHorizontal", "barLayoutVertical", "barOutputOverrides", "barIslandPlacements", "ephemerisStyle"]
     readonly property bool canUndoAppearance: appearanceCheckpoint !== null && checkpointRevision === externalRevision
         && JSON.stringify(appearanceCheckpoint) !== JSON.stringify(appearanceSnapshot())
 
+    function controlFinishFor(scope) {
+        const values = ["etched", "frosted", "lens"];
+        const global = values.indexOf(controlMaterial) >= 0 ? controlMaterial : "etched";
+        const map = controlMaterialScopes;
+        const local = map && typeof map === "object" && !Array.isArray(map) ? map[scope] : "inherit";
+        return values.indexOf(local) >= 0 ? local : global;
+    }
+    function setControlFinishScope(scope, value) {
+        const scopes = ["aperture", "instruments", "dock", "umbra"];
+        if (scopes.indexOf(scope) < 0 || ["inherit", "etched", "frosted", "lens"].indexOf(value) < 0) return;
+        const map = {};
+        scopes.forEach(function(key) {
+            const old = root.controlMaterialScopes && root.controlMaterialScopes[key];
+            if (["etched", "frosted", "lens"].indexOf(old) >= 0) map[key] = old;
+        });
+        if (value === "inherit") delete map[scope]; else map[scope] = value;
+        controlMaterialScopes = map;
+    }
+
+    function setSpectralColor(role, value, backing) {
+        const surfaces = [String(Theme.void_), String(Theme.mantle), String(Theme.elevated)];
+        const result = SpectralPalette.edit(spectralColors, role, value, surfaces);
+        if (result.ok) spectralColors = result.colors;
+        return result;
+    }
+    function appearanceFor(module) {
+        const map = moduleAppearance;
+        const value = map && typeof map === "object" ? map[module] : "inherit";
+        return ["classic", "gravity"].indexOf(value) >= 0 ? value : "inherit";
+    }
+    function setModuleAppearance(module, value) {
+        if (!/^[a-z][a-z0-9_-]{0,31}$/.test(module) || ["inherit", "classic", "gravity"].indexOf(value) < 0) return;
+        const map = Object.assign({}, moduleAppearance || {});
+        if (value === "inherit") delete map[module]; else map[module] = value;
+        moduleAppearance = map;
+    }
     function appearanceSnapshot() {
         const values = {};
         appearanceKeys.forEach(function(key) { values[key] = root[key]; });
@@ -50,6 +87,45 @@ QtObject {
     // Every persisted setting is declared exactly once, on the JsonAdapter
     // below. These aliases keep the public Settings.<name> surface stable;
     // writes flow into the adapter, which debounces a save to disk.
+    property alias controlMaterial: settingsAdapter.controlMaterial
+    property alias controlOpacity: settingsAdapter.controlOpacity
+    property alias controlRadius: settingsAdapter.controlRadius
+    property alias opticalStrength: settingsAdapter.opticalStrength
+    property alias opticalFrost: settingsAdapter.opticalFrost
+    property alias opticalDispersion: settingsAdapter.opticalDispersion
+    property alias umbraFingerprintLook: settingsAdapter.umbraFingerprintLook
+    property alias umbraFingerprintShowText: settingsAdapter.umbraFingerprintShowText
+    property alias barClockFace: settingsAdapter.barClockFace
+    property alias barTelemetryFace: settingsAdapter.barTelemetryFace
+    property alias barTelemetryMetrics: settingsAdapter.barTelemetryMetrics
+    property alias barMediaWidth: settingsAdapter.barMediaWidth
+    property alias barMediaShowArt: settingsAdapter.barMediaShowArt
+    property alias barMediaShowControls: settingsAdapter.barMediaShowControls
+    property alias launcherWidth: settingsAdapter.launcherWidth
+    property alias launcherVisibleRows: settingsAdapter.launcherVisibleRows
+    property alias islandDensity: settingsAdapter.islandDensity
+    property alias controlMaterialScopes: settingsAdapter.controlMaterialScopes
+    property alias opticalControls: settingsAdapter.opticalControls
+    property alias spectralColors: settingsAdapter.spectralColors
+    property alias moduleAppearance: settingsAdapter.moduleAppearance
+    property alias calendarDefaultMode: settingsAdapter.calendarDefaultMode
+    property alias resonanceVisualizer: settingsAdapter.resonanceVisualizer
+    property alias captureFps: settingsAdapter.captureFps
+    property alias captureDesktopAudio: settingsAdapter.captureDesktopAudio
+    property alias captureMicrophone: settingsAdapter.captureMicrophone
+    property alias capturePointer: settingsAdapter.capturePointer
+    property alias captureCountdown: settingsAdapter.captureCountdown
+    property alias umbraBackgroundMode: settingsAdapter.umbraBackgroundMode
+    property alias umbraBackgroundPath: settingsAdapter.umbraBackgroundPath
+    property alias umbraClockVariant: settingsAdapter.umbraClockVariant
+    property alias umbraLayout: settingsAdapter.umbraLayout
+    property alias umbraFingerprintService: settingsAdapter.umbraFingerprintService
+    property alias toolboxState: settingsAdapter.toolboxState
+    property alias clipboardPaused: settingsAdapter.clipboardPaused
+    property alias osdPosition: settingsAdapter.osdPosition
+    property alias osdCapsLock: settingsAdapter.osdCapsLock
+    property alias osdNumLock: settingsAdapter.osdNumLock
+    property alias osdAirplane: settingsAdapter.osdAirplane
     property alias compact: settingsAdapter.compact
     property alias dockEnabled: settingsAdapter.dockEnabled
     property alias dockEdge: settingsAdapter.dockEdge
@@ -122,6 +198,8 @@ QtObject {
     property alias wallpaperPath: settingsAdapter.wallpaperPath
     property alias wallpaperKind: settingsAdapter.wallpaperKind
     property alias wallpaperOutputs: settingsAdapter.wallpaperOutputs
+    property alias wallpaperRenderer: settingsAdapter.wallpaperRenderer
+    property alias nativeWallpaperAssignments: settingsAdapter.nativeWallpaperAssignments
     property alias wallpaperTransition: settingsAdapter.wallpaperTransition
     property alias weatherEnabled: settingsAdapter.weatherEnabled
     property alias weatherLocation: settingsAdapter.weatherLocation
@@ -145,6 +223,27 @@ QtObject {
     property alias showTabClipboard: settingsAdapter.showTabClipboard
     property alias showTabCapture: settingsAdapter.showTabCapture
     property alias notificationPosition: settingsAdapter.notificationPosition
+    property alias osdCustomPosition: settingsAdapter.osdCustomPosition
+    property alias osdX: settingsAdapter.osdX
+    property alias osdY: settingsAdapter.osdY
+    property alias osdOrientation: settingsAdapter.osdOrientation
+    property alias notificationCustomPosition: settingsAdapter.notificationCustomPosition
+    property alias notificationX: settingsAdapter.notificationX
+    property alias notificationY: settingsAdapter.notificationY
+    property alias notificationWidth: settingsAdapter.notificationWidth
+    property alias notificationRightClickClose: settingsAdapter.notificationRightClickClose
+    property alias notificationEmptyGraphic: settingsAdapter.notificationEmptyGraphic
+    property alias notificationSoundsEnabled: settingsAdapter.notificationSoundsEnabled
+    property alias notificationSoundPath: settingsAdapter.notificationSoundPath
+    property alias notificationSoundVolume: settingsAdapter.notificationSoundVolume
+    property alias dockWindowScope: settingsAdapter.dockWindowScope
+    property alias dockShowIndicators: settingsAdapter.dockShowIndicators
+    property alias dockBackground: settingsAdapter.dockBackground
+    property alias dockHoverScale: settingsAdapter.dockHoverScale
+    property alias dockHoverNeighbors: settingsAdapter.dockHoverNeighbors
+    property alias dockAutoHide: settingsAdapter.dockAutoHide
+    property alias dockAboveWindows: settingsAdapter.dockAboveWindows
+    property alias dockExclusive: settingsAdapter.dockExclusive
     property alias enableCalculator: settingsAdapter.enableCalculator
     property alias barLayoutHorizontal: settingsAdapter.barLayoutHorizontal
     property alias barLayoutVertical: settingsAdapter.barLayoutVertical
@@ -507,7 +606,15 @@ QtObject {
             root.persistenceReady = true;
             root.migrateLegacyPersonalDefaults();
         }
-        onFileChanged: { root.preferencesLoading = true; reload(); }
+        onFileChanged: {
+            root.preferencesLoading = true;
+            reload();
+            // An identical atomic self-write need not emit loaded(). Complete
+            // this small local read before releasing the adapter-update guard,
+            // otherwise later edits can remain unsaved indefinitely.
+            waitForJob();
+            root.preferencesLoading = false;
+        }
         onAdapterUpdated: {
             if (root.persistenceReady && !root.preferencesLoading)
                 root.saveTimer.restart();
@@ -528,6 +635,45 @@ QtObject {
         // qmllint disable unresolved-type
         adapter: JsonAdapter {
             id: settingsAdapter
+            property string controlMaterial: "etched"
+            property real controlOpacity: 1.0
+            property int controlRadius: 8
+            property real opticalStrength: 0.6
+            property real opticalFrost: 0.35
+            property real opticalDispersion: 0.25
+            property string umbraFingerprintLook: "original"
+            property bool umbraFingerprintShowText: true
+            property string barClockFace: "classic"
+            property string barTelemetryFace: "numeric"
+            property var barTelemetryMetrics: ["cpu", "memory", "gpu", "disk"]
+            property int barMediaWidth: 400
+            property bool barMediaShowArt: true
+            property bool barMediaShowControls: true
+            property int launcherWidth: 0
+            property int launcherVisibleRows: 0
+            property var islandDensity: ({})
+            property var controlMaterialScopes: ({})
+            property bool opticalControls: true
+            property var spectralColors: ({})
+            property var moduleAppearance: ({})
+            property int calendarDefaultMode: 0
+            property string resonanceVisualizer: "ring"
+            property int captureFps: 60
+            property bool captureDesktopAudio: true
+            property bool captureMicrophone: false
+            property bool capturePointer: true
+            property int captureCountdown: 3
+            property string umbraBackgroundMode: "inherit"
+            property string umbraBackgroundPath: ""
+            property string umbraClockVariant: "classic"
+            property var umbraLayout: ({})
+            property string umbraFingerprintService: ""
+            property var toolboxState: ({})
+            property bool clipboardPaused: false
+            property string osdPosition: "bottom"
+            property bool osdCapsLock: true
+            property bool osdNumLock: true
+            property bool osdAirplane: true
             property bool compact: false
             property bool dockEnabled: true
             property string dockEdge: "bottom"
@@ -597,6 +743,8 @@ QtObject {
             property string wallpaperPath: ""
             property string wallpaperKind: "image"
             property string wallpaperOutputs: "all"
+            property string wallpaperRenderer: "external"
+            property var nativeWallpaperAssignments: ({})
             property string wallpaperTransition: "any"
             property bool weatherEnabled: true
             property string weatherLocation: ""
@@ -619,6 +767,27 @@ QtObject {
             property bool showTabClipboard: true
             property bool showTabCapture: true
             property string notificationPosition: "top-right"
+            property bool osdCustomPosition: false
+            property real osdX: 0.5
+            property real osdY: 0.9
+            property string osdOrientation: "horizontal"
+            property bool notificationCustomPosition: false
+            property real notificationX: 0.9
+            property real notificationY: 0.1
+            property int notificationWidth: 390
+            property bool notificationRightClickClose: true
+            property bool notificationEmptyGraphic: true
+            property bool notificationSoundsEnabled: false
+            property string notificationSoundPath: ""
+            property real notificationSoundVolume: 0.5
+            property string dockWindowScope: "all"
+            property bool dockShowIndicators: true
+            property bool dockBackground: true
+            property real dockHoverScale: 1.12
+            property bool dockHoverNeighbors: false
+            property bool dockAutoHide: true
+            property bool dockAboveWindows: true
+            property bool dockExclusive: false
             property bool enableCalculator: true
             property string barLayoutHorizontal: ""
             property string barLayoutVertical: ""

@@ -1,4 +1,5 @@
 import os
+import json
 from pathlib import Path
 import shutil
 import subprocess
@@ -17,6 +18,9 @@ class SettingsPersistenceTests(unittest.TestCase):
                 (ROOT / "tests/qml/settings-persistence.qml").read_text()
                 .replace("../../src/quickshell", (ROOT / "src/quickshell").as_uri())
             )
+            settings = Path(temporary) / "config/tonantzintla/settings.json"
+            settings.parent.mkdir(parents=True)
+            settings.write_text(json.dumps({"constellationEnabled": True, "constellationState": {"instances": [{"kind": "clock"}]}}))
             env = dict(
                 os.environ,
                 QT_QPA_PLATFORM="offscreen",

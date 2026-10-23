@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import ".."
 
@@ -20,14 +21,36 @@ Rectangle {
     readonly property bool hovered: pointer.containsMouse && !pointer.hoverSuppressed
         && !sourceActive
 
+    activeFocusOnTab: enabled
+    Accessible.role: Accessible.Button
+    Accessible.name: accessibleLabel
+    Accessible.onPressAction: if (enabled) activated()
+    Keys.onReturnPressed: if (enabled) activated()
+    Keys.onSpacePressed: if (enabled) activated()
+
+    ToolTip {
+        visible: root.hovered
+        delay: 500
+        text: root.accessibleLabel
+        background: Rectangle { color: Theme.mantle; radius: Theme.radiusSmall; border.color: Theme.accentLine }
+        contentItem: Text { text: root.accessibleLabel; color: Theme.moon; font.family: Theme.fontText; font.pixelSize: Theme.textLabel }
+    }
+
     implicitWidth: root.isVertical ? (Settings.compact ? 36 : 40) : (layoutGrid.implicitWidth + 16)
     implicitHeight: root.isVertical ? (layoutGrid.implicitHeight + 8) : (Settings.compact ? 34 : 38)
     radius: 9
-    color: root.warning
+    color: pointer.pressed ? Theme.controlPressed : root.warning
         ? Qt.rgba(Theme.warning.r, Theme.warning.g, Theme.warning.b, 0.12)
-        : sourceActive ? Theme.void_ : hovered ? Theme.barNeutralHover : "transparent"
-    border.width: 0
-    scale: hovered ? 1.03 : 1
+        : sourceActive ? Theme.controlSelected : hovered ? Theme.barNeutralHover : "transparent"
+    border.width: activeFocus ? 1 : 0
+    border.color: Theme.accent
+    opacity: enabled ? 1 : 0.45
+
+    OpticalSurface {
+        parent: root
+        anchors.fill: parent; radius: root.radius
+        hovered: root.hovered; pressed: pointer.pressed; selected: root.sourceActive; focused: root.activeFocus
+    }
 
     GridLayout {
         id: layoutGrid
@@ -41,7 +64,7 @@ Rectangle {
             text: root.code
             color: root.warning ? Theme.warning : root.active ? root.accentColor : Theme.muted
             font.family: Theme.fontText
-            font.pixelSize: root.isVertical ? 9 : 11
+            font.pixelSize: root.isVertical ? Theme.textMicro : Theme.textCaption
             font.weight: Font.DemiBold
             font.letterSpacing: 0.45
             horizontalAlignment: root.isVertical ? Text.AlignHCenter : Text.AlignLeft
@@ -51,7 +74,7 @@ Rectangle {
             text: root.value
             color: root.active ? Theme.moon : Theme.muted
             font.family: Theme.fontText
-            font.pixelSize: root.isVertical ? 10 : 12
+            font.pixelSize: root.isVertical ? Theme.textMicro : Theme.textLabel
             font.weight: Font.DemiBold
             horizontalAlignment: root.isVertical ? Text.AlignHCenter : Text.AlignLeft
         }
@@ -72,5 +95,4 @@ Rectangle {
     }
 
     Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-    Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Easing.OutBack } }
 }

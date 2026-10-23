@@ -46,7 +46,7 @@ Rectangle {
     implicitHeight: Math.max(78 + root.massBoost, content.implicitHeight + 20)
 
     radius: Theme.radiusLarge
-    color: critical ? Theme.controlDanger
+    color: critical ? Theme.danger
         : hover.hovered ? Theme.controlHover : Theme.mantle
     opacity: hover.hovered || activeFocus || critical ? 1 : 0.88 + visibleFreshness * 0.12
     activeFocusOnTab: true
@@ -64,6 +64,9 @@ Rectangle {
         anchors.left: parent.left
         anchors.top: parent.top
         anchors.bottom: parent.bottom
+        // Keep the accent inside the rounded plate without a per-card texture.
+        anchors.topMargin: root.radius
+        anchors.bottomMargin: root.radius
         width: 3 + root.visibleFreshness * 5
         color: root.critical ? Theme.void_ : Theme.accent
         opacity: 0.42 + root.visibleFreshness * 0.48
@@ -75,6 +78,8 @@ Rectangle {
         acceptedButtons: Qt.LeftButton
         onTapped: root.activated()
     }
+
+    TapHandler { enabled: Settings.notificationRightClickClose; acceptedButtons: Qt.RightButton; onTapped: root.dismissed() }
 
     RowLayout {
         id: content
@@ -176,24 +181,25 @@ Rectangle {
                 elide: Text.ElideRight
             }
 
-            RowLayout {
+            Flow {
+                id: actionFlow
                 Layout.fillWidth: true
                 Layout.topMargin: 4
                 spacing: 6
                 visible: root.actions && root.actions.length > 0
-
                 Repeater {
                     model: root.actions || []
                     ActionButton {
                         required property var modelData
+                        objectName: "notificationAction_" + modelData.identifier
                         text: modelData.text || modelData.identifier || "Open"
+                        width: Math.min(implicitWidth,actionFlow.width)
                         implicitHeight: 28
                         onClicked: root.actionInvoked(modelData.identifier)
                     }
                 }
-
-                Item { Layout.fillWidth: true }
             }
+
         }
 
     }
@@ -204,6 +210,7 @@ Rectangle {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         width: 70
+        radius: root.radius
         color: closePointer.containsMouse
             ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.11)
             : "transparent"

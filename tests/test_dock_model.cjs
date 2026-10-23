@@ -46,3 +46,19 @@ test('pin reorder clamps boundaries and keeps missing id unchanged', () => {
     assert.equal(ctx.movePin('["a","b"]','a',-1),'["a","b"]');
     assert.equal(ctx.movePin('["a","b"]','c',1),'["a","b"]');
 });
+test('running scope follows workspace output and per-output active workspace', () => {
+    const spaces = [{id:1,output:'A',is_active:false},{id:2,output:'A',is_active:true},{id:3,output:'B',is_active:true}];
+    const wins = [{id:1,workspace_id:1},{id:2,workspace_id:2},{id:3,workspace_id:3},{id:4,workspace_id:null}];
+    assert.deepEqual(plain(ctx.scopedWindows(wins,spaces,'output','A').map(w=>w.id)),[1,2]);
+    assert.deepEqual(plain(ctx.scopedWindows(wins,spaces,'workspace','A').map(w=>w.id)),[2]);
+    assert.deepEqual(plain(ctx.scopedWindows(wins,spaces,'workspace','B').map(w=>w.id)),[3]);
+    assert.deepEqual(plain(ctx.scopedWindows(wins,spaces,'workspace','missing')),[]);
+    assert.deepEqual(plain(ctx.scopedWindows(wins,spaces,'invalid','A')),wins);
+    assert.equal(wins.length,4);
+});
+test('scope preserves pins while limiting focus cycles to matching windows', () => {
+    const scoped = ctx.scopedWindows([{id:1,app_id:'Browser',workspace_id:1},{id:2,app_id:'Browser',workspace_id:2}],
+      [{id:1,output:'A',is_active:true},{id:2,output:'B',is_active:true}],'output','A');
+    const rows=ctx.entries(apps,scoped,['org.browser.desktop','terminal.desktop'],true);
+    assert.deepEqual(plain(rows.map(e=>e.windows)),[[1],[]]);
+});

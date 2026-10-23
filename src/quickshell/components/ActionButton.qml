@@ -22,6 +22,13 @@ Rectangle {
     Keys.onReturnPressed: if (!pending) clicked()
     Keys.onEnterPressed: if (!pending) clicked()
     Keys.onSpacePressed: if (!pending) clicked()
+    OpticalSurface {
+        anchors.fill: parent; radius: parent.radius
+        // Inverted selected labels retain their opaque readable plate.
+        visible: Settings.opticalControls && !root.selected
+        hovered: pointer.containsMouse; pressed: pointer.pressed
+        focused: root.activeFocus; selected: root.selected
+    }
     Text {
         id: label
         anchors.centerIn: parent

@@ -44,6 +44,7 @@ TestCase {
         controller.requestedTab = "apps";
         controller.contentReady = true;
         controller.motionEnabled = true;
+        controller.durationScale = 1;
         deployment.clear();
     }
     function test_open_waits_for_content() {
@@ -96,6 +97,21 @@ TestCase {
         tryCompare(controller, "phase", "closed");
         compare(controller.mounted, false);
     }
+    function test_reopen_same_instrument_reverses_without_content_flash() {
+        controller.requestedVisible = true;
+        tryCompare(controller, "phase", "open");
+        controller.requestedVisible = false;
+        wait(40);
+        const content = controller.contentProgress;
+        const reveal = controller.revealProgress;
+        verify(content > 0 && content < 1);
+        controller.requestedVisible = true;
+        compare(controller.contentProgress, content);
+        compare(controller.revealProgress, reveal);
+        tryCompare(controller, "phase", "open");
+        compare(controller.contentProgress, 1);
+        compare(controller.mounted, true);
+    }
     function test_reduced_motion_still_settles() {
         controller.motionEnabled = false;
         controller.requestedVisible = true;
@@ -103,6 +119,48 @@ TestCase {
         controller.requestedTab = "settings";
         tryCompare(controller, "activeTab", "settings");
         tryCompare(controller, "phase", "open");
+        compare(controller.interactive, true);
+    }
+    function test_instant_profile_preserves_loading_and_skips_animation() {
+        controller.durationScale = 0;
+        controller.contentReady = false;
+        controller.requestedVisible = true;
+        tryCompare(controller, "phase", "loading");
+        compare(controller.contentProgress, 0);
+        compare(controller.interactive, false);
+        controller.contentReady = true;
+        tryCompare(controller, "phase", "open", 75);
+        compare(controller.contentProgress, 1);
+        compare(controller.revealProgress, 1);
+        controller.requestedTab = "calendar";
+        tryCompare(controller, "phase", "open", 75);
+        compare(controller.activeTab, "calendar");
+        compare(controller.interactive, true);
+        controller.requestedVisible = false;
+        compare(controller.phase, "closed");
+        compare(controller.mounted, false);
+    }
+    function test_disabling_motion_settles_an_active_entrance() {
+        controller.durationScale = 4;
+        controller.requestedVisible = true;
+        tryCompare(controller, "phase", "entering");
+        verify(controller.contentProgress < 1);
+        controller.motionEnabled = false;
+        compare(controller.phase, "open");
+        compare(controller.contentProgress, 1);
+        compare(controller.revealProgress, 1);
+        compare(controller.interactive, true);
+    }
+    function test_disabling_motion_during_switch_keeps_latest_tab() {
+        controller.requestedVisible = true;
+        tryCompare(controller, "phase", "open");
+        controller.durationScale = 4;
+        controller.requestedTab = "calendar";
+        compare(controller.phase, "leaving");
+        controller.durationScale = 0;
+        controller.requestedTab = "walls";
+        tryCompare(controller, "phase", "open", 75);
+        compare(controller.activeTab, "walls");
         compare(controller.interactive, true);
     }
     function test_registry_fits_small_and_large_displays() {

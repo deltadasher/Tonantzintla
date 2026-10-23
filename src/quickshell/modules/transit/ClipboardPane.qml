@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import "../.."
 import "../../services"
+import "../../components"
 
 Item {
     id: root
@@ -9,6 +10,9 @@ Item {
     property string query: ""
     property var hoveredEntry: null
     property string selectedId: ""
+    property string pendingCopyId: ""
+    function copyEntry(entry) { if(entry && !Clipboard.busy) { pendingCopyId=String(entry.id);Clipboard.copy(entry.id); } }
+    Connections { target:Clipboard;function onCopied(identifier) { if(identifier===root.pendingCopyId && ShellState.ephemerisVisible && ShellState.ephemerisTab==="clipboard")ShellState.closeEphemeris(); } }
     readonly property var matchesList: Clipboard.entries.filter(function(entry) { return root.matches(entry); })
     readonly property var currentEntry: hoveredEntry && matches(hoveredEntry) ? hoveredEntry
         : matchesList.find(function(entry) { return String(entry.id) === root.selectedId; })
@@ -27,8 +31,7 @@ Item {
     }
     function restoreSelection() {
         if (!currentEntry) return;
-        Clipboard.copy(currentEntry.id);
-        ShellState.closeEphemeris();
+        copyEntry(currentEntry);
     }
 
     function focusSearch() {
@@ -96,13 +99,13 @@ Item {
                 font.weight: Font.Bold
             }
             Rectangle {
-                implicitWidth: 70
+                implicitWidth: 128
                 implicitHeight: 34
                 radius: 11
                 color: clearPointer.containsMouse ? Theme.danger : Theme.controlRest
                 Text {
                     anchors.centerIn: parent
-                    text: "CLEAR"
+                    text: "CLEAR UNPINNED"
                     color: clearPointer.containsMouse ? Theme.void_ : Theme.muted
                     font.family: Theme.fontMono
                     font.pixelSize: 10
@@ -117,6 +120,15 @@ Item {
                 }
             }
         }
+
+        Flow {
+            Layout.fillWidth: true
+            spacing: 8
+            ActionButton { text: Clipboard.paused ? "Resume capture" : "Pause capture"; selected: Clipboard.paused; onClicked: Clipboard.togglePaused() }
+            ActionButton { text: root.currentEntry && root.currentEntry.pinned ? "Unpin" : "Pin selected"; enabled: root.currentEntry!==null && !Clipboard.busy; onClicked: Clipboard.togglePin(root.currentEntry) }
+            ActionButton { text: "Delete selected"; destructive:true; enabled: root.currentEntry!==null && !Clipboard.busy; onClicked: Clipboard.remove(root.currentEntry) }
+        }
+        Text { Layout.fillWidth:true; text:Clipboard.status || "Pins survive clearing history. Pause affects only this shell's watchers."; color:Theme.muted; wrapMode:Text.Wrap; font.family:Theme.fontText; font.pixelSize:11 }
 
         Item {
             id: topSearchSlot
@@ -211,8 +223,7 @@ Item {
                             onEntered: root.hoveredEntry = layer.modelData
                             onExited: if (root.hoveredEntry === layer.modelData) root.hoveredEntry = null
                             onClicked: {
-                                Clipboard.copy(layer.modelData.id);
-                                ShellState.closeEphemeris();
+                                root.copyEntry(layer.modelData);
                             }
                         }
 
@@ -245,6 +256,8 @@ Item {
                     source: root.currentEntry && root.currentEntry.type === "image"
                         ? "file://" + root.currentEntry.content : ""
                     fillMode: Image.PreserveAspectFit
+                    sourceSize.width: Math.min(768,Math.ceil(width))
+                    sourceSize.height: Math.min(768,Math.ceil(height))
                     asynchronous: true
                     visible: root.currentEntry && root.currentEntry.type === "image"
                 }
@@ -259,7 +272,7 @@ Item {
                         Layout.fillWidth: true
                         Text {
                             Layout.fillWidth: true
-                            text: root.currentEntry ? root.clipKind(root.currentEntry).toUpperCase() : "EMPTY"
+                            text: root.currentEntry ? (root.currentEntry.pinned ? "PINNED · " : "")+root.clipKind(root.currentEntry).toUpperCase() : "EMPTY"
                             color: root.currentEntry ? root.kindTone(root.clipKind(root.currentEntry)) : Theme.muted
                             font.family: Theme.fontMono
                             font.pixelSize: 11
@@ -304,8 +317,7 @@ Item {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            Clipboard.copy(root.currentEntry.id);
-                            ShellState.closeEphemeris();
+                            root.copyEntry(root.currentEntry);
                         }
                     }
                 }
@@ -342,6 +354,10 @@ Item {
                 Keys.onPressed: function(event) {
                     if (event.key === Qt.Key_Down || event.key === Qt.Key_Up) {
                         root.moveSelection(event.key === Qt.Key_Down ? 1 : -1); event.accepted = true;
+                    } else if (event.key === Qt.Key_Delete) {
+                        Clipboard.remove(root.currentEntry); event.accepted=true;
+                    } else if (event.key === Qt.Key_P && (event.modifiers & Qt.ControlModifier)) {
+                        Clipboard.togglePin(root.currentEntry); event.accepted=true;
                     } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
                         root.restoreSelection(); event.accepted = true;
                     }

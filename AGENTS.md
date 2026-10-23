@@ -12,6 +12,7 @@ authorization to redesign working surfaces.
 - Preserve the real logo, Parallax's orbit, expressive morphing, solid instrument
   backgrounds, translucent controls, and Resonance's rounded clipping.
 - Do not restore Chronos or the diamond's duplicate telemetry sidepanel.
+- Do not add desktop background widgets. Clocks, telemetry and controls must stay useful while application windows are open, through Aperture or an on-demand instrument. Visual/customization inspiration from another shell must fit this rule.
 - Inspect the current branch, dirty tree, source and installed runtime separately.
   Preserve existing changes. Commit, push, install, restart and rewrite history
   only when the current request authorizes those actions.

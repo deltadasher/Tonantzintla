@@ -48,6 +48,9 @@ fake_bin="$test_root/bin"
 mkdir -p "$fake_bin"
 cat >"$fake_bin/qs" <<'EOF'
 #!/usr/bin/env bash
+if [[ -n "${QS_ENV_CAPTURE:-}" ]]; then
+    printf '%s\n' "${MALLOC_CONF-}" >"$QS_ENV_CAPTURE"
+fi
 if [[ "${1:-}" == "-p" && "${3:-}" == "list" ]]; then
     exit 0
 fi
@@ -58,6 +61,25 @@ fi
 printf '%s\n' "$*" >"$QS_CAPTURE"
 EOF
 chmod +x "$fake_bin/qs"
+
+# Fake qs proves the environment at the exec boundary without a real shell/lock.
+allocator_inherited="background_thread:false,narenas:8,dirty_decay_ms:9000,thp:never"
+allocator_policy="narenas:2,dirty_decay_ms:0,muzzy_decay_ms:0"
+for action in run lock; do
+    MALLOC_CONF="$allocator_inherited" QS_CAPTURE="$test_root/$action-call" \
+    QS_ENV_CAPTURE="$test_root/$action-env" PATH="$fake_bin:$PATH" \
+        "$project_root/bin/blackhole" "$action"
+    [[ "$(<"$test_root/$action-env")" == "$allocator_inherited,$allocator_policy" ]]
+done
+[[ "$(<"$test_root/run-call")" == "-p $project_root/src/quickshell" ]]
+[[ "$(<"$test_root/lock-call")" == "-d -n -p $project_root/src/quickshell/umbra-lock.qml" ]]
+env -u MALLOC_CONF QS_CAPTURE="$test_root/empty-call" QS_ENV_CAPTURE="$test_root/empty-env" \
+    PATH="$fake_bin:$PATH" "$project_root/bin/blackhole" run
+[[ "$(<"$test_root/empty-env")" == "$allocator_policy" ]]
+MALLOC_CONF="$allocator_inherited" QS_CAPTURE="$test_root/status-call" \
+QS_ENV_CAPTURE="$test_root/status-env" PATH="$fake_bin:$PATH" \
+    "$project_root/bin/blackhole" lock-status
+[[ "$(<"$test_root/status-env")" == "$allocator_inherited" ]]
 
 QS_CAPTURE="$test_root/notify-call" PATH="$fake_bin:$PATH" \
     "$project_root/bin/blackhole" notify "Hello" "World"

@@ -1,10 +1,12 @@
 import QtQuick
+import QtQuick.Controls
 import ".."
 import "../services"
 
 Rectangle {
     id: root
 
+    property string accessibleLabel: "Open notifications · " + (unread ? Notifications.unreadCount + " unread" : "No unread notifications")
     signal activated()
     readonly property bool unread: Notifications.unreadCount > 0
     readonly property bool isVertical: root.parent && typeof root.parent.isVertical !== "undefined"
@@ -14,13 +16,28 @@ Rectangle {
     readonly property bool hovered: pointer.containsMouse && !pointer.hoverSuppressed
         && !sourceActive
 
+    activeFocusOnTab: true
+    Accessible.role: Accessible.Button
+    Accessible.name: accessibleLabel
+    Accessible.onPressAction: activated()
+    Keys.onReturnPressed: activated()
+    Keys.onSpacePressed: activated()
+
+    ToolTip {
+        visible: root.hovered
+        delay: 500
+        text: root.accessibleLabel
+        background: Rectangle { color: Theme.mantle; radius: Theme.radiusSmall; border.color: Theme.accentLine }
+        contentItem: Text { text: root.accessibleLabel; color: Theme.moon; font.family: Theme.fontText; font.pixelSize: Theme.textLabel }
+    }
+
     implicitWidth: isVertical ? (Settings.compact ? 32 : 36) : (Settings.compact ? 36 : 40)
     implicitHeight: isVertical ? (Settings.compact ? 32 : 36) : (Settings.compact ? 36 : 40)
     radius: 11
-    color: sourceActive ? Theme.void_ : unread ? Theme.barAccentVeil
-        : hovered ? Theme.barNeutralHover : "transparent"
-    border.width: 0
-    scale: hovered ? 1.05 : 1
+    color: pointer.pressed ? Theme.controlPressed : sourceActive ? Theme.controlSelected
+        : hovered ? Theme.barNeutralHover : unread ? Theme.barAccentVeil : "transparent"
+    border.width: activeFocus ? 1 : 0
+    border.color: Theme.accent
     clip: true
 
     Text {
@@ -46,7 +63,7 @@ Rectangle {
             text: Math.min(9, Notifications.unreadCount)
             color: Theme.void_
             font.family: Theme.fontMono
-            font.pixelSize: 10
+            font.pixelSize: Theme.textMicro
             font.weight: Font.Black
         }
     }
@@ -62,5 +79,4 @@ Rectangle {
     }
 
     Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-    Behavior on scale { NumberAnimation { duration: Settings.motion ? 170 : 0; easing.type: Easing.OutBack } }
 }

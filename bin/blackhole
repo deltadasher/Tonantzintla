@@ -52,6 +52,8 @@ Machine:
   doctor                  Report required and optional machine integrations
 
 Configuration:
+  graphics ACTION         Renderer preference: status, auto, opengl, or vulkan
+  render-loop ACTION      Render loop: status, auto, basic, or threaded
   config get [KEY]        Read all or a specific setting from settings.json
   config set KEY VALUE    Update a configuration key (e.g., barPosition left, ephemerisStyle spotlight)
   config preset NAME      Apply a desktop theme preset (serpantinum, caelestia, solaris, cyberpunk, minimalist)
@@ -399,9 +401,30 @@ retire_legacy_session() {
     fi
 }
 
+# Keep freed transition/image pages from lingering in the UI process. Set the
+# policy only on an actual shell/lock launch, preserving unrelated user options.
+run_quickshell() {
+    MALLOC_CONF="${MALLOC_CONF:+${MALLOC_CONF},}narenas:2,dirty_decay_ms:0,muzzy_decay_ms:0" \
+        exec python3 "$libexec/graphics_policy.py" launch -- qs "$@"
+}
+
 case "$command_name" in
+    render-loop)
+        case "${2:-status}" in
+            status|auto|basic|threaded)
+                exec python3 "$libexec/graphics_policy.py" --policy render-loop "${2:-status}" "${@:3}" ;;
+            *) printf 'Usage: blackhole render-loop [status|auto|basic|threaded]\n' >&2; exit 2 ;;
+        esac
+        ;;
+    graphics)
+        case "${2:-status}" in
+            status|auto|opengl|vulkan)
+                exec python3 "$libexec/graphics_policy.py" "${2:-status}" "${@:3}" ;;
+            *) printf 'Usage: blackhole graphics [status|auto|opengl|vulkan]\n' >&2; exit 2 ;;
+        esac
+        ;;
     run)
-        exec qs -p "$shell_root"
+        run_quickshell -p "$shell_root"
         ;;
     start)
         check_niri_start_allowed
@@ -516,7 +539,7 @@ case "$command_name" in
         call_ipc quickactions toggle "$tab"
         ;;
     lock)
-        exec qs -d -n -p "$shell_root/umbra-lock.qml"
+        run_quickshell -d -n -p "$shell_root/umbra-lock.qml"
         ;;
     lock-status)
         exec qs -p "$shell_root/umbra-lock.qml" ipc call lockState status

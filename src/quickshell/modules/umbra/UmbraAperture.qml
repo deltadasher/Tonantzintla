@@ -19,7 +19,9 @@ Item {
     }
     Canvas {
         id: fallback
-        anchors.fill: parent
+        readonly property real renderScale: Math.min(1, 1280 / Math.max(1, root.width), 720 / Math.max(1, root.height))
+        width: root.width * renderScale; height: root.height * renderScale
+        transform: Scale { xScale: 1 / fallback.renderScale; yScale: 1 / fallback.renderScale }
         visible: root.GraphicsInfo.api === GraphicsInfo.Software || effect.status === ShaderEffect.Error
         Connections {
             target: root

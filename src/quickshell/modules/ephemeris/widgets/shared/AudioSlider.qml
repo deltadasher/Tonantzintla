@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import "../../../.."
+import "../../../../components"
 
 Item {
     id: root
@@ -9,6 +10,8 @@ Item {
     property real maximumValue: 150
     property real stepSize: 2
     property bool muted: false
+    // Compact media volume stays subordinate to the track's seek display.
+    property bool compact: false
     property color accentColor: Theme.accent
     property real previewValue: value
     property bool interacting: false
@@ -17,6 +20,7 @@ Item {
 
     implicitHeight: 42
     activeFocusOnTab: true
+    Accessible.role: Accessible.Slider
 
     function clamp(value) {
         return Math.max(0, Math.min(maximumValue, value));
@@ -54,8 +58,8 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         anchors.leftMargin: 9
         anchors.rightMargin: 9
-        height: 9
-        radius: 5
+        height: root.compact ? 5 : 9
+        radius: root.compact ? height / 2 : 5
         color: Theme.line
         border.width: 0
         border.color: root.accentColor
@@ -69,7 +73,8 @@ Item {
                 x: track.width * modelData / root.maximumValue - width / 2
                 anchors.verticalCenter: parent.verticalCenter
                 width: modelData % 50 === 0 ? 2 : 1
-                height: modelData % 50 === 0 ? 13 : 7
+                height: root.compact ? (modelData % 50 === 0 ? 9 : 5)
+                    : modelData % 50 === 0 ? 13 : 7
                 radius: 1
                 color: Theme.lineBright
                 opacity: 0.65
@@ -84,7 +89,7 @@ Item {
             opacity: root.muted ? 0.45 : 1
             Behavior on width {
                 enabled: !root.interacting
-                NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                NumberAnimation { duration: Theme.duration(180); easing.type: Easing.OutCubic }
             }
         }
 
@@ -101,13 +106,20 @@ Item {
         Rectangle {
             x: track.width * root.ratio - width / 2
             anchors.verticalCenter: parent.verticalCenter
-            width: root.interacting || hover.hovered || root.activeFocus ? 21 : 17
+            width: root.compact ? (root.interacting || hover.hovered || root.activeFocus ? 17 : 13)
+                : root.interacting || hover.hovered || root.activeFocus ? 21 : 17
             height: width
             radius: width / 2
             color: root.muted ? Theme.muted : Theme.moon
-            border.width: 0
-            border.color: root.muted ? Theme.lineBright : root.accentColor
-            scale: root.interacting ? 1.12 : 1
+            border.width: root.activeFocus ? 2 : 0
+            border.color: Theme.accent
+            scale: root.interacting && Theme.motionEnabled ? 1.12 : 1
+
+            OpticalSurface {
+                anchors.fill: parent; radius: parent.radius
+                hovered: hover.hovered; pressed: root.interacting; focused: root.activeFocus
+                tint: root.accentColor
+            }
 
             Rectangle {
                 anchors.centerIn: parent
@@ -119,7 +131,7 @@ Item {
 
             Behavior on x {
                 enabled: !root.interacting
-                NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                NumberAnimation { duration: Theme.duration(180); easing.type: Easing.OutCubic }
             }
             Behavior on width { NumberAnimation { duration: Theme.motionFast; easing.type: Easing.OutCubic } }
             Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Easing.OutBack } }
@@ -144,7 +156,7 @@ Item {
             text: Math.round(root.previewValue) + "%"
             color: root.previewValue > 100 ? Theme.warning : Theme.moon
             font.family: Theme.fontMono
-            font.pixelSize: 10
+            font.pixelSize: Theme.textMicro
             font.weight: Font.Bold
         }
     }

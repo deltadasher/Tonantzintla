@@ -4,10 +4,27 @@ import QtQuick.Effects
 import Quickshell
 import "../.."
 import "../../services"
+import "../../components"
+import "UmbraLayout.js" as Layout
 
 FocusScope {
     id: root
 
+    property var opticalBackdrop: opticalField
+    OpticalBackdrop {
+        id: opticalField
+        anchors.fill: parent
+        scope: "umbra"
+        active: root.surfaceActive && background.mode !== "solid"
+        viewportSize: Qt.size(root.width, root.height)
+        source: background.mode === "solid" ? "" : String(background.actualStillSource)
+        sourceKind: background.videoPlaying ? "video" : "image"
+        // Prepared Umbra loops have no separate cached still. The provider keeps
+        // controls etched while the loop plays rather than decoding another copy.
+        previewSource: ""
+    }
+    readonly property var layout: Layout.normalize(Settings.umbraLayout)
+    function hasPlacement(key) { return Settings.umbraLayout && Settings.umbraLayout[key] !== undefined; }
     property bool previewMode: false
     property var screenInfo: null
     property real intro: 0
@@ -20,6 +37,10 @@ FocusScope {
         Math.min(width / 1920, height / 1080)))
     readonly property real pad: Math.max(26, width * 0.045)
     readonly property real horizonSize: Math.min(height * 1.26, width * 0.78)
+    // One decoder across lock outputs protects the shared memory budget.
+    readonly property bool videoOutput: !root.screenInfo
+        || root.screenInfo.name === (Compositor.focusedOutput.length > 0 ? Compositor.focusedOutput
+            : Quickshell.screens.length > 0 ? Quickshell.screens[0].name : "")
     readonly property bool surfaceActive: root.previewMode
         ? Umbra.previewActive : Umbra.active
     readonly property real visualEnergy: Math.max(root.authEnergy,
@@ -174,30 +195,12 @@ FocusScope {
         easing.type: Easing.OutCubic
     }
 
-    Image {
-        id: wallpaper
+    UmbraBackground {
+        id: background
         anchors.fill: parent
-        source: root.wallpaperSource
-        fillMode: Image.PreserveAspectCrop
-        asynchronous: true
-        cache: true
-    }
-
-    MultiEffect {
-        anchors.fill: parent
-        source: wallpaper
-        visible: Settings.umbraBlurWallpaper
-        blurEnabled: true
-        blur: 0.68
-        blurMax: 64
-        saturation: -0.25
-        brightness: -0.08
-    }
-
-    Rectangle {
-        anchors.fill: parent
-        color: Theme.void_
-        opacity: Settings.umbraBlurWallpaper ? 0.84 : 0.86
+        active: root.surfaceActive
+        videoEnabled: root.videoOutput
+        preview: root.previewMode
     }
 
     Rectangle {
@@ -245,6 +248,7 @@ FocusScope {
     // scenery, status instrument, and authentication feedback simultaneously.
     UmbraEventHorizon {
         id: eventHorizon
+        objectName: "umbraFixedHorizon"
         width: root.horizonSize
         height: width
         x: (root.width * (0.69 - root.plunge * 0.19)) - width * 0.5
@@ -297,51 +301,69 @@ FocusScope {
         opacity: root.contentOpacity
     }
 
-    Item {
-        x: root.pad
-        y: root.height * 0.29 + (1 - root.clockArrival) * 28 * root.sf
-            + root.departure * 26 * root.sf
-        transform: Translate { x: root.departure * 92 * root.sf }
-        width: root.width * 0.44
-        height: 240 * root.sf
+    UmbraPlacement {
+        id: clockBox
+        objectName: "umbraClock"
+        placementRotation: root.layout.clock.rotation
+        placementOpacity: root.layout.clock.opacity
+        x: root.layout.clock.x * root.width
+        y: root.layout.clock.y * root.height + (1 - root.clockArrival) * 28 * root.sf
+        width: root.layout.clock.w * root.width
+        height: root.hasPlacement("clock") ? root.layout.clock.h * root.height : 240 * root.sf
+        visible: root.layout.clock.visible
         opacity: root.clockArrival * (1 - root.departure)
+        UmbraClassicClock {
+            anchors.fill: parent
+            visible: Settings.umbraClockVariant === "classic"
+            dateTime: clock.date
+        }
+        InstrumentClock {
+            anchors.fill: parent
+            visible: Settings.umbraClockVariant !== "classic"
+            active: visible && root.surfaceActive && clockBox.visible
+            dateTime: clock.date
+            variant: Settings.umbraClockVariant
+        }
+    }
+    UmbraPlacement {
+        objectName: "umbraWeather"
+        placementRotation: root.layout.weather.rotation
+        placementOpacity: root.layout.weather.opacity
+        x: root.layout.weather.x * root.width; y: root.layout.weather.y * root.height
+        width: root.layout.weather.w * root.width; height: root.layout.weather.h * root.height
+        visible: root.layout.weather.visible && Settings.umbraShowWeather && Weather.available
+        opacity: root.contentOpacity
+        Text {
+            anchors.fill: parent
+        text: Math.round(Number(Weather.current.temp || 0)) + Weather.unitSymbol + "  /  " + String(Weather.current.condition || "").toUpperCase()
+        color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10 * root.sf
+        fontSizeMode: Text.Fit; minimumPixelSize: 8; elide: Text.ElideRight
 
-        Text {
-            text: Qt.formatDateTime(clock.date, "dddd, MMMM dd").toUpperCase()
-            color: Theme.accent
-            font.family: Theme.fontMono
-            font.pixelSize: 11 * root.sf
-            font.letterSpacing: 2 * root.sf
         }
+    }
+    UmbraPlacement {
+        objectName: "umbraKeyboard"
+        placementRotation: root.layout.keyboard.rotation
+        placementOpacity: root.layout.keyboard.opacity
+        x: root.layout.keyboard.x * root.width; y: root.layout.keyboard.y * root.height
+        width: root.layout.keyboard.w * root.width; height: root.layout.keyboard.h * root.height
+        visible: root.layout.keyboard.visible
+        opacity: root.contentOpacity
         Text {
-            y: 23 * root.sf
-            text: Qt.formatDateTime(clock.date, "HH:mm")
-            color: Theme.moon
-            font.family: Theme.fontDisplay
-            font.pixelSize: 126 * root.sf
-            font.weight: Font.Light
-            font.letterSpacing: -5 * root.sf
-        }
-        Rectangle {
-            y: 180 * root.sf
-            width: 42 * root.sf; height: 2 * root.sf
-            color: Theme.accent
-        }
-        Text {
-            visible: Settings.umbraShowWeather && Weather.available
-            x: 60 * root.sf; y: 174 * root.sf
-            text: Math.round(Number(Weather.current.temp || 0)) + Weather.unitSymbol
-                + "  /  " + String(Weather.current.condition || "").toUpperCase()
-            color: Theme.muted
-            font.family: Theme.fontMono
-            font.pixelSize: 10 * root.sf
-            font.letterSpacing: 1 * root.sf
+            anchors.fill: parent
+        text: (Compositor.keyboardLayoutName.length > 0 ? Compositor.keyboardLayoutName : "Keyboard layout unavailable")
+            + "  ·  Enter to unlock"
+        color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10 * root.sf
+        fontSizeMode: Text.Fit; minimumPixelSize: 8; elide: Text.ElideRight
+
         }
     }
 
     // Password entry is a path through space. The actual TextInput is invisible;
     // each character energizes a node on this trajectory.
     Item {
+        objectName: "umbraFixedPassword"
+        z: 10 // Editable instruments cannot cover the authentication controls.
         x: root.pad + root.failureOffset
         y: root.height * 0.58
         width: Math.min(root.width * 0.37, 660 * root.sf)
@@ -446,122 +468,65 @@ FocusScope {
         }
     }
 
-    Rectangle {
-        visible: DeviceState.batteryAvailable
-        x: eventHorizon.x + eventHorizon.width * 0.13
-        y: eventHorizon.y + eventHorizon.height * 0.73
-        width: 54 * root.sf
-        height: width
-        radius: width / 2
-        color: Qt.rgba((DeviceState.batteryLow ? Theme.danger : Theme.cyan).r,
-            (DeviceState.batteryLow ? Theme.danger : Theme.cyan).g,
-            (DeviceState.batteryLow ? Theme.danger : Theme.cyan).b, 0.15)
-        opacity: root.contentOpacity
-        scale: 0.55 + root.intro * 0.45
-
-        Text {
-            anchors.centerIn: parent
-            text: DeviceState.batteryCharging ? "+" : DeviceState.batteryPercent + "%"
-            color: DeviceState.batteryLow ? Theme.danger : Theme.cyan
-            font.family: Theme.fontMono
-            font.pixelSize: 10 * root.sf
-            font.weight: Font.Bold
+    Row {
+        z: 10
+        x: root.pad; y: root.height * .72; spacing: 8
+        visible: Umbra.fingerprintAvailable && !root.previewMode
+        UmbraFingerprintVisual {
+            visible: Settings.umbraFingerprintLook !== "original" || !Settings.umbraFingerprintShowText
+            interactive: !root.previewMode
+        }
+        ActionButton {
+            visible: Settings.umbraFingerprintLook === "original" && Settings.umbraFingerprintShowText
+            text: Umbra.authenticating && Umbra.authMethod === "fingerprint" ? "Waiting for reader…" : Umbra.failed ? "Retry fingerprint" : "Use fingerprint"
+            enabled: !Umbra.authenticating && !Umbra.unlocking
+            onClicked: Umbra.submitFingerprint()
+        }
+        ActionButton {
+            text: "Use password"
+            visible: Umbra.authenticating && Umbra.authMethod === "fingerprint"
+            onClicked: { Umbra.cancelAuthentication(); root.focusInput(); }
         }
     }
+    Text {
+        x: root.pad; y: root.height - 22
+        width: root.width - root.pad * 2
+        visible: root.previewMode && background.statusText.length > 0
+        text: background.statusText
+        color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10
+        elide: Text.ElideRight
+    }
 
-    Item {
-        visible: Settings.umbraShowMedia && Media.available
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        anchors.rightMargin: root.pad
-        anchors.bottomMargin: root.pad
-        width: Math.min(470 * root.sf, parent.width * 0.34)
-        height: 108 * root.sf
+    UmbraPlacement {
+        objectName: "umbraBattery"
+        placementRotation: root.layout.battery.rotation
+        placementOpacity: root.layout.battery.opacity
+        visible: root.layout.battery.visible && DeviceState.batteryAvailable
+        x: root.hasPlacement("battery") ? root.layout.battery.x * root.width : eventHorizon.x + eventHorizon.width * .13
+        y: root.hasPlacement("battery") ? root.layout.battery.y * root.height : eventHorizon.y + eventHorizon.height * .73
+        width: root.hasPlacement("battery") ? root.layout.battery.w * root.width : 54 * root.sf
+        height: root.hasPlacement("battery") ? root.layout.battery.h * root.height : 54 * root.sf
+        opacity: root.contentOpacity
+        scale: 0.55 + root.intro * 0.45
+        UmbraStatusInstrument { anchors.fill: parent; kind: "battery"; textSize: 10 * root.sf }
+    }
+
+    UmbraPlacement {
+        id: mediaBox
+        visible: root.layout.media.visible && Settings.umbraShowMedia && Media.available
+        x: root.hasPlacement("media") ? root.layout.media.x * root.width : root.width - root.pad - width
+        y: root.hasPlacement("media") ? root.layout.media.y * root.height : root.height - root.pad - height
+        width: root.hasPlacement("media") ? root.layout.media.w * root.width : Math.min(470 * root.sf, root.width * .34)
+        height: root.hasPlacement("media") ? root.layout.media.h * root.height : 108 * root.sf
+        objectName: "umbraMedia"
+        placementRotation: root.layout.media.rotation
+        placementOpacity: root.layout.media.opacity
         opacity: root.mediaArrival * (1 - root.departure)
-        // Media hit targets stay at their final positions throughout arrival.
-
-        UmbraDisc {
-            id: mediaDisc
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            width: 108 * root.sf
-            height: width
-            artSource: Media.artUrl
-            playing: Settings.motion && Settings.umbraMotion && Media.playing
+        UmbraMediaInstrument {
+            anchors.fill: parent
+            active: mediaBox.visible && root.surfaceActive
             phase: eventHorizon.phase
             energy: root.visualEnergy
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: Media.toggle()
-            }
-        }
-
-        Text {
-            anchors.right: mediaDisc.left
-            anchors.rightMargin: 22 * root.sf
-            y: 25 * root.sf
-            width: parent.width - mediaDisc.width - 30 * root.sf
-            horizontalAlignment: Text.AlignRight
-            text: Media.title
-            color: Theme.moon
-            font.family: Theme.fontDisplay
-            font.pixelSize: 15 * root.sf
-            font.weight: Font.DemiBold
-            elide: Text.ElideRight
-        }
-        Rectangle {
-            anchors.right: mediaDisc.left
-            anchors.rightMargin: 22 * root.sf
-            y: 60 * root.sf
-            width: (parent.width - mediaDisc.width - 30 * root.sf) * Media.progress
-            height: 7 * root.sf
-            radius: height / 2
-            color: Theme.rose
-            Behavior on width { NumberAnimation { duration: 700; easing.type: Easing.Linear } }
-        }
-
-        Row {
-            anchors.right: mediaDisc.left
-            anchors.rightMargin: 22 * root.sf
-            y: 78 * root.sf
-            spacing: 12 * root.sf
-
-            Repeater {
-                model: ["‹", Media.playing ? "Ⅱ" : "▶", "›"]
-                Rectangle {
-                    required property string modelData
-                    required property int index
-                    width: 32 * root.sf
-                    height: width
-                    radius: width / 2
-                    color: controlPointer.containsMouse
-                        ? (index === 1 ? Theme.accent : Theme.elevated)
-                        : index === 1 ? Theme.accentVeil : "transparent"
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: parent.modelData
-                        color: parent.index === 1 && controlPointer.containsMouse
-                            ? Theme.void_ : Theme.moon
-                        font.family: Theme.fontDisplay
-                        font.pixelSize: 16 * root.sf
-                        font.weight: Font.Bold
-                    }
-                    MouseArea {
-                        id: controlPointer
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            if (parent.index === 0) Media.previous();
-                            else if (parent.index === 1) Media.toggle();
-                            else Media.next();
-                        }
-                    }
-                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                }
-            }
         }
     }
 
@@ -619,6 +584,6 @@ FocusScope {
 
     SystemClock {
         id: clock
-        precision: SystemClock.Seconds
+        precision: SystemClock.Minutes
     }
 }

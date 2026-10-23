@@ -8,6 +8,9 @@ Rectangle {
 
     property string islandId: ""
     default property alias contents: contentGrid.data
+    readonly property string density: ["clock", "system_stats", "media"].indexOf(islandId) >= 0
+        ? (Settings.islandDensity[islandId] || "inherit") : "inherit"
+    readonly property bool compactContent: density === "compact" || (density !== "comfortable" && Settings.compact)
     property real reveal: 1
     property bool luminous: false
     property bool reactive: true
@@ -44,12 +47,12 @@ Rectangle {
     width: visible ? implicitWidth : 0
     height: visible ? implicitHeight : 0
     implicitWidth: !islandVisible ? 0 : (isVertical
-        ? (Settings.compact ? 42 : 46)
-        : contentGrid.implicitWidth + (Settings.compact ? 10 : 14))
+        ? (compactContent ? 42 : 46)
+        : contentGrid.implicitWidth + (compactContent ? 10 : 14))
     implicitHeight: !islandVisible ? 0 : (isVertical
-        ? contentGrid.implicitHeight + (Settings.compact ? 10 : 14)
-        : (Settings.compact ? 36 : Theme.barHeight))
-    radius: Settings.compact ? 8 : 10
+        ? contentGrid.implicitHeight + (compactContent ? 10 : 14)
+        : (compactContent ? 36 : Theme.barHeight))
+    radius: compactContent ? 8 : 10
     color: separate && !(ShellState.barEditMode && barWindow)
         ? extensionActive ? Theme.void_
             : surfaceHover.hovered && reactive
@@ -67,8 +70,7 @@ Rectangle {
     // follows the pointer in the studio overlay.
     opacity: ShellState.isDraggingIsland && ShellState.draggedIslandSourceItem === root
         ? 0 : reveal
-    scale: (0.96 + reveal * 0.04)
-        * (surfaceHover.hovered && reactive && !extensionActive ? 1.01 : 1)
+    scale: 0.96 + reveal * 0.04
 
     readonly property var islandGlyphs: ({
         launcher: "⌕",
@@ -180,7 +182,7 @@ Rectangle {
         columns: root.isVertical ? 1 : -1
         verticalItemAlignment: root.isVertical ? Grid.AlignTop : Grid.AlignVCenter
         horizontalItemAlignment: Grid.AlignHCenter
-        spacing: Settings.compact ? 2 : 4
+        spacing: compactContent ? 2 : 4
         opacity: 1.0
     }
 
@@ -210,8 +212,8 @@ Rectangle {
         height: root.isVertical ? Math.min(28, root.height * 0.28) : 1
         color: Theme.accent
         opacity: 0.72
-        Behavior on width { NumberAnimation { duration: Settings.motion ? 180 : 0; easing.type: Easing.OutCubic } }
-        Behavior on height { NumberAnimation { duration: Settings.motion ? 180 : 0; easing.type: Easing.OutCubic } }
+        Behavior on width { NumberAnimation { duration: Theme.duration(180); easing.type: Easing.OutCubic } }
+        Behavior on height { NumberAnimation { duration: Theme.duration(180); easing.type: Easing.OutCubic } }
     }
 
     transform: Translate {
@@ -221,5 +223,5 @@ Rectangle {
 
     Behavior on color { ColorAnimation { duration: Theme.motionFast } }
     Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
-    Behavior on scale { NumberAnimation { duration: Settings.motion ? 180 : 0; easing.type: Easing.OutCubic } }
+    Behavior on scale { NumberAnimation { duration: Theme.duration(180); easing.type: Easing.OutCubic } }
 }

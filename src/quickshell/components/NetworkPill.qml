@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import ".."
 import "../services"
@@ -7,6 +8,12 @@ Rectangle {
     id: root
     property string outputName: ""
     property var anchorHost: null
+
+    property string accessibleLabel: "Open network · " + (NetState.connected ? NetState.label : "Disconnected")
+    function activate() {
+        if (root.anchorHost) root.anchorHost.toggleEphemeris("network", root);
+        else ShellState.toggleEphemeris("network", root.outputName);
+    }
 
     readonly property var activeNetwork: NetState.wifiNetworks.find(function(network) {
         return network.connected === true;
@@ -19,12 +26,28 @@ Rectangle {
     readonly property bool hovered: pointer.containsMouse && !pointer.hoverSuppressed
         && !sourceActive
 
+    activeFocusOnTab: true
+    Accessible.role: Accessible.Button
+    Accessible.name: accessibleLabel
+    Accessible.onPressAction: activate()
+    Keys.onReturnPressed: activate()
+    Keys.onSpacePressed: activate()
+
+    ToolTip {
+        visible: root.hovered
+        delay: 500
+        text: root.accessibleLabel
+        background: Rectangle { color: Theme.mantle; radius: Theme.radiusSmall; border.color: Theme.accentLine }
+        contentItem: Text { text: root.accessibleLabel; color: Theme.moon; font.family: Theme.fontText; font.pixelSize: Theme.textLabel }
+    }
+
     implicitWidth: isVertical ? (Settings.compact ? 36 : 40) : Math.max(126, row.implicitWidth + 18)
     implicitHeight: Settings.compact ? 34 : 38
     radius: 10
-    color: sourceActive ? Theme.void_ : hovered ? Theme.barNeutralHover : "transparent"
-    border.width: 0
-    scale: hovered ? 1.025 : 1
+    color: pointer.pressed ? Theme.controlPressed : sourceActive ? Theme.controlSelected
+        : hovered ? Theme.barNeutralHover : "transparent"
+    border.width: activeFocus ? 1 : 0
+    border.color: Theme.accent
 
     RowLayout {
         id: row
@@ -116,17 +139,19 @@ Rectangle {
                 function onKindChanged() { networkIcon.requestPaint(); }
             }
             onSigLevelChanged: requestPaint()
+            onActiveColorChanged: requestPaint()
+            onMutedColorChanged: requestPaint()
         }
 
         ColumnLayout {
             visible: !root.isVertical
-            spacing: -1
+            spacing: 0
             Text {
                 Layout.maximumWidth: 112
                 text: Settings.showNetworkLabel ? NetState.label : "NETWORK"
                 color: Theme.moon
                 font.family: Theme.fontText
-                font.pixelSize: 12
+                font.pixelSize: Theme.textLabel
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
             }
@@ -136,7 +161,7 @@ Rectangle {
                     : "DISCONNECTED"
                 color: NetState.connected ? Theme.cyan : Theme.danger
                 font.family: Theme.fontText
-                font.pixelSize: 10
+                font.pixelSize: Theme.textMicro
                 font.weight: Font.DemiBold
                 font.letterSpacing: 0.35
             }
@@ -151,12 +176,10 @@ Rectangle {
         cursorShape: Qt.PointingHandCursor
         onClicked: {
             hoverSuppressed = true;
-            if (root.anchorHost) root.anchorHost.toggleEphemeris("network", root);
-            else ShellState.toggleEphemeris("network", root.outputName);
+            root.activate();
         }
         onExited: hoverSuppressed = false
     }
 
     Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-    Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Easing.OutBack } }
 }

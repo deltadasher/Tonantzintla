@@ -164,11 +164,14 @@ tab. Content leaves before a source swap, the new component must finish loading
 before entrance, and rapid requests coalesce. Closing cancels outstanding
 entrances. Loader failures show an actionable state without taking down the bar.
 
-`InstrumentGeometry.qml` and `InstrumentBridge.qml` are isolated prototypes in
-src/quickshell/preview-instruments.qml; neither currently has a live host consumer.
-The intended contract is shared bounds for backing and rounded masking with
-fixed-size content. Integrate and validate that contract before restoring the
-experimental settings toggle. It is not a general SDF metaball renderer.
+`InstrumentGeometry.qml` feeds the live host's backing and rounded content mask
+while content retains its final layout size. `InstrumentBridge.qml` draws the
+classic solid rounded backing directly in the scene graph; Gravity uses its
+bounded shader alternative. Neither is a general SDF metaball union renderer.
+The existing instrument context is a lazy local overlay in that same native
+window, rather than another fullscreen layer-shell buffer. Its controls change
+the visible instrument, keep keyboard focus and unload on dismissal. F10 and the
+outside-content Customize handle join the existing Super+Alt click gesture.
 Compact widgets may expose `preferredSurfaceHeight`; the live host clamps it to
 the registry's screen bounds.
 

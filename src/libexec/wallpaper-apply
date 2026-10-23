@@ -5,6 +5,15 @@ kind="${1:-image}"
 wallpaper_path="${2:-}"
 outputs="${3:-all}"
 transition="${4:-any}"
+backend="${5:-awww}"
+[[ "$backend" == "awww" || "$backend" == "swww" ]] || exit 2
+transition_angle=45
+case "$transition" in
+    swipe) transition=left ;;
+    diagonal) transition=wipe ;;
+    any|fade|grow|wave|left|right|top|bottom|wipe|none|simple|center|outer|random) ;;
+    *) transition=fade ;;
+esac
 runtime_root="${XDG_RUNTIME_DIR:-/tmp}/tonantzintla"
 pid_file="$runtime_root/mpvpaper.pids"
 mkdir -p "$runtime_root"
@@ -35,12 +44,14 @@ if [[ "$kind" == "video" ]]; then
     exit 0
 fi
 
-awww query >/dev/null 2>&1 || {
-    nohup awww-daemon -q >/tmp/tonantzintla-awww.log 2>&1 &
-    sleep 0.35
-}
+if [[ "$backend" == "awww" ]]; then
+    awww query >/dev/null 2>&1 || {
+        nohup awww-daemon -q >/tmp/tonantzintla-awww.log 2>&1 &
+        sleep 0.35
+    }
+fi
 
-command=(awww img "$wallpaper_path" --transition-type "$transition" --transition-pos 0.5,0.5 --transition-fps 120 --transition-duration 0.85)
+command=("$backend" img "$wallpaper_path" --transition-type "$transition" --transition-angle "$transition_angle" --transition-pos 0.5,0.5 --transition-fps 120 --transition-duration 0.85)
 if [[ "$outputs" != "all" && -n "$outputs" ]]; then
     command+=(--outputs "$outputs")
 fi

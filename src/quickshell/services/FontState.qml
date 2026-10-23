@@ -7,6 +7,8 @@ import ".."
 QtObject {
     id: root
 
+    Component.onCompleted: refreshDelay.restart()
+
     property string displayResolved: ""
     property string textResolved: ""
     property string monoResolved: ""
@@ -15,12 +17,15 @@ QtObject {
     readonly property bool displayOk: classification(Settings.fontDisplay, displayResolved) !== "fallback"
     readonly property bool textOk: classification(Settings.fontText, textResolved) !== "fallback"
     readonly property bool monoOk: classification(Settings.fontMono, monoResolved) !== "fallback"
-    readonly property bool iconOk: classification(Settings.fontIcon, iconResolved) !== "fallback"
+    readonly property bool iconOk: Theme.iconFontReady || classification(Settings.fontIcon, iconResolved) !== "fallback"
 
-    readonly property string displayStatus: status(Settings.fontDisplay, displayResolved)
-    readonly property string textStatus: status(Settings.fontText, textResolved)
-    readonly property string monoStatus: status(Settings.fontMono, monoResolved)
-    readonly property string iconStatus: status(Settings.fontIcon, iconResolved)
+    readonly property string displayStatus: displayProcess.running ? "Checking…" : status(Settings.fontDisplay, displayResolved)
+    readonly property string textStatus: textProcess.running ? "Checking…" : status(Settings.fontText, textResolved)
+    readonly property string monoStatus: monoProcess.running ? "Checking…" : status(Settings.fontMono, monoResolved)
+    readonly property string iconSystemStatus: iconProcess.running ? "Checking…" : status(Settings.fontIcon, iconResolved)
+    readonly property string iconStatus: Theme.iconFontReady
+        ? "Bundled symbols ready · other glyphs: " + iconSystemStatus
+        : Theme.iconFontError ? "Bundled symbols unavailable · " + iconSystemStatus : iconSystemStatus
 
     function normalized(value) {
         return String(value || "").trim().toLowerCase();
@@ -44,12 +49,12 @@ QtObject {
     function status(requested, resolved) {
         const kind = classification(requested, resolved);
         if (kind === "offline")
-            return "FONTCONFIG OFFLINE";
+            return "Not verified";
         if (kind === "fallback")
-            return "FALLBACK  //  " + resolved.toUpperCase();
+            return "Fallback: " + resolved;
         if (kind === "alias")
-            return "SYSTEM ALIAS  //  " + resolved.toUpperCase();
-        return "INSTALLED  //  " + resolved.toUpperCase();
+            return "System: " + resolved;
+        return "Available";
     }
 
     function launch(process, family) {
@@ -89,7 +94,6 @@ QtObject {
 
     property Timer refreshDelay: Timer {
         interval: 180
-        triggeredOnStart: true
         onTriggered: root.refresh()
     }
 

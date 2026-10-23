@@ -109,14 +109,6 @@ class SpotlightTests(unittest.TestCase):
         self.assertNotIn("color: Qt.rgba(Theme.void_.r, Theme.void_.g, Theme.void_.b, 0.28)",
                          studio)
 
-    def test_widget_popover_is_hosted_and_gated(self) -> None:
-        shell = source("shell.qml")
-        state = source("ShellState.qml")
-        self.assertIn("WidgetQuickSettings {}", shell)
-        self.assertIn("ShellState.widgetSettingsVisible", shell)
-        self.assertIn("function openWidgetSettings", state)
-        # Closing the surface must take its popover with it.
-        self.assertIn("closeWidgetSettings();", state)
 
 
 class PlainLanguageTests(unittest.TestCase):

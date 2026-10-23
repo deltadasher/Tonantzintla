@@ -26,3 +26,33 @@ TONANTZINTLA_DISABLE_GRAVITY=1 prevents loading the material.
 
 The software host uses rectangular content clipping because Quickshell’s rounded
 mask also needs a shader. Rounded containment remains in use on the GPU.
+
+## Bounded control optics
+
+`optical.frag` is an independently authored rounded-distance shader sampling one
+small shared wallpaper still. `OpticalBackdrop` supplies a direct Image texture
+(maximum 768 × 768 decoded request) to controls within its explicit host. There is
+no screen capture, item capture, per-control texture, mipmap or recurring frame
+clock. The host supplies output dimensions and origin so edge bars and clipped
+instrument viewports sample the correct wallpaper region. Ancestor geometry
+signals update sampling during movement and scrolling.
+
+The shader provides edge displacement, separated RGB samples, fixed five-point
+frosting, a directional rim and inner glint. Hover/press use the normal finite
+motion policy. Instruments retain their opaque backings. This is wallpaper-based
+control optics, not refraction of application windows or a physically exact lens.
+Video uses an existing indexed still, with an explicit unavailable state if none
+exists. Etched, hidden and disabled providers do not create the Image. Software
+rendering and shader/image errors retain primitive etched shading.
+
+Build the shipped source and baked output together:
+
+```sh
+/usr/lib/qt6/bin/qsb --glsl '100 es,120,150' --hlsl 50 --msl 12 -o optical.frag.qsb optical.frag
+```
+
+`tests/instruments/optics.qml` checks provider lifetime, geometry mapping and the
+GPU path when hosted on a real renderer. `test_optical_material.py` runs the same
+lifecycle under isolated software rendering. These checks do not establish the
+full-shell 450 MB RSS requirement; that requires the coordinator's native session
+measurement, including Niri and any transient helpers.

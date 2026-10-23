@@ -44,18 +44,18 @@ Item {
         anchors.left: parent.left; anchors.right: zoneLabel.left; anchors.rightMargin: 12
         text: root.available ? root.location.toUpperCase() : "DAY / NIGHT"
         elide: Text.ElideRight
-        color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.letterSpacing: 1
+        color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.letterSpacing: 1
     }
     Text {
         id: zoneLabel
         anchors.right: parent.right
         text: root.available ? (root.solar.state === "polar-day" ? "MIDNIGHT SUN · "
             : root.solar.state === "polar-night" ? "POLAR NIGHT · " : "") + (root.solar.zone_label || "") : ""
-        color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: 10
+        color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption
     }
     Canvas {
         id: field
-        anchors.fill: parent; anchors.topMargin: 23; anchors.bottomMargin: 41
+        anchors.fill: parent; anchors.topMargin: 26; anchors.bottomMargin: 44
         visible: root.available
         antialiasing: true
         function yAt(f) { return height * 0.58 - root.pathHeight(f) * height * 0.48; }
@@ -140,11 +140,11 @@ Item {
             Column {
                 required property var modelData
                 width: root.width / 5; spacing: 4
-                Text { width: parent.width; horizontalAlignment: Text.AlignHCenter; text: modelData.label; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: root.width < 500 ? 8 : 9 }
+                Text { width: parent.width; horizontalAlignment: Text.AlignHCenter; text: modelData.label; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: Theme.textMicro }
                 Text {
                     width: parent.width; horizontalAlignment: Text.AlignHCenter
                     text: root.solar[modelData.key] ? (root.solar[modelData.key].estimated ? "≈" : "") + root.solar[modelData.key].time : "—"
-                    color: Theme.moon; font.family: Theme.fontMono; font.pixelSize: 11
+                    color: Theme.moon; font.family: Theme.fontMono; font.pixelSize: Theme.textLabel
                 }
             }
         }
@@ -156,7 +156,7 @@ Item {
             anchors.centerIn: parent; width: parent.width - 28
             text: root.unavailableText + "\nOPEN WEATHER SETTINGS"
             horizontalAlignment: Text.AlignHCenter; wrapMode: Text.Wrap
-            color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; lineHeight: 1.6
+            color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; lineHeight: 1.6
         }
         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.configureRequested() }
         Accessible.role: Accessible.Button

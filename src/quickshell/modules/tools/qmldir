@@ -1,0 +1,5 @@
+singleton ToolboxState 1.0 ToolboxState.qml
+CalculatorPane 1.0 CalculatorPane.qml
+NotesPane 1.0 NotesPane.qml
+EmojiPane 1.0 EmojiPane.qml
+FilePane 1.0 FilePane.qml

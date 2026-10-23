@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Layouts
 import "../../../../services"
 import "../../../.."
 
@@ -66,8 +67,11 @@ Item {
 
     function centerY(index, canvasHeight) {
         const bounds = temperatureBounds();
-        const top = 62;
-        const bottom = canvasHeight - 62;
+        // Reserve space for the condition capsule and the day labels even
+        // when the temperature band reaches its widest point.
+        const bandMargin = 8 + Math.min(22, canvasHeight * 0.10);
+        const top = 60 + bandMargin;
+        const bottom = Math.max(top, canvasHeight - 48 - bandMargin);
         return top + (bounds.high - midpoint(forecast[index]))
             / (bounds.high - bounds.low) * (bottom - top);
     }
@@ -211,7 +215,7 @@ Item {
                 height: width
                 radius: width / 2
                 color: dayPointer.containsMouse ? Theme.rose : Theme.moon
-                Behavior on width { NumberAnimation { duration: Settings.motion ? 150 : 0 } }
+                Behavior on width { NumberAnimation { duration: Theme.duration(150) } }
             }
 
             Column {
@@ -224,7 +228,7 @@ Item {
                     text: dayTick.day.day
                     color: root.activeIndex === dayTick.index ? Theme.moon : Theme.muted
                     font.family: Theme.fontMono
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.textCaption
                     font.weight: Font.Black
                 }
                 Text {
@@ -232,7 +236,7 @@ Item {
                     text: dayTick.day.precipitation + "%"
                     color: Theme.cyan
                     font.family: Theme.fontMono
-                    font.pixelSize: 10
+                    font.pixelSize: Theme.textCaption
                     font.weight: Font.Bold
                 }
             }
@@ -253,27 +257,34 @@ Item {
         visible: root.activeDay !== null
         x: 18
         y: 14
-        width: Math.min(parent.width - 36, detailRow.implicitWidth + 24)
+        width: parent.width - 36
         height: 34
         radius: 17
         color: Theme.controlRest
-        Row {
-            id: detailRow
-            anchors.centerIn: parent
-            spacing: 9
+        RowLayout {
+            anchors.fill: parent; anchors.leftMargin: 10; anchors.rightMargin: 10
+            spacing: 6
             Text { text: root.activeDay ? root.activeDay.icon : ""; color: Theme.cyan; font.family: Theme.fontDisplay; font.pixelSize: 17 }
-            Text { text: root.activeDay ? root.activeDay.condition.toUpperCase() : ""; color: Theme.moon; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Black }
-            Text { text: root.activeDay ? root.activeDay.max + " / " + root.activeDay.min + root.unitSymbol : ""; color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Black }
+            Text {
+                Layout.fillWidth: true
+                text: root.activeDay ? root.activeDay.condition.toUpperCase() : ""
+                elide: Text.ElideRight
+                color: Theme.moon; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.DemiBold
+            }
+            Text { text: root.activeDay ? root.activeDay.max + " / " + root.activeDay.min + root.unitSymbol : ""; color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.DemiBold }
         }
     }
 
     Text {
         anchors.centerIn: parent
+        width: parent.width - 32
+        horizontalAlignment: Text.AlignHCenter
+        wrapMode: Text.Wrap
         visible: root.dayCount === 0
         text: Weather.loading ? "Loading forecast…" : Weather.status + " · Retry"
         color: Theme.muted
         font.family: Theme.fontMono
-        font.pixelSize: 10
+        font.pixelSize: Theme.textCaption
         font.weight: Font.Bold
         MouseArea {
             anchors.fill: parent

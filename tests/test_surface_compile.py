@@ -17,6 +17,7 @@ class SurfaceCompileTests(unittest.TestCase):
         sources += [qml / "modules/aperture/ApertureContents.qml",
                     qml / "modules/aperture/ApertureFluidBackplane.qml",
                     qml / "modules/ephemeris/SettingsPane.qml",
+                    qml / "modules/ephemeris/WidgetQuickSettings.qml",
                     qml / "modules/ephemeris/CursorSettings.qml",
                     qml / "modules/ephemeris/OutputSettings.qml",
                     qml / "components/InstrumentBridge.qml",
@@ -35,6 +36,11 @@ class SurfaceCompileTests(unittest.TestCase):
         sources += [qml / "modules/aperture/DockSettings.qml",
                     qml / "modules/aperture/DockAppButton.qml",
                     qml / "components/DockFluidSurface.qml"]
+        sources += [qml / "components/OpticalSurface.qml",
+                    qml / "components/InstrumentContextHandle.qml",
+                    qml / "components/InstrumentClock.qml",
+                    qml / "components/InstrumentVisualizer.qml"]
+        sources += sorted((qml / "modules/umbra").glob("*Editor.qml"))
         with tempfile.TemporaryDirectory(prefix="tonantzintla-compile-") as directory:
             env = dict(os.environ, XDG_RUNTIME_DIR=directory,
                        QT_QPA_PLATFORM="offscreen", QT_QUICK_BACKEND="software",

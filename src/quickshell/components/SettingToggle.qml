@@ -4,11 +4,12 @@ import ".."
 
 Rectangle {
     id: root
-    implicitHeight: Math.max(46, copy.implicitHeight + 20)
+    implicitHeight: Math.max(48, copy.implicitHeight + Theme.spaceXl)
     radius: Theme.radiusMedium
-    color: root.checked ? Theme.controlActive
+    color: pointer.pressed ? Theme.controlPressed
         : pointer.containsMouse || activeFocus ? Theme.controlHover : Theme.controlRest
-    border.width: 0
+    border.width: activeFocus ? 1 : 0
+    border.color: Theme.focusRing
     opacity: enabled ? 1 : 0.45
     activeFocusOnTab: enabled
     Accessible.role: Accessible.CheckBox
@@ -23,11 +24,17 @@ Rectangle {
     property bool checked: false
     signal toggled
 
+    OpticalSurface {
+        parent: root
+        anchors.fill: parent; radius: root.radius
+        hovered: pointer.containsMouse; pressed: pointer.pressed; selected: root.checked; focused: root.activeFocus
+    }
+
     RowLayout {
         anchors.fill: parent
-        anchors.leftMargin: 14
-        anchors.rightMargin: 12
-        spacing: 12
+        anchors.leftMargin: Theme.spaceLg
+        anchors.rightMargin: Theme.spaceLg
+        spacing: Theme.spaceMd
 
         ColumnLayout {
             id: copy
@@ -40,7 +47,7 @@ Rectangle {
                 wrapMode: Text.Wrap
                 color: Theme.moon
                 font.family: Theme.fontText
-                font.pixelSize: 12
+                font.pixelSize: Theme.textBody
                 font.weight: Font.Medium
             }
 
@@ -51,28 +58,31 @@ Rectangle {
                 wrapMode: Text.Wrap
                 color: Theme.muted
                 font.family: Theme.fontText
-                font.pixelSize: 10
+                font.pixelSize: Theme.textCaption
             }
         }
 
         Rectangle {
-            Layout.preferredWidth: 34
-            Layout.preferredHeight: 18
-            radius: 9
+            Layout.preferredWidth: Theme.switchWidth
+            Layout.preferredHeight: Theme.switchHeight
+            radius: Math.min(Theme.radiusSmall, height / 2)
             color: root.checked ? Theme.accent : Theme.elevated
             border.width: 0
 
             Rectangle {
-                y: 3
-                x: root.checked ? 19 : 3
-                width: 12
-                height: 12
-                radius: 6
+                objectName: "switchThumb"
+                y: (Theme.switchHeight - Theme.switchKnob) / 2
+                x: root.checked ? Theme.switchWidth - width - y : y
+                width: Theme.switchKnob + (pointer.pressed && Theme.motionEnabled ? 6 : 0)
+                height: Theme.switchKnob
+                radius: Math.min(Theme.radiusSmall, height / 2)
                 color: root.checked ? Theme.void_ : Theme.muted
+                Behavior on width { NumberAnimation { duration: Theme.motionFast; easing.type: Easing.OutCubic } }
+                Behavior on radius { NumberAnimation { duration: Theme.motionFast } }
                 Behavior on x {
                     NumberAnimation {
                         duration: Settings.motion ? Theme.motionNormal : 0
-                        easing.type: Easing.OutBack
+                        easing.type: Easing.OutCubic
                     }
                 }
             }

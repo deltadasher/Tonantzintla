@@ -2,6 +2,7 @@
 """Per-session Tonantzintla supervisor, independent of the host init system."""
 import collections
 import fcntl
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -14,6 +15,20 @@ import time
 
 ROOT = Path(__file__).resolve().parents[2]
 OWNERSHIP = ROOT / "src/libexec/niri-ownership.py"
+_GRAPHICS_SPEC = importlib.util.spec_from_file_location(
+    "tonantzintla_graphics_policy", ROOT / "src/libexec/graphics_policy.py")
+_GRAPHICS_POLICY = importlib.util.module_from_spec(_GRAPHICS_SPEC)
+_GRAPHICS_SPEC.loader.exec_module(_GRAPHICS_POLICY)
+
+
+def quickshell_environment(environ=None):
+    # The supervisor and its ownership checks retain their inherited environment.
+    # Append managed keys so unrelated allocator options are preserved verbatim.
+    result = _GRAPHICS_POLICY.quickshell_environment(environ)
+    inherited = result.get("MALLOC_CONF", "")
+    policy = "narenas:2,dirty_decay_ms:0,muzzy_decay_ms:0"
+    result["MALLOC_CONF"] = inherited + ("," if inherited else "") + policy
+    return result
 
 
 def ownership_allows_start():
@@ -105,7 +120,7 @@ def serve(directory):
                 if child is None:
                     child = subprocess.Popen(["qs", "-n", "-p", str(ROOT / "src/quickshell")],
                                              stdin=subprocess.DEVNULL, stdout=log, stderr=log,
-                                             start_new_session=True)
+                                             start_new_session=True, env=quickshell_environment())
                 try:
                     connection, _ = server.accept()
                     with connection:

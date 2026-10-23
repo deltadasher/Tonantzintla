@@ -31,24 +31,6 @@ fail_missing() {
     fi
 }
 
-recording_pid() {
-    [[ -f "$pid_file" ]] || return 1
-    local pid
-    pid="$(<"$pid_file")"
-    [[ "$pid" =~ ^[0-9]+$ ]] || return 1
-    kill -0 "$pid" 2>/dev/null || return 1
-    printf '%s\n' "$pid"
-}
-
-recording_status() {
-    if recording_pid >/dev/null; then
-        printf 'recording\n'
-    else
-        rm -f -- "$pid_file"
-        printf 'idle\n'
-    fi
-}
-
 select_geometry() {
     slurp \
         -d \
@@ -109,45 +91,6 @@ capture_image() {
     notify_user "Capture archived" "$output"
 }
 
-start_recording() {
-    fail_missing gpu-screen-recorder
-    if recording_pid >/dev/null; then
-        notify_user "Recording already active" "Stop the current capture before starting another"
-        exit 0
-    fi
-
-    mkdir -p -- "$state_dir" "$video_dir"
-    local output="${video_dir}/Tonantzintla_$(date +%Y-%m-%d-%H%M%S).mp4"
-    local log_file="${state_dir}/recording.log"
-
-    nohup gpu-screen-recorder \
-        -w portal \
-        -f 60 \
-        -q very_high \
-        -k h264 \
-        -a default_output \
-        -cursor yes \
-        -o "$output" >"$log_file" 2>&1 &
-    local pid=$!
-    printf '%s\n' "$pid" >"$pid_file"
-    printf '%s\n' "$output" >"$recording_file"
-    notify_user "Capture stream armed" "Choose a portal target; 60 FPS desktop audio is enabled"
-}
-
-stop_recording() {
-    local pid
-    if ! pid="$(recording_pid)"; then
-        rm -f -- "$pid_file"
-        notify_user "No active recording" "Capture stream is already idle"
-        exit 0
-    fi
-
-    kill -INT "$pid"
-    local output=""
-    [[ -f "$recording_file" ]] && output="$(<"$recording_file")"
-    notify_user "Finalizing capture" "${output:-Recording is being written to disk}"
-}
-
 mode="${1:---region-copy}"
 case "$mode" in
     --region-copy) capture_image region copy ;;
@@ -156,9 +99,10 @@ case "$mode" in
     --full|--full-copy) capture_image full copy ;;
     --full-save) capture_image full save ;;
     --full-edit) capture_image full edit ;;
-    --record-start) start_recording ;;
-    --record-stop) stop_recording ;;
-    --record-status) recording_status ;;
+    --record-start) shift; exec python3 "${script_dir}/capture-state.py" start "$@" ;;
+    --record-stop) exec python3 "${script_dir}/capture-state.py" stop ;;
+    --record-status-json) exec python3 "${script_dir}/capture-state.py" status ;;
+    --record-status) python3 "${script_dir}/capture-state.py" status | python3 -c 'import json,sys; print(json.load(sys.stdin).get("state", "idle"))' ;;
     --open-captures)
         mkdir -p -- "$picture_dir"
         xdg-open "$picture_dir"

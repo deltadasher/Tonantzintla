@@ -27,7 +27,9 @@ Item {
 
     Image {
         anchors.fill: parent
-        source: Qt.resolvedUrl("shaders/accretion-fallback.png")
+        source: visible ? Qt.resolvedUrl("shaders/accretion-fallback.png") : ""
+        sourceSize: Qt.size(768, 768)
+        cache: false
         visible: root.GraphicsInfo.api === GraphicsInfo.Software || plasma.status === ShaderEffect.Error
         fillMode: Image.PreserveAspectFit
         opacity: Math.min(1, root.deployment * 1.6)
