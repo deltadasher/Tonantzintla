@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell.Io
 import ".."
+import "LyricsModel.js" as LyricModel
 
 QtObject {
     id: root
@@ -43,25 +44,8 @@ QtObject {
         }).map(function(line) { return { "time": -1, "text": line.trim() }; });
     }
 
-    function syncedLines(text) {
-        const parsed = [];
-        String(text || "").split(/\r?\n/).forEach(function(line) {
-            const matches = [];
-            const timestampPattern = /\[(\d+):(\d+(?:\.\d+)?)\]/g;
-            let match = timestampPattern.exec(line);
-            while (match !== null) {
-                matches.push(match);
-                match = timestampPattern.exec(line);
-            }
-            const lyric = line.replace(/(?:\[\d+:\d+(?:\.\d+)?\])+/g, "").trim();
-            matches.forEach(function(match) {
-                parsed.push({ "time": Number(match[1]) * 60 + Number(match[2]),
-                    "text": lyric.length > 0 ? lyric : "···" });
-            });
-        });
-        parsed.sort(function(left, right) { return left.time - right.time; });
-        return parsed;
-    }
+    function syncedLines(text) { return LyricModel.syncedLines(text); }
+    function wordHtml(line, position) { return LyricModel.wordHtml(line, position); }
 
     function applyPayload(payload) {
         status = payload.status || "missing";
@@ -108,7 +92,8 @@ QtObject {
         busy = true;
         const command = ["python3", helperPath,
             "--title", Media.title, "--artist", Media.artist,
-            "--album", Media.album, "--duration", String(Math.round(Media.length))];
+            "--album", Media.album, "--duration", String(Math.round(Media.length)),
+            "--source-url", Media.sourceUrl];
         if (forceOnline)
             command.push("--refresh");
         fetchProcess.command = command;

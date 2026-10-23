@@ -7,7 +7,7 @@ pragma ComponentBehavior: Bound
 Rectangle {
     id: root
 
-    implicitHeight: Math.max(48, content.implicitHeight + 20)
+    implicitHeight: Math.max(52, content.implicitHeight + Theme.spaceXl)
     radius: Theme.radiusMedium
     color: Theme.controlRest
     border.width: 0
@@ -18,6 +18,9 @@ Rectangle {
     property var choices: []
     property var value
     signal selected(var value)
+    property Item hoveredOption: null
+    property Item focusedOption: null
+    property Item activeOption: null
 
     GridLayout {
         id: content
@@ -25,14 +28,14 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        anchors.leftMargin: 14
-        anchors.rightMargin: 9
-        columnSpacing: 12
-        rowSpacing: 8
+        anchors.leftMargin: Theme.spaceLg
+        anchors.rightMargin: Theme.spaceLg
+        columnSpacing: Theme.spaceMd
+        rowSpacing: Theme.spaceSm
 
         ColumnLayout {
             Layout.fillWidth: true
-            Layout.preferredWidth: content.columns === 1 ? root.width - 28 : root.width * 0.4
+            Layout.preferredWidth: content.columns === 1 ? root.width - 32 : root.width * 0.36
             spacing: 2
 
             Text {
@@ -41,7 +44,7 @@ Rectangle {
                 wrapMode: Text.Wrap
                 color: Theme.moon
                 font.family: Theme.fontText
-                font.pixelSize: 12
+                font.pixelSize: Theme.textBody
                 font.weight: Font.Medium
             }
 
@@ -52,59 +55,86 @@ Rectangle {
                 wrapMode: Text.Wrap
                 color: Theme.muted
                 font.family: Theme.fontText
-                font.pixelSize: 10
+                font.pixelSize: Theme.textCaption
             }
         }
 
-        Flow {
+        Item {
+            implicitHeight: optionFlow.implicitHeight
+            OpticalLens {
+                targetItem: root.hoveredOption || root.focusedOption || root.activeOption
+                outset: 1
+            }
             Layout.fillWidth: true
-            Layout.preferredWidth: content.columns === 1 ? root.width - 28 : root.width * 0.5
-            spacing: 4
-            Repeater {
-                model: root.choices
-                Rectangle {
-                    id: option
-                    required property var modelData
-                    readonly property bool active: modelData.value === root.value
-                    width: Math.min(parent.width, optionLabel.implicitWidth + 16)
-                    height: 30
-                    radius: Theme.radiusSmall
-                    color: active ? Theme.accent : optionPointer.containsMouse || activeFocus
-                        ? Theme.controlHover : "transparent"
-                    border.width: 0
-                    activeFocusOnTab: root.enabled
-                    Accessible.role: Accessible.Button
-                    Accessible.name: root.label + ": " + (option.modelData.label || "")
-                    Accessible.checked: active
-                    Accessible.onPressAction: if (root.enabled) root.selected(option.modelData.value)
-                    Keys.onReturnPressed: if (root.enabled) root.selected(option.modelData.value)
-                    Keys.onSpacePressed: if (root.enabled) root.selected(option.modelData.value)
-
-                    Text {
-                        id: optionLabel
-                        anchors.centerIn: parent
-                        width: Math.min(implicitWidth, parent.width - 16)
-                        elide: Text.ElideRight
-                        text: option.modelData.label
-                        color: option.active ? Theme.void_ : optionPointer.containsMouse || option.activeFocus ? Theme.moon : Theme.muted
-                        font.family: Theme.fontMono
-                        font.pixelSize: 10
-                        font.weight: option.active ? Font.Bold : Font.Normal
-                    }
-
-                    MouseArea {
-                        id: optionPointer
-                        anchors.fill: parent
-                        enabled: root.enabled
-                        hoverEnabled: true
-                        cursorShape: root.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                        onClicked: {
-                            option.forceActiveFocus();
-                            root.selected(option.modelData.value);
+            Layout.preferredWidth: content.columns === 1 ? root.width - 32 : root.width * 0.56
+            Flow {
+                id: optionFlow
+                anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top
+                spacing: Theme.spaceXs
+                Repeater {
+                    model: root.choices
+                    Rectangle {
+                        id: option
+                        required property var modelData
+                        readonly property bool active: modelData.value === root.value
+                        onActiveChanged: { if (active) root.activeOption = option; else if (root.activeOption === option) root.activeOption = null; }
+                        onActiveFocusChanged: { if (activeFocus) root.focusedOption = option; else if (root.focusedOption === option) root.focusedOption = null; }
+                        Component.onCompleted: if (active) root.activeOption = option
+                        Component.onDestruction: {
+                            if (root.hoveredOption === option) root.hoveredOption = null;
+                            if (root.focusedOption === option) root.focusedOption = null;
+                            if (root.activeOption === option) root.activeOption = null;
                         }
-                    }
+                        width: Math.min(parent.width, optionLabel.implicitWidth + 20)
+                        height: Theme.controlHeight
+                        radius: Theme.radiusSmall
+                        color: optionPointer.pressed ? Theme.controlPressed
+                            : active ? Theme.accent : optionPointer.containsMouse || activeFocus
+                            ? (Settings.opticalControls ? "transparent" : Theme.controlHover) : "transparent"
+                        border.width: activeFocus ? 1 : 0
+                        border.color: active ? Theme.moon : Theme.focusRing
+                        activeFocusOnTab: root.enabled
+                        Accessible.role: Accessible.Button
+                        Accessible.name: root.label + ": " + (option.modelData.label || "")
+                        Accessible.checked: active
+                        Accessible.onPressAction: if (root.enabled) root.selected(option.modelData.value)
+                        Keys.onReturnPressed: if (root.enabled) root.selected(option.modelData.value)
+                        Keys.onSpacePressed: if (root.enabled) root.selected(option.modelData.value)
 
-                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                        OpticalSurface {
+                            anchors.fill: parent; radius: option.radius
+                            hovered: optionPointer.containsMouse; pressed: optionPointer.pressed
+                            selected: option.active; focused: option.activeFocus
+                            visible: Settings.opticalControls && !option.active
+                        }
+                        Text {
+                            id: optionLabel
+                            anchors.centerIn: parent
+                            width: Math.min(implicitWidth, parent.width - 16)
+                            elide: Text.ElideRight
+                            text: option.modelData.label
+                            color: option.active && !optionPointer.pressed ? Theme.void_ : optionPointer.containsMouse || option.activeFocus ? Theme.moon : Theme.muted
+                            font.family: Theme.fontMono
+                            font.pixelSize: Theme.textCaption
+                            font.weight: option.active ? Font.Bold : Font.Normal
+                        }
+
+                        MouseArea {
+                            id: optionPointer
+                            anchors.fill: parent
+                            enabled: root.enabled
+                            hoverEnabled: true
+                            cursorShape: root.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                            onEntered: root.hoveredOption = option
+                            onExited: if (root.hoveredOption === option) root.hoveredOption = null
+                            onClicked: {
+                                option.forceActiveFocus();
+                                root.selected(option.modelData.value);
+                            }
+                        }
+
+                        Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                    }
                 }
             }
         }

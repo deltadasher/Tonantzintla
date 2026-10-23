@@ -180,29 +180,12 @@ PanelWindow {
         showToast("Reset to default profile");
     }
 
-    // Keyboard controls
-    Item {
-        focus: true
-        Keys.onEscapePressed: root.exitStudio()
-        Keys.onTabPressed: root.sideDrawerOpen = !root.sideDrawerOpen
-        Keys.onPressed: function(event) {
-            if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Z) {
-                root.applyUndo();
-                event.accepted = true;
-            } else if (event.key === Qt.Key_1) {
-                root.activeTab = "colors";
-                event.accepted = true;
-            } else if (event.key === Qt.Key_2) {
-                root.activeTab = "position";
-                event.accepted = true;
-            } else if (event.key === Qt.Key_3) {
-                root.activeTab = "presets";
-                event.accepted = true;
-            } else if (event.key === Qt.Key_4) {
-                root.activeTab = "shelf";
-                event.accepted = true;
-            }
-        }
+    ApertureShortcuts {
+        enabled: root.visible
+        studioActions: true
+        onCloseRequested: root.exitStudio()
+        onUndoRequested: root.applyUndo()
+        onTabRequested: function(tab) { root.activeTab = tab; }
     }
 
     // The bar stays lit and everything else falls away, so positioning happens
@@ -253,14 +236,14 @@ PanelWindow {
         y: (ShellState.dropAnimating ? ShellState.dropFlightY : ShellState.dragScreenY) - height / 2
         width: proxyHost.width
         height: proxyHost.height
-        rotation: Math.max(-4.5, Math.min(4.5, ShellState.dragVelocityX * 0.12))
-        scale: 1 + Math.min(0.045, Math.sqrt(ShellState.dragVelocityX * ShellState.dragVelocityX
-            + ShellState.dragVelocityY * ShellState.dragVelocityY) * 0.0014)
+        rotation: Theme.motionEnabled ? Math.max(-4.5, Math.min(4.5, ShellState.dragVelocityX * 0.12)) : 0
+        scale: Theme.motionEnabled ? 1 + Math.min(0.045, Math.sqrt(ShellState.dragVelocityX * ShellState.dragVelocityX
+            + ShellState.dragVelocityY * ShellState.dragVelocityY) * 0.0014) : 1
 
-        Behavior on x { SmoothedAnimation { velocity: 3200; duration: 82 } }
-        Behavior on y { SmoothedAnimation { velocity: 3200; duration: 82 } }
-        Behavior on rotation { NumberAnimation { duration: 110; easing.type: Easing.OutCubic } }
-        Behavior on scale { NumberAnimation { duration: 90; easing.type: Easing.OutCubic } }
+        Behavior on x { enabled: Theme.motionEnabled; SmoothedAnimation { velocity: 3200; duration: Theme.duration(82) } }
+        Behavior on y { enabled: Theme.motionEnabled; SmoothedAnimation { velocity: 3200; duration: Theme.duration(82) } }
+        Behavior on rotation { NumberAnimation { duration: Theme.duration(110); easing.type: Easing.OutCubic } }
+        Behavior on scale { NumberAnimation { duration: Theme.duration(90); easing.type: Easing.OutCubic } }
 
         IslandHost {
         id: proxyHost
@@ -293,15 +276,15 @@ PanelWindow {
         color: Theme.accent
         opacity: 0.7
 
-        Behavior on x { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
-        Behavior on y { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
-        Behavior on width { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
-        Behavior on height { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+        Behavior on x { NumberAnimation { duration: Theme.duration(140); easing.type: Easing.OutCubic } }
+        Behavior on y { NumberAnimation { duration: Theme.duration(140); easing.type: Easing.OutCubic } }
+        Behavior on width { NumberAnimation { duration: Theme.duration(120); easing.type: Easing.OutCubic } }
+        Behavior on height { NumberAnimation { duration: Theme.duration(120); easing.type: Easing.OutCubic } }
     }
 
     Timer {
         id: dropFlightTimer
-        interval: 240
+        interval: Theme.duration(240)
         running: ShellState.dropAnimating
         onTriggered: ShellState.dropAnimating = false
     }
@@ -319,18 +302,18 @@ PanelWindow {
         border.width: 0
         border.color: Theme.accent
         opacity: 0.0
-        Behavior on opacity { NumberAnimation { duration: 180 } }
+        Behavior on opacity { NumberAnimation { duration: Theme.duration(180) } }
 
         RowLayout {
             anchors.centerIn: parent
             spacing: 6
-            Text { text: "✦"; color: Theme.accent; font.pixelSize: 11; font.bold: true }
+            Text { font.family: Theme.fontText; text: "✦"; color: Theme.accent; font.pixelSize: Theme.textLabel; font.bold: true }
             Text {
                 id: toastLabel
                 text: root.toastText
                 color: Theme.moon
-                font.family: Theme.fontDisplay
-                font.pixelSize: 11
+                font.family: Theme.fontText
+                font.pixelSize: Theme.textLabel
                 font.bold: true
             }
         }
@@ -366,10 +349,10 @@ PanelWindow {
         }
 
         Behavior on anchors.bottomMargin {
-            NumberAnimation { duration: 380; easing.type: Easing.OutBack }
+            NumberAnimation { duration: Theme.duration(380); easing.type: Easing.OutBack }
         }
         Behavior on width {
-            NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
+            NumberAnimation { duration: Theme.duration(250); easing.type: Easing.OutCubic }
         }
 
         // Catch clicks so clicking drawer body does not close edit mode
@@ -397,13 +380,13 @@ PanelWindow {
                     Rectangle {
                         implicitWidth: 20; implicitHeight: 20; radius: 5
                         color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.25)
-                        Text { anchors.centerIn: parent; text: "✦"; color: Theme.accent; font.pixelSize: 11; font.bold: true }
+                        Text { font.family: Theme.fontText; anchors.centerIn: parent; text: "✦"; color: Theme.accent; font.pixelSize: Theme.textLabel; font.bold: true }
                     }
                     Text {
                         text: "BAR STUDIO"
                         color: Theme.accent
                         font.family: Theme.fontMono
-                        font.pixelSize: 13
+                        font.pixelSize: Theme.textBody
                         font.bold: true
                         font.letterSpacing: 1.2
                     }
@@ -423,32 +406,27 @@ PanelWindow {
                             { id: "shelf",    label: "Islands" }
                         ]
 
-                        Rectangle {
+                        StudioControl {
+                            id: tabHControl
+                            accessibleLabel: modelData.label
                             implicitWidth: tabText.implicitWidth + 20
-                            implicitHeight: 28
+                            implicitHeight: Theme.controlHeight
                             radius: 7
                             color: root.activeTab === modelData.id
                                 ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.25)
-                                : (tabH.containsMouse ? Theme.controlActive : Theme.controlRest)
-                            border.width: 0
+                                : (tabHControl.hovered ? Theme.controlActive : Theme.controlRest)
 
                             Text {
                                 id: tabText
                                 anchors.centerIn: parent
                                 text: modelData.label
                                 color: root.activeTab === modelData.id ? Theme.accent : Theme.moon
-                                font.family: Theme.fontDisplay
-                                font.pixelSize: 11
+                                font.family: Theme.fontText
+                                font.pixelSize: Theme.textLabel
                                 font.bold: root.activeTab === modelData.id
                             }
 
-                            MouseArea {
-                                id: tabH
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: root.activeTab = modelData.id
-                            }
+                            onActivated: root.activeTab = modelData.id
                         }
                     }
                 }
@@ -456,32 +434,28 @@ PanelWindow {
                 Item { Layout.fillWidth: true }
 
                 // Done Button
-                Rectangle {
-                    implicitWidth: 82; implicitHeight: 30; radius: 15
-                    color: doneH.containsMouse ? Theme.accent : Theme.controlRest
-                    border.width: 0
+                StudioControl {
+                    id: doneHControl
+                    accessibleLabel: "Finish editing the bar"
+                    implicitWidth: 82; implicitHeight: Theme.controlHeight; radius: 15
+                    color: doneHControl.hovered ? Theme.accent : Theme.controlRest
 
                     Text {
+                        font.family: Theme.fontText
                         anchors.centerIn: parent
                         text: "Done"
-                        color: doneH.containsMouse ? Theme.void_ : Theme.accent
-                        font.pixelSize: 11
+                        color: doneHControl.hovered ? Theme.void_ : Theme.accent
+                        font.pixelSize: Theme.textLabel
                         font.bold: true
                     }
 
-                    MouseArea {
-                        id: doneH
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.exitStudio()
-                    }
+                    onActivated: root.exitStudio()
                 }
             }
 
             Rectangle {
                 Layout.fillWidth: true
-                height: 1
+                implicitHeight: 1
                 color: Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.08)
             }
 
@@ -509,7 +483,7 @@ PanelWindow {
                                 text: "Accent color"
                                 color: Theme.accent
                                 font.family: Theme.fontMono
-                                font.pixelSize: 10
+                                font.pixelSize: Theme.textCaption
                                 font.bold: true
                             }
 
@@ -520,15 +494,15 @@ PanelWindow {
                                 Repeater {
                                     model: root.colorSwatches
 
-                                    Rectangle {
+                                    StudioControl {
+                                        id: colorHoverControl
+                                        accessibleLabel: "Accent color: " + modelData.name
                                         Layout.fillWidth: true
                                         implicitHeight: 52
                                         radius: 10
                                         color: Settings.accentName === modelData.id
                                             ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.22)
-                                            : (colorHover.containsMouse ? Theme.controlActive : Theme.controlRest)
-                                        border.width: 0
-                                        border.color: Settings.accentName === modelData.id ? modelData.hex : Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.12)
+                                            : (colorHoverControl.hovered ? Theme.controlActive : Theme.controlRest)
 
                                         RowLayout {
                                             anchors.centerIn: parent
@@ -543,30 +517,25 @@ PanelWindow {
                                             ColumnLayout {
                                                 spacing: 1
                                                 Text {
+                                                    font.family: Theme.fontText
                                                     text: modelData.name
                                                     color: Settings.accentName === modelData.id ? Theme.moon : Theme.muted
-                                                    font.pixelSize: 10
+                                                    font.pixelSize: Theme.textCaption
                                                     font.bold: Settings.accentName === modelData.id
                                                 }
                                                 Text {
                                                     text: modelData.id.toUpperCase()
                                                     color: Theme.muted
                                                     font.family: Theme.fontMono
-                                                    font.pixelSize: 8
+                                                    font.pixelSize: Theme.textMicro
                                                 }
                                             }
                                         }
 
-                                        MouseArea {
-                                            id: colorHover
-                                            anchors.fill: parent
-                                            hoverEnabled: true
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: {
+                                        onActivated: {
                                                 Settings.accentName = modelData.id;
                                                 root.showToast("Accent shifted to " + modelData.name);
                                             }
-                                        }
                                     }
                                 }
                             }
@@ -580,7 +549,7 @@ PanelWindow {
                                 text: "Appearance presets"
                                 color: Theme.muted
                                 font.family: Theme.fontMono
-                                font.pixelSize: 10
+                                font.pixelSize: Theme.textCaption
                                 font.bold: true
                             }
 
@@ -597,42 +566,40 @@ PanelWindow {
                                         { id: "minimalist",  name: "Zen Float",   desc: "Silver • Top • Minimal" }
                                     ]
 
-                                    Rectangle {
+                                    StudioControl {
+                                        id: themeBtnHControl
+                                        accessibleLabel: "Appearance preset: " + modelData.name
                                         Layout.fillWidth: true
                                         implicitHeight: 46
                                         radius: 8
-                                        color: themeBtnH.containsMouse ? Theme.controlActive : Theme.controlRest
-                                        border.width: 0
-                                        border.color: Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.12)
+                                        color: themeBtnHControl.hovered ? Theme.controlActive : Theme.controlRest
 
                                         ColumnLayout {
                                             anchors.centerIn: parent
                                             spacing: 1
                                             Text {
-                                                anchors.horizontalCenter: parent.horizontalCenter
+                                                font.family: Theme.fontText
+                                                Layout.alignment: Qt.AlignHCenter
                                                 text: modelData.name
                                                 color: Theme.moon
-                                                font.pixelSize: 11
+                                                font.pixelSize: Theme.textLabel
                                                 font.bold: true
                                             }
                                             Text {
-                                                anchors.horizontalCenter: parent.horizontalCenter
+                                                font.family: Theme.fontText
+                                                Layout.alignment: Qt.AlignHCenter
                                                 text: modelData.desc
-                                                color: Theme.accent
-                                                font.pixelSize: 8
+                                                color: Theme.muted
+                                                Layout.maximumWidth: (bottomDrawer.width - 76) / 5 - 16
+                                                elide: Text.ElideRight
+                                                font.pixelSize: Theme.textMicro
                                             }
                                         }
 
-                                        MouseArea {
-                                            id: themeBtnH
-                                            anchors.fill: parent
-                                            hoverEnabled: true
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: {
+                                        onActivated: {
                                                 Settings.applyDesktopPreset(modelData.id);
                                                 root.showToast("Applied " + modelData.name + " theme profile");
                                             }
-                                        }
                                     }
                                 }
                             }
@@ -655,7 +622,7 @@ PanelWindow {
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: 8
-                            Text { text: "Bar position"; color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: 10; font.bold: true }
+                            Text { text: "Bar position"; color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.bold: true }
 
                             GridLayout {
                                 columns: 2
@@ -671,30 +638,28 @@ PanelWindow {
                                         { id: "right",  name: "→ Right Screen Edge" }
                                     ]
 
-                                    Rectangle {
+                                    StudioControl {
+                                        id: edgeHControl
+                                        accessibleLabel: "Bar position: " + modelData.name
                                         Layout.fillWidth: true
                                         implicitHeight: 40; radius: 8
                                         color: Settings.barPosition === modelData.id
                                             ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.24)
-                                            : (edgeH.containsMouse ? Theme.controlActive : Theme.controlRest)
-                                        border.width: 0
-                                        border.color: Settings.barPosition === modelData.id ? Theme.accent : Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.12)
+                                            : (edgeHControl.hovered ? Theme.controlActive : Theme.controlRest)
 
                                         Text {
+                                            font.family: Theme.fontText
                                             anchors.centerIn: parent
                                             text: modelData.name
                                             color: Settings.barPosition === modelData.id ? Theme.accent : Theme.moon
-                                            font.pixelSize: 11
+                                            font.pixelSize: Theme.textLabel
                                             font.bold: Settings.barPosition === modelData.id
                                         }
 
-                                        MouseArea {
-                                            id: edgeH; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                            onClicked: {
+                                        onActivated: {
                                                 Settings.barPosition = modelData.id;
                                                 root.showToast("Bar docked to " + modelData.id);
                                             }
-                                        }
                                     }
                                 }
                             }
@@ -704,7 +669,7 @@ PanelWindow {
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: 8
-                            Text { text: "PRESENTATION & DENSITY"; color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: 10; font.bold: true }
+                            Text { text: "PRESENTATION & DENSITY"; color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.bold: true }
 
                             RowLayout {
                                 Layout.fillWidth: true
@@ -717,8 +682,8 @@ PanelWindow {
                                     border.color: Settings.barMode === "capsules" ? Theme.accent : Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.12)
                                     ColumnLayout {
                                         anchors.centerIn: parent; spacing: 1
-                                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Capsules (Islands)"; color: Theme.moon; font.pixelSize: 11; font.bold: true }
-                                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Individual floating modules"; color: Theme.muted; font.pixelSize: 9 }
+                                        Text { font.family: Theme.fontText; Layout.alignment: Qt.AlignHCenter; text: "Capsules (Islands)"; color: Theme.moon; font.pixelSize: Theme.textLabel; font.bold: true }
+                                        Text { font.family: Theme.fontText; Layout.alignment: Qt.AlignHCenter; text: "Individual floating modules"; color: Theme.muted; font.pixelSize: Theme.textMicro }
                                     }
                                     MouseArea { anchors.fill: parent; onClicked: Settings.barMode = "capsules" }
                                 }
@@ -730,8 +695,8 @@ PanelWindow {
                                     border.color: Settings.barMode === "docked" ? Theme.accent : Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.12)
                                     ColumnLayout {
                                         anchors.centerIn: parent; spacing: 1
-                                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Docked Rail"; color: Theme.moon; font.pixelSize: 11; font.bold: true }
-                                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Continuous edge bar"; color: Theme.muted; font.pixelSize: 9 }
+                                        Text { font.family: Theme.fontText; Layout.alignment: Qt.AlignHCenter; text: "Docked Rail"; color: Theme.moon; font.pixelSize: Theme.textLabel; font.bold: true }
+                                        Text { font.family: Theme.fontText; Layout.alignment: Qt.AlignHCenter; text: "Continuous edge bar"; color: Theme.muted; font.pixelSize: Theme.textMicro }
                                     }
                                     MouseArea { anchors.fill: parent; onClicked: Settings.barMode = "docked" }
                                 }
@@ -749,7 +714,7 @@ PanelWindow {
                                     color: selected ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.24) : Theme.controlRest
                                     border.width: 0
                                     border.color: selected ? Theme.accent : Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.12)
-                                    Text { anchors.centerIn: parent; text: "Nominal (44px)"; color: parent.selected ? Theme.accent : Theme.moon; font.pixelSize: 11; font.bold: true }
+                                    Text { font.family: Theme.fontText; anchors.centerIn: parent; text: "Nominal (44px)"; color: parent.selected ? Theme.accent : Theme.moon; font.pixelSize: Theme.textLabel; font.bold: true }
                                     MouseArea { anchors.fill: parent; onClicked: { Settings.compact = false; Settings.barHeightProfile = "nominal"; } }
                                 }
 
@@ -758,7 +723,7 @@ PanelWindow {
                                     color: Settings.compact ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.24) : Theme.controlRest
                                     border.width: 0
                                     border.color: Settings.compact ? Theme.accent : Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.12)
-                                    Text { anchors.centerIn: parent; text: "Compact Height (36px)"; color: Settings.compact ? Theme.accent : Theme.moon; font.pixelSize: 11; font.bold: true }
+                                    Text { font.family: Theme.fontText; anchors.centerIn: parent; text: "Compact Height (36px)"; color: Settings.compact ? Theme.accent : Theme.moon; font.pixelSize: Theme.textLabel; font.bold: true }
                                     MouseArea { anchors.fill: parent; onClicked: { Settings.compact = true; Settings.barHeightProfile = "compact"; } }
                                 }
 
@@ -769,7 +734,7 @@ PanelWindow {
                                     color: selected ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.24) : Theme.controlRest
                                     border.width: 0
                                     border.color: selected ? Theme.accent : Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.12)
-                                    Text { anchors.centerIn: parent; text: "Tall (52px)"; color: parent.selected ? Theme.accent : Theme.moon; font.pixelSize: 11; font.bold: true }
+                                    Text { font.family: Theme.fontText; anchors.centerIn: parent; text: "Tall (52px)"; color: parent.selected ? Theme.accent : Theme.moon; font.pixelSize: Theme.textLabel; font.bold: true }
                                     MouseArea { anchors.fill: parent; onClicked: { Settings.compact = false; Settings.barHeightProfile = "tall"; } }
                                 }
                             }
@@ -836,15 +801,16 @@ PanelWindow {
                                     Text {
                                         text: modelData.name
                                         color: Theme.moon
-                                        font.family: Theme.fontDisplay
-                                        font.pixelSize: 12
+                                        font.family: Theme.fontText
+                                        font.pixelSize: Theme.textLabel
                                         font.bold: true
                                     }
 
                                     Text {
+                                        font.family: Theme.fontText
                                         text: modelData.desc
                                         color: Theme.muted
-                                        font.pixelSize: 9
+                                        font.pixelSize: Theme.textMicro
                                         wrapMode: Text.WordWrap
                                         Layout.fillWidth: true
                                     }
@@ -856,7 +822,7 @@ PanelWindow {
                                         implicitHeight: 28; radius: 6
                                         color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.22)
                                         border.width: 0
-                                        Text { anchors.centerIn: parent; text: "Apply Layout"; color: Theme.accent; font.pixelSize: 10; font.bold: true }
+                                        Text { font.family: Theme.fontText; anchors.centerIn: parent; text: "Apply Layout"; color: Theme.accent; font.pixelSize: Theme.textCaption; font.bold: true }
                                         MouseArea {
                                             anchors.fill: parent; cursorShape: Qt.PointingHandCursor
                                             onClicked: root.applyPresetLayout(modelData)
@@ -913,19 +879,28 @@ PanelWindow {
                                     anchors.margins: 8
                                     spacing: 8
 
-                                    Text { text: modelData.glyph; color: Theme.accent; font.pixelSize: 14; font.bold: true }
+                                    Text {
+                                        Layout.preferredWidth: 20
+                                        Layout.alignment: Qt.AlignVCenter
+                                        horizontalAlignment: Text.AlignHCenter
+                                        text: modelData.glyph
+                                        color: Theme.accent
+                                        font.family: Theme.iconFamily(text)
+                                        font.pixelSize: 16
+                                    }
 
                                     ColumnLayout {
                                         Layout.fillWidth: true; spacing: 1
-                                        Text { text: modelData.name; color: Theme.moon; font.pixelSize: 11; font.bold: true }
+                                        Text { font.family: Theme.fontText; text: modelData.name; color: Theme.moon; font.pixelSize: Theme.textLabel; font.bold: true }
                                         Text {
+                                            font.family: Theme.fontText
                                             text: placement
                                                 ? ((placement.edge || Settings.barPosition).toUpperCase()
                                                     + " · " + (placement.zone || (loc ? loc.zone : "start")).toUpperCase())
                                                 : loc ? (Settings.barPosition.toUpperCase() + " · " + loc.zone.toUpperCase())
                                                     : "Not in bar"
                                             color: present ? Theme.accent : Theme.muted
-                                            font.pixelSize: 9
+                                            font.pixelSize: Theme.textMicro
                                         }
                                     }
 
@@ -941,7 +916,7 @@ PanelWindow {
                                         visible: !present
                                         implicitWidth: 64; implicitHeight: 22; radius: 5
                                         color: Theme.accent
-                                        Text { anchors.centerIn: parent; text: "Spawn"; color: Theme.void_; font.pixelSize: 9; font.bold: true }
+                                        Text { font.family: Theme.fontText; anchors.centerIn: parent; text: "Spawn"; color: Theme.void_; font.pixelSize: Theme.textMicro; font.bold: true }
                                         MouseArea {
                                             anchors.fill: parent; cursorShape: Qt.PointingHandCursor
                                             onClicked: root.addIsland("start", modelData.id)
@@ -952,7 +927,7 @@ PanelWindow {
                                             implicitWidth: 0; implicitHeight: 0; radius: 4
                                             color: effectiveZone === "start" ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.3) : Theme.controlRest
                                             border.width: 0
-                                            Text { anchors.centerIn: parent; text: "S"; color: Theme.moon; font.pixelSize: 9; font.bold: true }
+                                            Text { font.family: Theme.fontText; anchors.centerIn: parent; text: "S"; color: Theme.moon; font.pixelSize: Theme.textMicro; font.bold: true }
                                             MouseArea {
                                                 anchors.fill: parent; cursorShape: Qt.PointingHandCursor
                                                 onClicked: {
@@ -966,7 +941,7 @@ PanelWindow {
                                             implicitWidth: 0; implicitHeight: 0; radius: 4
                                             color: effectiveZone === "center" ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.3) : Theme.controlRest
                                             border.width: 0
-                                            Text { anchors.centerIn: parent; text: "C"; color: Theme.moon; font.pixelSize: 9; font.bold: true }
+                                            Text { font.family: Theme.fontText; anchors.centerIn: parent; text: "C"; color: Theme.moon; font.pixelSize: Theme.textMicro; font.bold: true }
                                             MouseArea {
                                                 anchors.fill: parent; cursorShape: Qt.PointingHandCursor
                                                 onClicked: {
@@ -980,7 +955,7 @@ PanelWindow {
                                             implicitWidth: 0; implicitHeight: 0; radius: 4
                                             color: effectiveZone === "end" ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.3) : Theme.controlRest
                                             border.width: 0
-                                            Text { anchors.centerIn: parent; text: "E"; color: Theme.moon; font.pixelSize: 9; font.bold: true }
+                                            Text { font.family: Theme.fontText; anchors.centerIn: parent; text: "E"; color: Theme.moon; font.pixelSize: Theme.textMicro; font.bold: true }
                                             MouseArea {
                                                 anchors.fill: parent; cursorShape: Qt.PointingHandCursor
                                                 onClicked: {
@@ -994,7 +969,7 @@ PanelWindow {
                                             Layout.alignment: Qt.AlignRight
                                             implicitWidth: 22; implicitHeight: 22; radius: 4
                                             color: Theme.controlDanger
-                                            Text { anchors.centerIn: parent; text: "×"; color: Theme.danger; font.pixelSize: 11; font.bold: true }
+                                            Text { font.family: Theme.fontText; anchors.centerIn: parent; text: "×"; color: Theme.danger; font.pixelSize: Theme.textLabel; font.bold: true }
                                             MouseArea {
                                                 anchors.fill: parent; cursorShape: Qt.PointingHandCursor
                                                 onClicked: root.removeIsland(modelData.id)
@@ -1035,7 +1010,7 @@ PanelWindow {
         }
 
         Behavior on anchors.rightMargin {
-            NumberAnimation { duration: 320; easing.type: Easing.OutCubic }
+            NumberAnimation { duration: Theme.duration(320); easing.type: Easing.OutCubic }
         }
 
         // Catch clicks so clicking side drawer does not close edit mode
@@ -1061,21 +1036,19 @@ PanelWindow {
                 anchors.centerIn: parent
                 spacing: 2
                 Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
+                    font.family: Theme.fontText
+                    Layout.alignment: Qt.AlignHCenter
                     text: root.sideDrawerOpen ? "▶" : "◀"
                     color: Theme.accent
-                    font.pixelSize: 10
+                    font.pixelSize: Theme.textCaption
                     font.bold: true
                 }
                 Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "S
-E
-T
-T"
+                    Layout.alignment: Qt.AlignHCenter
+                    text: "S\nE\nT\nT"
                     color: Theme.moon
                     font.family: Theme.fontMono
-                    font.pixelSize: 9
+                    font.pixelSize: Theme.textMicro
                     font.bold: true
                     lineHeight: 0.85
                 }
@@ -1103,19 +1076,19 @@ T"
                     text: "Spacing & appearance"
                     color: Theme.accent
                     font.family: Theme.fontMono
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.textLabel
                     font.bold: true
                     Layout.fillWidth: true
                 }
                 Rectangle {
                     implicitWidth: 22; implicitHeight: 22; radius: 5
                     color: Theme.controlRest
-                    Text { anchors.centerIn: parent; text: "×"; color: Theme.muted; font.pixelSize: 13 }
+                    Text { font.family: Theme.fontText; anchors.centerIn: parent; text: "×"; color: Theme.muted; font.pixelSize: Theme.textBody }
                     MouseArea { anchors.fill: parent; onClicked: root.sideDrawerOpen = false }
                 }
             }
 
-            Rectangle { Layout.fillWidth: true; height: 1; color: Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.08) }
+            Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.08) }
 
             // Bar Margin
             ColumnLayout {
@@ -1123,9 +1096,9 @@ T"
                 spacing: 4
                 RowLayout {
                     Layout.fillWidth: true
-                    Text { text: "Edge Margin"; color: Theme.moon; font.pixelSize: 11 }
+                    Text { font.family: Theme.fontText; text: "Edge Margin"; color: Theme.moon; font.pixelSize: Theme.textLabel }
                     Item { Layout.fillWidth: true }
-                    Text { text: Settings.barMargin + "px"; color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: 10 }
+                    Text { text: Settings.barMargin + "px"; color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption }
                 }
                 RowLayout {
                     Layout.fillWidth: true; spacing: 4
@@ -1134,7 +1107,7 @@ T"
                         Rectangle {
                             Layout.fillWidth: true; implicitHeight: 24; radius: 4
                             color: Settings.barMargin === modelData ? Theme.accent : Theme.controlRest
-                            Text { anchors.centerIn: parent; text: modelData; color: Settings.barMargin === modelData ? Theme.void_ : Theme.moon; font.pixelSize: 9; font.bold: true }
+                            Text { font.family: Theme.fontText; anchors.centerIn: parent; text: modelData; color: Settings.barMargin === modelData ? Theme.void_ : Theme.moon; font.pixelSize: Theme.textMicro; font.bold: true }
                             MouseArea { anchors.fill: parent; onClicked: Settings.barMargin = modelData }
                         }
                     }
@@ -1147,9 +1120,9 @@ T"
                 spacing: 4
                 RowLayout {
                     Layout.fillWidth: true
-                    Text { text: "Island Spacing"; color: Theme.moon; font.pixelSize: 11 }
+                    Text { font.family: Theme.fontText; text: "Island Spacing"; color: Theme.moon; font.pixelSize: Theme.textLabel }
                     Item { Layout.fillWidth: true }
-                    Text { text: Settings.barIslandSpacing + "px"; color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: 10 }
+                    Text { text: Settings.barIslandSpacing + "px"; color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption }
                 }
                 RowLayout {
                     Layout.fillWidth: true; spacing: 4
@@ -1158,7 +1131,7 @@ T"
                         Rectangle {
                             Layout.fillWidth: true; implicitHeight: 24; radius: 4
                             color: Settings.barIslandSpacing === modelData ? Theme.accent : Theme.controlRest
-                            Text { anchors.centerIn: parent; text: modelData; color: Settings.barIslandSpacing === modelData ? Theme.void_ : Theme.moon; font.pixelSize: 9; font.bold: true }
+                            Text { font.family: Theme.fontText; anchors.centerIn: parent; text: modelData; color: Settings.barIslandSpacing === modelData ? Theme.void_ : Theme.moon; font.pixelSize: Theme.textMicro; font.bold: true }
                             MouseArea { anchors.fill: parent; onClicked: Settings.barIslandSpacing = modelData }
                         }
                     }
@@ -1171,9 +1144,9 @@ T"
                 spacing: 4
                 RowLayout {
                     Layout.fillWidth: true
-                    Text { text: "Bar Opacity"; color: Theme.moon; font.pixelSize: 11 }
+                    Text { font.family: Theme.fontText; text: "Bar Opacity"; color: Theme.moon; font.pixelSize: Theme.textLabel }
                     Item { Layout.fillWidth: true }
-                    Text { text: Math.round(Settings.barOpacity * 100) + "%"; color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: 10 }
+                    Text { text: Math.round(Settings.barOpacity * 100) + "%"; color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption }
                 }
                 RowLayout {
                     Layout.fillWidth: true; spacing: 4
@@ -1182,7 +1155,7 @@ T"
                         Rectangle {
                             Layout.fillWidth: true; implicitHeight: 24; radius: 4
                             color: Math.abs(Settings.barOpacity - modelData) < 0.04 ? Theme.accent : Theme.controlRest
-                            Text { anchors.centerIn: parent; text: Math.round(modelData * 100); color: Math.abs(Settings.barOpacity - modelData) < 0.04 ? Theme.void_ : Theme.moon; font.pixelSize: 9; font.bold: true }
+                            Text { font.family: Theme.fontText; anchors.centerIn: parent; text: Math.round(modelData * 100); color: Math.abs(Settings.barOpacity - modelData) < 0.04 ? Theme.void_ : Theme.moon; font.pixelSize: Theme.textMicro; font.bold: true }
                             MouseArea { anchors.fill: parent; onClicked: Settings.barOpacity = modelData }
                         }
                     }
@@ -1196,11 +1169,11 @@ T"
                 spacing: 4
                 RowLayout {
                     Layout.fillWidth: true
-                    Text { text: "Bar Thickness"; color: Theme.moon; font.pixelSize: 11 }
+                    Text { font.family: Theme.fontText; text: "Bar Thickness"; color: Theme.moon; font.pixelSize: Theme.textLabel }
                     Item { Layout.fillWidth: true }
                     Text {
                         text: Settings.compact ? "36px" : (Settings.barHeightProfile === "tall" || Settings.barHeightProfile === "spacious" ? "52px" : "44px")
-                        color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: 10
+                        color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption
                     }
                 }
                 RowLayout {
@@ -1219,7 +1192,7 @@ T"
                                     ? (Settings.barHeightProfile === "tall" || Settings.barHeightProfile === "spacious")
                                     : Settings.barHeightProfile !== "tall" && Settings.barHeightProfile !== "spacious")
                             color: selected ? Theme.accent : Theme.controlRest
-                            Text { anchors.centerIn: parent; text: modelData.label; color: parent.selected ? Theme.void_ : Theme.moon; font.pixelSize: 9; font.bold: true }
+                            Text { font.family: Theme.fontText; anchors.centerIn: parent; text: modelData.label; color: parent.selected ? Theme.void_ : Theme.moon; font.pixelSize: Theme.textMicro; font.bold: true }
                             MouseArea {
                                 anchors.fill: parent
                                 onClicked: {
@@ -1236,7 +1209,7 @@ T"
             ColumnLayout {
                 Layout.fillWidth: true
                 spacing: 4
-                Text { text: "Animation Easing Profile"; color: Theme.moon; font.pixelSize: 11 }
+                Text { font.family: Theme.fontText; text: "Motion speed"; color: Theme.moon; font.pixelSize: Theme.textLabel }
                 RowLayout {
                     Layout.fillWidth: true; spacing: 4
                     Repeater {
@@ -1245,7 +1218,7 @@ T"
                             Layout.fillWidth: true; implicitHeight: 24; radius: 4
                             color: Settings.motionSpeedProfile === modelData ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.25) : Theme.controlRest
                             border.width: 0
-                            Text { anchors.centerIn: parent; text: modelData.toUpperCase(); color: Settings.motionSpeedProfile === modelData ? Theme.accent : Theme.muted; font.pixelSize: 9; font.bold: true }
+                            Text { font.family: Theme.fontText; anchors.centerIn: parent; text: modelData.toUpperCase(); color: Settings.motionSpeedProfile === modelData ? Theme.accent : Theme.muted; font.pixelSize: Theme.textMicro; font.bold: true }
                             MouseArea { anchors.fill: parent; onClicked: Settings.motionSpeedProfile = modelData }
                         }
                     }
@@ -1256,7 +1229,7 @@ T"
             Rectangle {
                 Layout.fillWidth: true; implicitHeight: 30; radius: 6
                 color: Theme.controlRest; border.width: 0
-                Text { anchors.centerIn: parent; text: "↺ Reset Bar to Default"; color: Theme.moon; font.pixelSize: 10 }
+                Text { font.family: Theme.fontText; anchors.centerIn: parent; text: "↺ Reset Bar to Default"; color: Theme.moon; font.pixelSize: Theme.textCaption }
                 MouseArea { anchors.fill: parent; onClicked: root.resetLayout() }
             }
         }

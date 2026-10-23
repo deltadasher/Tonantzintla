@@ -18,7 +18,7 @@ Item {
     readonly property real masterValue: masterIsInput ? Audio.inputPercent : Audio.percent
     readonly property bool masterMuted: masterIsInput ? Audio.inputMuted : Audio.muted
     readonly property string masterName: masterIsInput ? "MICROPHONE"
-        : activeTab === "apps" ? "APP VOLUME" : Audio.defaultOutputName
+        : Audio.defaultOutputName
     readonly property string masterDetail: masterIsInput
         ? "Default PipeWire input gain" : Audio.defaultOutputDetail
 
@@ -114,7 +114,7 @@ Item {
                         Layout.fillWidth: true
                         Text {
                             Layout.fillWidth: true
-                            text: root.masterIsInput ? "MIC LEVEL" : "VOLUME"
+                            text: root.masterIsInput ? "MIC GAIN" : "VOLUME"
                             color: root.activeColor
                             font.family: Theme.fontMono
                             font.pixelSize: 10
@@ -253,13 +253,14 @@ Item {
                             ColumnLayout {
                                 Layout.fillWidth: true; spacing: 0
                                 Text { Layout.fillWidth: true; text: Audio.nodeTitle(nodeCard.modelData); color: Theme.moon; font.family: Theme.fontText; font.pixelSize: 11; font.weight: Font.DemiBold; elide: Text.ElideRight }
-                                Text { Layout.fillWidth: true; text: Audio.nodeSubtitle(nodeCard.modelData); color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; elide: Text.ElideRight }
+                                Text { Layout.fillWidth: true; text: (root.activeTab === "apps" ? (nodeCard.modelData.isSink ? "Recording stream · " : "Playback stream · ") : "") + Audio.nodeSubtitle(nodeCard.modelData); color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; elide: Text.ElideRight }
                             }
                             Text { text: nodeCard.muted ? "MUTED" : nodeCard.volumePercent + "%"; color: nodeCard.muted ? Theme.warning : Theme.moon; font.family: Theme.fontMono; font.pixelSize: 11; font.weight: Font.Bold }
                         }
                         Shared.AudioSlider {
                             Layout.fillWidth: true
                             value: nodeCard.volumePercent
+                            Accessible.name: Audio.nodeTitle(nodeCard.modelData) + (root.activeTab === "inputs" ? " input gain" : " volume")
                             muted: nodeCard.muted
                             accentColor: root.activeColor
                             onValueRequested: function(nextValue) {

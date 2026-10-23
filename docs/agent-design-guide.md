@@ -27,6 +27,7 @@ Treat these as constraints unless the user explicitly changes direction:
 | Resonance | Artwork and ambience inside a genuinely rounded boundary | Assuming Rectangle.clip makes rounded corners |
 | Branding | Existing WabiSabiBlackHole component | Invented crescent glyphs, generic rings or a question mark as the logo |
 | Navigation | One recognizable destination per action | Chronos, duplicate telemetry sidepanel, misleading Notifications heading |
+| Information access | Aperture and instruments usable alongside application windows | Desktop background clocks/widgets hidden behind applications |
 | Settings | Real integration, clear status, consistent theme | Native white controls, inert toggles, always-success feedback |
 | Portability | Discover the user's apps, tools, devices and location | Developer-machine app lists, home paths, geography or preferred applications |
 | Platform | Working Niri integration and Obarun compatibility | Assuming systemd exists everywhere or importing Hyprland-specific behavior into Niri |
@@ -101,12 +102,12 @@ the smallest Niri-compatible solution that keeps visible shapes, clipping and in
 regions synchronized. Do not add a renderer dependency without considering packaging,
 fallback behavior and measured cost.
 
-**Verified 2026-09-06:** InstrumentGeometry and InstrumentBridge exist as preview
-components, but are not wired into the live Ephemeris host. The inactive settings
-toggle is removed pending integration. The isolated harness is
-src/quickshell/preview-instruments.qml. This is not Caelestia's SDF union renderer;
-Calendar's telemetry metaball shader is separate. Live integration, rounded-mask
-containment and fractional-scale validation remain required.
+**Verified 2026-10-21:** InstrumentGeometry now feeds the live Ephemeris backing
+and rounded mask with one transition and fixed-size content. The classic backing
+is a native rounded rectangle; Gravity is its optional bounded shader alternative.
+This is not Caelestia's SDF union renderer or a joined curved neck. The standalone
+preview remains useful, but live lifecycle, GPU geometry and fractional scaling
+are separate acceptance checks.
 
 ### Caelestia: requested state versus displayed state
 
@@ -247,9 +248,10 @@ this concept. Prototype only after a new explicit request.
   state, not just process existence. Idle command/path changes restart the owned
   watcher. Real authentication, inhibitors and suspend remain host acceptance gates;
   no automated suspend behavior was added on an unverified path.
-- **Motion:** shared geometry and curved attachments are preview prototypes, not
-  integrated live-host features. Rapid switching and reduced motion have controller
-  tests; they do not prove live rounded containment or GPU visual acceptance.
+- **Motion:** shared transition geometry is wired into live backing and masking;
+  curved joined attachments are not claimed. Rapid switching and reduced motion
+  have controller tests. Native GPU appearance and output scaling require their
+  own checks, beyond compilation.
 - **Settings:** cursor status distinguishes loading, unsupported, dirty and failed.
   Apply checks the revision observed by the UI before editing, in addition to the
   validation-time concurrency check. Saved configuration is not labelled as proof

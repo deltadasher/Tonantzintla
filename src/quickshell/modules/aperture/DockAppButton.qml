@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import Quickshell
 import "../.."
+import "../../components"
 
 Item {
     id: root
@@ -13,21 +14,40 @@ Item {
     property bool active: false
     property bool motion: true
     property bool lift: true
+    property real hoverAmount: 1.12
+    property real neighborAmount: 0
+    property bool showIndicator: true
+    property string edge: "bottom"
+    readonly property bool vertical: edge === "left" || edge === "right"
+    readonly property bool hovered: pointer.containsMouse && enabled
+    activeFocusOnTab: enabled
+    opacity: enabled ? 1 : 0.45
+    Keys.onReturnPressed: if (enabled) activated()
+    Keys.onSpacePressed: if (enabled) activated()
     signal activated()
     signal newInstance()
     Accessible.role: Accessible.Button
     Accessible.name: name + (active ? ", focused" : running ? ", running" : "")
-    Accessible.onPressAction: activated()
+    Accessible.onPressAction: if (enabled) activated()
+    OpticalSurface {
+        anchors.fill: parent; anchors.margins: 3
+        hovered: root.hovered; pressed: pointer.pressed
+        selected: root.active; focused: root.activeFocus
+        opacity: root.active || root.hovered || root.activeFocus ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
+    }
     Item {
         anchors.centerIn: parent
         width: root.iconSize; height: width
-        scale: root.lift && pointer.containsMouse ? 1.16 : 1
+        scale: pointer.pressed ? 0.96 : root.lift
+            ? 1 + (Math.max(1, Math.min(1.6, root.hoverAmount)) - 1)
+                * (root.hovered ? 1 : Math.max(0, Math.min(0.5, root.neighborAmount))) : 1
         Behavior on scale { NumberAnimation { duration: root.motion ? 150 : 0; easing.type: Easing.OutCubic } }
         Image {
             id: appIcon
             anchors.fill: parent
             source: root.icon ? Quickshell.iconPath(root.icon, "application-x-executable") : ""
-            sourceSize: Qt.size(root.iconSize * 2, root.iconSize * 2)
+            sourceSize: Qt.size(Math.ceil(root.iconSize * Math.min(3, Math.max(1, Screen.devicePixelRatio))), Math.ceil(root.iconSize * Math.min(3, Math.max(1, Screen.devicePixelRatio))))
             fillMode: Image.PreserveAspectFit
             smooth: true
         }
@@ -41,11 +61,12 @@ Item {
         }
     }
     Rectangle {
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 1
-        width: root.active ? 16 : 5; height: 3; radius: 2
-        visible: root.running
+        x: root.vertical ? (root.edge === "right" ? parent.width - width - 1 : 1) : (parent.width - width) / 2
+        y: root.vertical ? (parent.height - height) / 2 : (root.edge === "bottom" ? parent.height - height - 1 : 1)
+        width: root.vertical ? 3 : root.active ? 16 : 5
+        height: root.vertical ? (root.active ? 16 : 5) : 3
+        radius: 2
+        visible: root.running && root.showIndicator
         color: root.active ? Theme.accent : Theme.moon
     }
     MouseArea {
@@ -59,7 +80,7 @@ Item {
             else root.activated();
         }
     }
-    ToolTip.visible: pointer.containsMouse
+    ToolTip.visible: root.hovered
     ToolTip.delay: 400
     ToolTip.text: root.name + (root.running ? " · click to focus / cycle" : "")
 }

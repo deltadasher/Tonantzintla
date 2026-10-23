@@ -23,6 +23,8 @@ Item {
     property real daySpinAngle: 0
     property real monthSpinAngle: 0
     property int calendarMode: 0
+    readonly property int preferredCalendarMode: [0, 1, 2].indexOf(Settings.calendarDefaultMode) >= 0 ? Settings.calendarDefaultMode : 0
+    onPreferredCalendarModeChanged: setCalendarMode(preferredCalendarMode)
     readonly property bool heliocentricMode: calendarMode === 1
     readonly property bool earthMode: calendarMode === 2
     property real celestialReveal: calendarMode === 0 ? 0 : 1
@@ -207,19 +209,19 @@ Item {
     }
 
     Behavior on heliocentricReveal {
-        NumberAnimation { duration: Settings.motion ? 720 : 0; easing.type: Easing.InOutCubic }
+        NumberAnimation { duration: Theme.duration(720); easing.type: Easing.InOutCubic }
     }
     Behavior on earthReveal {
-        NumberAnimation { duration: Settings.motion ? 720 : 0; easing.type: Easing.InOutCubic }
+        NumberAnimation { duration: Theme.duration(720); easing.type: Easing.InOutCubic }
     }
     Behavior on celestialReveal {
-        NumberAnimation { duration: Settings.motion ? 760 : 0; easing.type: Easing.InOutCubic }
+        NumberAnimation { duration: Theme.duration(760); easing.type: Easing.InOutCubic }
     }
 
     NumberAnimation {
         id: modeTransition
         target: root; property: "modePulse"; from: 0; to: 1
-        duration: Settings.motion ? 780 : 0; easing.type: Easing.OutExpo
+        duration: Theme.duration(780); easing.type: Easing.OutExpo
     }
 
     function circularDistance(a, b, size) {
@@ -329,12 +331,26 @@ Item {
 
     function deploy() {
         deployment.stop();
-        entrance = 0;
-        sideOne = 0;
-        sideTwo = 0;
-        sideThree = 0;
-        deployment.restart();
+        entrance = Theme.motionEnabled ? 0 : 1;
+        sideOne = Theme.motionEnabled ? 0 : 1;
+        sideTwo = Theme.motionEnabled ? 0 : 1;
+        sideThree = Theme.motionEnabled ? 0 : 1;
+        if (Theme.motionEnabled) deployment.restart();
         moonFace.requestPaint();
+    }
+
+    Connections {
+        target: Theme
+        function onMotionEnabledChanged() {
+            if (Theme.motionEnabled) return;
+            deployment.complete();
+            modeTransition.complete();
+            moonPulse.complete();
+            root.entrance = root.sideOne = root.sideTwo = root.sideThree = 1;
+            lunarDrift.x = lunarDrift.y = 0;
+            lightDrift.x = lightDrift.y = 0;
+            currentDrift.x = currentDrift.y = 0;
+        }
     }
 
     function beginDeployment() { deploy(); }
@@ -353,25 +369,25 @@ Item {
     SequentialAnimation {
         id: deployment
         ParallelAnimation {
-            NumberAnimation { target: root; property: "entrance"; to: 1; duration: Settings.motion ? 780 : 0; easing.type: Easing.OutBack; easing.overshoot: 1.08 }
+            NumberAnimation { target: root; property: "entrance"; to: 1; duration: Theme.duration(780); easing.type: Easing.OutBack; easing.overshoot: 1.08 }
             SequentialAnimation {
-                PauseAnimation { duration: Settings.motion ? 170 : 0 }
-                NumberAnimation { target: root; property: "sideOne"; to: 1; duration: Settings.motion ? 520 : 0; easing.type: Easing.OutBack }
+                PauseAnimation { duration: Theme.duration(170) }
+                NumberAnimation { target: root; property: "sideOne"; to: 1; duration: Theme.duration(520); easing.type: Easing.OutBack }
             }
             SequentialAnimation {
-                PauseAnimation { duration: Settings.motion ? 280 : 0 }
-                NumberAnimation { target: root; property: "sideTwo"; to: 1; duration: Settings.motion ? 560 : 0; easing.type: Easing.OutBack }
+                PauseAnimation { duration: Theme.duration(280) }
+                NumberAnimation { target: root; property: "sideTwo"; to: 1; duration: Theme.duration(560); easing.type: Easing.OutBack }
             }
             SequentialAnimation {
-                PauseAnimation { duration: Settings.motion ? 390 : 0 }
-                NumberAnimation { target: root; property: "sideThree"; to: 1; duration: Settings.motion ? 620 : 0; easing.type: Easing.OutBack }
+                PauseAnimation { duration: Theme.duration(390) }
+                NumberAnimation { target: root; property: "sideThree"; to: 1; duration: Theme.duration(620); easing.type: Easing.OutBack }
             }
         }
     }
 
     NumberAnimation on zodiacDrift {
-        from: 0; to: 360; duration: 240000; loops: Animation.Infinite
-        running: Settings.motion && root.visible && root.calendarMode === 0
+        from: 0; to: 360; duration: Theme.duration(240000); loops: Animation.Infinite
+        running: Theme.motionEnabled && root.visible && root.calendarMode === 0
     }
 
     MouseArea {
@@ -495,10 +511,10 @@ Item {
                     }
                 }
                 SequentialAnimation on opacity {
-                    running: Settings.motion && root.heliocentricMode
+                    running: Theme.motionEnabled && root.heliocentricMode
                     loops: Animation.Infinite
-                    NumberAnimation { to: 0.72; duration: 1800; easing.type: Easing.InOutSine }
-                    NumberAnimation { to: 1; duration: 1800; easing.type: Easing.InOutSine }
+                    NumberAnimation { to: 0.72; duration: Theme.duration(1800); easing.type: Easing.InOutSine }
+                    NumberAnimation { to: 1; duration: Theme.duration(1800); easing.type: Easing.InOutSine }
                 }
             }
 
@@ -584,9 +600,9 @@ Item {
                         anchors.top: parent.bottom; anchors.topMargin: 5
                         text: planetBody.modelData.name
                         color: Theme.moon
-                        font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Black
+                        font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.Black
                         opacity: planetPointer.containsMouse ? 1 : 0
-                        Behavior on opacity { NumberAnimation { duration: 120 } }
+                        Behavior on opacity { NumberAnimation { duration: Theme.duration(120) } }
                     }
                     MouseArea {
                         id: planetPointer
@@ -794,7 +810,7 @@ Item {
                     text: root.earthMode ? (root.localDaylight ? "DAY  /  " : "NIGHT  /  ")
                         + root.nextSolarLabel + "  " + root.nextSolarTime : ""
                     color: root.localDaylight ? Theme.warning : Theme.accent
-                    font.family: Theme.fontMono; font.pixelSize: 12; font.weight: Font.Black
+                    font.family: Theme.fontMono; font.pixelSize: Theme.textLabel; font.weight: Font.Black
                     font.letterSpacing: 1.5
                 }
                 Canvas {
@@ -826,7 +842,7 @@ Item {
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: Weather.location.length ? Weather.location.toUpperCase() : "LOCATION UNRESOLVED"
-                    color: Theme.moon; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Bold
+                    color: Theme.moon; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.Bold
                     font.letterSpacing: 1.2
                 }
             }
@@ -861,8 +877,8 @@ Item {
                 z: selected ? 7 : 2
                 opacity: root.calendarFaceReveal
                 scale: 0.76 + root.calendarFaceReveal * 0.24
-                Behavior on width { enabled: Settings.motion; NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
-                Behavior on height { enabled: Settings.motion; NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+                Behavior on width { enabled: Theme.motionEnabled; NumberAnimation { duration: Theme.duration(220); easing.type: Easing.OutCubic } }
+                Behavior on height { enabled: Theme.motionEnabled; NumberAnimation { duration: Theme.duration(220); easing.type: Easing.OutCubic } }
                 Rectangle {
                     visible: zodiac.selected
                     anchors.fill: parent; radius: height / 2
@@ -871,7 +887,7 @@ Item {
                 Text {
                     anchors.centerIn: parent; text: root.zodiacNames[zodiac.index]
                     color: zodiac.selected ? Theme.void_ : Theme.muted
-                    font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Black
+                    font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.Black
                     visible: zodiac.selected || zodiac.distance === 1
                     opacity: zodiac.selected ? 1 : 0.46
                 }
@@ -899,8 +915,8 @@ Item {
                 y: watch.height / 2 + Math.sin(angle) * watch.height * 0.325 - height / 2
                 opacity: root.calendarFaceReveal
                 scale: 0.72 + root.calendarFaceReveal * 0.28
-                Behavior on width { enabled: Settings.motion; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-                Behavior on height { enabled: Settings.motion; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                Behavior on width { enabled: Theme.motionEnabled; NumberAnimation { duration: Theme.duration(200); easing.type: Easing.OutCubic } }
+                Behavior on height { enabled: Theme.motionEnabled; NumberAnimation { duration: Theme.duration(200); easing.type: Easing.OutCubic } }
                 Rectangle {
                     anchors.fill: parent; radius: width / 2
                     color: monthMark.current ? Theme.cyan
@@ -938,8 +954,8 @@ Item {
                 z: chosen ? 8 : 3
                 opacity: root.calendarFaceReveal
                 scale: 0.68 + root.calendarFaceReveal * 0.32
-                Behavior on width { enabled: Settings.motion; NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-                Behavior on height { enabled: Settings.motion; NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                Behavior on width { enabled: Theme.motionEnabled; NumberAnimation { duration: Theme.duration(180); easing.type: Easing.OutCubic } }
+                Behavior on height { enabled: Theme.motionEnabled; NumberAnimation { duration: Theme.duration(180); easing.type: Easing.OutCubic } }
                 Rectangle {
                     anchors.fill: parent; radius: width / 2
                     color: dayMark.isToday ? Theme.cyan : dayMark.chosen ? Theme.accent
@@ -1056,11 +1072,11 @@ Item {
                 let velocity = ring === "day" ? dayVelocity : monthVelocity;
                 let angle = ring === "day" ? root.daySpinAngle : root.monthSpinAngle;
                 const step = Math.PI * 2 / (ring === "day" ? root.daysInMonth : 12);
-                if (!Settings.motion || Math.abs(velocity) < step * 0.8) {
+                if (!Theme.motionEnabled || Math.abs(velocity) < step * 0.8) {
                     // The residual already identifies the nearest selected label.
                     // Settle geometry only: don't restart deployment or selection.
                     velocity = 0;
-                    angle = Settings.motion ? angle * Math.exp(-14 * dt) : 0;
+                    angle = Theme.motionEnabled ? angle * Math.exp(-14 * dt) : 0;
                     if (Math.abs(angle) < 0.0001) angle = 0;
                     if (ring === "day") root.daySpinAngle = angle;
                     else root.monthSpinAngle = angle;
@@ -1109,8 +1125,8 @@ Item {
                 const delta = wheel.angleDelta.y || wheel.angleDelta.x;
                 const movement = -delta / 120 * Math.PI * 2 / (ring === "day" ? root.daysInMonth : 12);
                 advance(ring, movement);
-                if (ring === "day") dayVelocity = Settings.motion ? movement * 5 : 0;
-                else monthVelocity = Settings.motion ? movement * 5 : 0;
+                if (ring === "day") dayVelocity = Theme.motionEnabled ? movement * 5 : 0;
+                else monthVelocity = Theme.motionEnabled ? movement * 5 : 0;
                 wheel.accepted = true;
             }
 
@@ -1155,7 +1171,7 @@ Item {
             onReleased: function() {
                 const ring = activeRing;
                 activeRing = "";
-                if (!Settings.motion || Date.now() - lastSample > 120) {
+                if (!Theme.motionEnabled || Date.now() - lastSample > 120) {
                     if (ring === "day") dayVelocity = 0;
                     else monthVelocity = 0;
                 }
@@ -1219,13 +1235,13 @@ Item {
                 Text {
                     width: parent.width; text: root.phaseName(root.lunarPhase)
                     color: root.lunarCenterIsDark ? Theme.moon : Theme.void_
-                    font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Black; horizontalAlignment: Text.AlignHCenter
+                    font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.Black; horizontalAlignment: Text.AlignHCenter
                 }
             }
             SequentialAnimation {
                 id: moonPulse
-                NumberAnimation { target: moon; property: "scale"; to: 1.085; duration: Settings.motion ? 150 : 0; easing.type: Easing.OutCubic }
-                NumberAnimation { target: moon; property: "scale"; to: 1; duration: Settings.motion ? 430 : 0; easing.type: Easing.OutElastic; easing.amplitude: 0.35 }
+                NumberAnimation { target: moon; property: "scale"; to: 1.085; duration: Theme.duration(150); easing.type: Easing.OutCubic }
+                NumberAnimation { target: moon; property: "scale"; to: 1; duration: Theme.duration(430); easing.type: Easing.OutElastic; easing.amplitude: 0.35 }
             }
             Connections {
                 target: root
@@ -1257,7 +1273,7 @@ Item {
             Text {
                 anchors.left: parent.left; anchors.bottom: parent.bottom; anchors.bottomMargin: 4
                 text: root.viewYear + "  /  " + Qt.formatDate(root.selectedDate, "ddd").toUpperCase()
-                color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: 11; font.weight: Font.Black; font.letterSpacing: 3
+                color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: Theme.textLabel; font.weight: Font.DemiBold; font.letterSpacing: 2
             }
         }
 
@@ -1273,16 +1289,28 @@ Item {
                     id: navButton
                     required property var modelData
                     width: modelData.delta === 0 ? 32 : 46; height: 32; radius: height / 2
-                    color: navPointer.containsMouse ? Theme.accent : Theme.controlRest
+                    color: navPointer.containsMouse ? Theme.controlHover : Theme.controlRest
+                    border.width: activeFocus ? 1 : 0
+                    border.color: Theme.accent
+                    activeFocusOnTab: true
+                    Accessible.role: Accessible.Button
+                    Accessible.name: modelData.delta === 0 ? "Today" : modelData.delta < 0 ? "Previous year" : "Next year"
+                    function activate() { modelData.delta === 0 ? root.goToday() : root.moveYear(modelData.delta); }
+                    Keys.onPressed: function(event) {
+                        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) {
+                            activate(); event.accepted = true;
+                        }
+                    }
+                    Accessible.onPressAction: activate()
                     Text {
                         anchors.centerIn: parent; text: navButton.modelData.glyph
-                        color: navPointer.containsMouse ? Theme.void_ : Theme.moon
+                        color: Theme.moon
                         font.family: Theme.fontDisplay; font.pixelSize: navButton.modelData.delta === 0 ? 8 : 21; font.weight: Font.Black
                     }
                     MouseArea {
                         id: navPointer
                         anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                        onClicked: navButton.modelData.delta === 0 ? root.goToday() : root.moveYear(navButton.modelData.delta)
+                        onClicked: navButton.activate()
                     }
                 }
             }
@@ -1385,7 +1413,7 @@ Item {
             property color color2: Theme.accent
             property color color3: Theme.moon
             property real phase: root.telemetryMerge * 6.2 + root.telemetryAbsorb * 4.1
-            property real distortion: Settings.motion
+            property real distortion: Theme.motionEnabled
                 ? Math.sin(root.telemetryMerge * Math.PI) * (1 - root.telemetryAbsorb) : 0
 
             fragmentShader: "shaders/telemetry-metaballs.frag.qsb"
@@ -1413,22 +1441,22 @@ Item {
             Column {
                 anchors.centerIn: parent; spacing: 1; opacity: root.telemetryTextOpacity
                 Text { anchors.horizontalCenter: parent.horizontalCenter; text: root.lunarAge.toFixed(1); color: Theme.void_; font.family: Theme.fontDisplay; font.pixelSize: 26; font.weight: Font.Black }
-                Text { anchors.horizontalCenter: parent.horizontalCenter; text: "LUNAR DAYS"; color: Theme.void_; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Black; font.letterSpacing: 2 }
+                Text { anchors.horizontalCenter: parent.horizontalCenter; text: "LUNAR DAYS"; color: Theme.void_; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.DemiBold; font.letterSpacing: 1 }
             }
             SequentialAnimation {
                 loops: Animation.Infinite
-                running: Settings.motion && lunarBubble.visible && root.sideTwo > 0.99 && root.telemetryMerge < 0.01
+                running: Theme.motionEnabled && lunarBubble.visible && root.sideTwo > 0.99 && root.telemetryMerge < 0.01
                 ParallelAnimation {
-                    NumberAnimation { target: lunarDrift; property: "x"; to: 5; duration: 1900; easing.type: Easing.InOutSine }
-                    NumberAnimation { target: lunarDrift; property: "y"; to: -4; duration: 1900; easing.type: Easing.InOutSine }
+                    NumberAnimation { target: lunarDrift; property: "x"; to: 5; duration: Theme.duration(1900); easing.type: Easing.InOutSine }
+                    NumberAnimation { target: lunarDrift; property: "y"; to: -4; duration: Theme.duration(1900); easing.type: Easing.InOutSine }
                 }
                 ParallelAnimation {
-                    NumberAnimation { target: lunarDrift; property: "x"; to: -4; duration: 2300; easing.type: Easing.InOutSine }
-                    NumberAnimation { target: lunarDrift; property: "y"; to: 3; duration: 2300; easing.type: Easing.InOutSine }
+                    NumberAnimation { target: lunarDrift; property: "x"; to: -4; duration: Theme.duration(2300); easing.type: Easing.InOutSine }
+                    NumberAnimation { target: lunarDrift; property: "y"; to: 3; duration: Theme.duration(2300); easing.type: Easing.InOutSine }
                 }
                 ParallelAnimation {
-                    NumberAnimation { target: lunarDrift; property: "x"; to: 0; duration: 1600; easing.type: Easing.InOutSine }
-                    NumberAnimation { target: lunarDrift; property: "y"; to: 0; duration: 1600; easing.type: Easing.InOutSine }
+                    NumberAnimation { target: lunarDrift; property: "x"; to: 0; duration: Theme.duration(1600); easing.type: Easing.InOutSine }
+                    NumberAnimation { target: lunarDrift; property: "y"; to: 0; duration: Theme.duration(1600); easing.type: Easing.InOutSine }
                 }
             }
         }
@@ -1455,22 +1483,22 @@ Item {
             Column {
                 anchors.centerIn: parent; spacing: 1; opacity: root.telemetryTextOpacity
                 Text { anchors.horizontalCenter: parent.horizontalCenter; text: root.illumination + "%"; color: Theme.void_; font.family: Theme.fontDisplay; font.pixelSize: 22; font.weight: Font.Black }
-                Text { anchors.horizontalCenter: parent.horizontalCenter; text: "MOONLIGHT"; color: Theme.void_; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Black }
+                Text { anchors.horizontalCenter: parent.horizontalCenter; text: "MOONLIGHT"; color: Theme.void_; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.Black }
             }
             SequentialAnimation {
                 loops: Animation.Infinite
-                running: Settings.motion && lightBubble.visible && root.sideTwo > 0.99 && root.telemetryMerge < 0.01
+                running: Theme.motionEnabled && lightBubble.visible && root.sideTwo > 0.99 && root.telemetryMerge < 0.01
                 ParallelAnimation {
-                    NumberAnimation { target: lightDrift; property: "x"; to: -4; duration: 2100; easing.type: Easing.InOutSine }
-                    NumberAnimation { target: lightDrift; property: "y"; to: 4; duration: 2100; easing.type: Easing.InOutSine }
+                    NumberAnimation { target: lightDrift; property: "x"; to: -4; duration: Theme.duration(2100); easing.type: Easing.InOutSine }
+                    NumberAnimation { target: lightDrift; property: "y"; to: 4; duration: Theme.duration(2100); easing.type: Easing.InOutSine }
                 }
                 ParallelAnimation {
-                    NumberAnimation { target: lightDrift; property: "x"; to: 4; duration: 1700; easing.type: Easing.InOutSine }
-                    NumberAnimation { target: lightDrift; property: "y"; to: -3; duration: 1700; easing.type: Easing.InOutSine }
+                    NumberAnimation { target: lightDrift; property: "x"; to: 4; duration: Theme.duration(1700); easing.type: Easing.InOutSine }
+                    NumberAnimation { target: lightDrift; property: "y"; to: -3; duration: Theme.duration(1700); easing.type: Easing.InOutSine }
                 }
                 ParallelAnimation {
-                    NumberAnimation { target: lightDrift; property: "x"; to: 0; duration: 1800; easing.type: Easing.InOutSine }
-                    NumberAnimation { target: lightDrift; property: "y"; to: 0; duration: 1800; easing.type: Easing.InOutSine }
+                    NumberAnimation { target: lightDrift; property: "x"; to: 0; duration: Theme.duration(1800); easing.type: Easing.InOutSine }
+                    NumberAnimation { target: lightDrift; property: "y"; to: 0; duration: Theme.duration(1800); easing.type: Easing.InOutSine }
                 }
             }
         }
@@ -1520,18 +1548,18 @@ Item {
             }
             SequentialAnimation {
                 loops: Animation.Infinite
-                running: Settings.motion && currentSky.visible && root.sideThree > 0.99 && root.telemetryMerge < 0.01
+                running: Theme.motionEnabled && currentSky.visible && root.sideThree > 0.99 && root.telemetryMerge < 0.01
                 ParallelAnimation {
-                    NumberAnimation { target: currentDrift; property: "x"; to: 4; duration: 1800; easing.type: Easing.InOutSine }
-                    NumberAnimation { target: currentDrift; property: "y"; to: 4; duration: 1800; easing.type: Easing.InOutSine }
+                    NumberAnimation { target: currentDrift; property: "x"; to: 4; duration: Theme.duration(1800); easing.type: Easing.InOutSine }
+                    NumberAnimation { target: currentDrift; property: "y"; to: 4; duration: Theme.duration(1800); easing.type: Easing.InOutSine }
                 }
                 ParallelAnimation {
-                    NumberAnimation { target: currentDrift; property: "x"; to: -5; duration: 2400; easing.type: Easing.InOutSine }
-                    NumberAnimation { target: currentDrift; property: "y"; to: -2; duration: 2400; easing.type: Easing.InOutSine }
+                    NumberAnimation { target: currentDrift; property: "x"; to: -5; duration: Theme.duration(2400); easing.type: Easing.InOutSine }
+                    NumberAnimation { target: currentDrift; property: "y"; to: -2; duration: Theme.duration(2400); easing.type: Easing.InOutSine }
                 }
                 ParallelAnimation {
-                    NumberAnimation { target: currentDrift; property: "x"; to: 0; duration: 1700; easing.type: Easing.InOutSine }
-                    NumberAnimation { target: currentDrift; property: "y"; to: 0; duration: 1700; easing.type: Easing.InOutSine }
+                    NumberAnimation { target: currentDrift; property: "x"; to: 0; duration: Theme.duration(1700); easing.type: Easing.InOutSine }
+                    NumberAnimation { target: currentDrift; property: "y"; to: 0; duration: Theme.duration(1700); easing.type: Easing.InOutSine }
                 }
             }
         }
@@ -1545,16 +1573,16 @@ Item {
         anchors.topMargin: 28
         z: 20
         Behavior on anchors.rightMargin {
-            NumberAnimation { duration: Settings.motion ? 420 : 0; easing.type: Easing.InOutCubic }
+            NumberAnimation { duration: Theme.duration(420); easing.type: Easing.InOutCubic }
         }
     }
 
     Timer {
-        interval: Settings.motion && root.calendarMode === 0 ? 16 : 1000
+        interval: Theme.motionEnabled && root.calendarMode === 0 ? 16 : 1000
         running: root.visible
         repeat: true
         triggeredOnStart: true
         onTriggered: root.smoothEpoch = Date.now()
     }
-    Component.onCompleted: { forceActiveFocus(); moonFace.requestPaint(); }
+    Component.onCompleted: { setCalendarMode(preferredCalendarMode); forceActiveFocus(); moonFace.requestPaint(); }
 }

@@ -4,6 +4,8 @@
 var apiVersion = 1;
 var catalog = [
     {id: "apps", title: "Blackhole command palette", code: "APP", width: 680, height: 760, placement: "left", source: "widgets/catalog/LauncherWidget.qml", setting: "showTabApps"},
+    {id: "calculator", title: "Calculator", code: "CALC", width: 760, height: 680, source: "widgets/productivity/CalculatorWidget.qml"},
+    {id: "notes", title: "Pinned notes", code: "NOTE", width: 780, height: 680, source: "widgets/productivity/NotesWidget.qml"},
     {id: "walls", title: "Parallax library", code: "WAL", width: 1480, height: 860, placement: "horizon", source: "widgets/desktop/WallpaperWidget.qml", setting: "showTabWalls"},
     {id: "clipboard", title: "Clipboard core", code: "CLP", width: 820, height: 670, source: "widgets/productivity/ClipboardWidget.qml", setting: "showTabClipboard"},
     {id: "notifications", title: "Transit signals", code: "SIG", width: 470, height: 760, placement: "right", source: "widgets/productivity/NotificationsWidget.qml"},

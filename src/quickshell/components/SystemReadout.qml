@@ -1,67 +1,95 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import ".."
 import "../services"
 
 Rectangle {
     id: root
+    property bool compactContent: Settings.compact
+    readonly property string faceName: Settings.barTelemetryFace
+    readonly property var metricsModel: Settings.showSystemStats ? [
+        { id: "cpu", code: "CPU" }, { id: "memory", code: "MEM" },
+        { id: "gpu", code: "GPU" }, { id: "disk", code: "DISK" }
+    ].filter(function(metric) { return Settings.barTelemetryMetrics.indexOf(metric.id) >= 0; }) : []
+    function reading(id) {
+        if(id === "cpu") return {value:SysStats.cpuPercent+"%",level:SysStats.cpuPercent/100};
+        if(id === "memory") return {value:SysStats.memoryPercent+"%",level:SysStats.memoryPercent/100};
+        if(id === "gpu") return {value:SysStats.gpuTemperature>0?SysStats.gpuTemperature+"°":"—",level:SysStats.gpuTemperature/100};
+        return {value:SysStats.diskPercent+"%",level:SysStats.diskPercent/100};
+    }
     property string outputName: ""
     property var anchorHost: null
     readonly property bool sourceActive: ShellState.ephemerisVisible
         && ShellState.ephemerisAnchorTarget === root
     implicitWidth: row.implicitWidth + 18
-    implicitHeight: Settings.compact ? 34 : 38
+    implicitHeight: compactContent ? 34 : 38
     radius: 9
-    color: sourceActive ? Theme.void_ : hover.hovered ? Theme.barNeutralHover : "transparent"
+    color: sourceActive ? Theme.controlSelected : hover.hovered ? Theme.barNeutralHover : "transparent"
     border.width: 0
 
-    HoverHandler { id: hover }
+    property bool tooltipSuppressed: false
+
+    function openPanel(panel) {
+        tooltipSuppressed = true;
+        if (root.anchorHost) root.anchorHost.toggleEphemeris(panel, root);
+        else ShellState.toggleEphemeris(panel, root.outputName);
+    }
+
+    HoverHandler {
+        id: hover
+        onHoveredChanged: if (!hovered) root.tooltipSuppressed = false
+    }
 
     RowLayout {
         id: row
         anchors.centerIn: parent
-        spacing: 12
+        spacing: root.compactContent ? 8 : 12
 
         Repeater {
-            model: Settings.showSystemStats ? [
-                { "code": "CPU", "value": SysStats.cpuPercent + "%" },
-                { "code": "MEM", "value": SysStats.memoryPercent + "%" },
-                { "code": "GPU", "value": SysStats.gpuTemperature > 0 ? SysStats.gpuTemperature + "°" : "—" },
-                { "code": "DISK", "value": SysStats.diskPercent + "%" }
-            ] : []
+            model: root.metricsModel
 
             Item {
                 id: statHitbox
                 required property var modelData
+                readonly property var metric: root.reading(modelData.id)
+                activeFocusOnTab: true
+                Accessible.role: Accessible.Button
+                Accessible.name: "Open System · " + modelData.code + " " + metric.value
+                Accessible.onPressAction: root.openPanel("system")
+                Keys.onReturnPressed: root.openPanel("system")
+                Keys.onSpacePressed: root.openPanel("system")
+                HoverHandler { id: statHitboxHover }
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.leftMargin: -3
+                    anchors.rightMargin: -3
+                    radius: Theme.radiusSmall
+                    color: "transparent"
+                    border.width: statHitbox.activeFocus ? 1 : 0
+                    border.color: Theme.accent
+                }
+                ToolTip {
+                    visible: statHitboxHover.hovered && !root.sourceActive && !root.tooltipSuppressed
+                    delay: 500
+                    text: statHitbox.Accessible.name
+                    background: Rectangle { color: Theme.mantle; radius: Theme.radiusSmall; border.color: Theme.accentLine }
+                    contentItem: Text { text: statHitbox.Accessible.name; color: Theme.moon; font.family: Theme.fontText; font.pixelSize: Theme.textLabel }
+                }
                 Layout.preferredWidth: stat.implicitWidth
                 Layout.preferredHeight: root.implicitHeight
 
-                RowLayout {
+                TelemetryReadoutFace {
                     id: stat
                     anchors.centerIn: parent
-                    spacing: 4
-                    Text {
-                        Layout.alignment: Qt.AlignVCenter
-                        text: statHitbox.modelData.code
-                        color: Theme.muted
-                        font.family: Theme.fontText
-                        font.pixelSize: 11
-                        font.weight: Font.DemiBold
-                        font.letterSpacing: 0.45
-                    }
-                    Text {
-                        Layout.alignment: Qt.AlignVCenter
-                        text: statHitbox.modelData.value
-                        color: Theme.moon
-                        font.family: Theme.fontText
-                        font.pixelSize: 12
-                        font.weight: Font.DemiBold
-                    }
+                    code: statHitbox.modelData.code
+                    value: statHitbox.metric.value
+                    level: statHitbox.metric.level
+                    variant: root.faceName
+                    compact: root.compactContent
                 }
                 TapHandler {
-                    onTapped: root.anchorHost
-                        ? root.anchorHost.toggleEphemeris("system", root)
-                        : ShellState.toggleEphemeris("system", root.outputName)
+                    onTapped: root.openPanel("system")
                 }
             }
         }
@@ -75,6 +103,29 @@ Rectangle {
 
         Item {
             id: audioHitbox
+            activeFocusOnTab: true
+            Accessible.role: Accessible.Button
+            Accessible.name: "Open audio · " + (Audio.muted ? "Muted" : Audio.percent + "%")
+            Accessible.onPressAction: root.openPanel("audio")
+            Keys.onReturnPressed: root.openPanel("audio")
+            Keys.onSpacePressed: root.openPanel("audio")
+            HoverHandler { id: audioHitboxHover }
+            Rectangle {
+                anchors.fill: parent
+                anchors.leftMargin: -3
+                anchors.rightMargin: -3
+                radius: Theme.radiusSmall
+                color: "transparent"
+                border.width: audioHitbox.activeFocus ? 1 : 0
+                border.color: Theme.accent
+            }
+            ToolTip {
+                visible: audioHitboxHover.hovered && !root.sourceActive && !root.tooltipSuppressed
+                delay: 500
+                text: audioHitbox.Accessible.name
+                background: Rectangle { color: Theme.mantle; radius: Theme.radiusSmall; border.color: Theme.accentLine }
+                contentItem: Text { text: audioHitbox.Accessible.name; color: Theme.moon; font.family: Theme.fontText; font.pixelSize: Theme.textLabel }
+            }
             visible: Settings.showAudio
             Layout.preferredWidth: audioReadout.implicitWidth
             Layout.preferredHeight: root.implicitHeight
@@ -88,7 +139,7 @@ Rectangle {
                     text: Audio.muted ? "MUT" : "VOL"
                     color: Audio.muted ? Theme.warning : Theme.muted
                     font.family: Theme.fontText
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.textCaption
                     font.weight: Font.DemiBold
                     font.letterSpacing: 0.45
                 }
@@ -97,14 +148,12 @@ Rectangle {
                     text: Audio.percent + "%"
                     color: Theme.moon
                     font.family: Theme.fontText
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.textLabel
                     font.weight: Font.DemiBold
                 }
             }
             TapHandler {
-                onTapped: root.anchorHost
-                    ? root.anchorHost.toggleEphemeris("audio", root)
-                    : ShellState.toggleEphemeris("audio", root.outputName)
+                onTapped: root.openPanel("audio")
             }
         }
     }

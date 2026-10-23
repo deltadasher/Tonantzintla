@@ -31,6 +31,34 @@ def emit(payload: dict) -> None:
     print(json.dumps(payload, ensure_ascii=False))
 
 
+def local_lyrics(source_url: str) -> dict | None:
+    """Only inspect a sidecar beside the current local track, never scan folders."""
+    try:
+        parsed = urllib.parse.urlsplit(source_url)
+    except ValueError:
+        return None
+    if parsed.scheme != "file" or parsed.netloc not in ("", "localhost"):
+        return None
+    track = pathlib.Path(urllib.parse.unquote(parsed.path))
+    if not track.is_absolute():
+        return None
+    for suffix in (".lrc", ".LRC"):
+        try:
+            candidate = track.with_suffix(suffix)
+            # Bound retained lyric text and avoid large sidecar allocations.
+            with candidate.open("rb") as stream:
+                content = stream.read(256 * 1024 + 1)
+            if len(content) > 256 * 1024:
+                continue
+            text = content.decode("utf-8-sig").strip()
+            if text:
+                return {"status": "ready", "source": "LOCAL LRC", "plain": text,
+                        "synced": text, "instrumental": False}
+        except (OSError, UnicodeError, ValueError):
+            continue
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--title", required=True)
@@ -38,7 +66,13 @@ def main() -> int:
     parser.add_argument("--album", default="")
     parser.add_argument("--duration", type=int, default=0)
     parser.add_argument("--refresh", action="store_true")
+    parser.add_argument("--source-url", default="")
     args = parser.parse_args()
+
+    local = local_lyrics(args.source_url)
+    if local and not args.refresh:
+        emit(local)
+        return 0
 
     cache_file = cache_root() / f"{signature(args.title, args.artist, args.album, args.duration)}.json"
     if cache_file.exists() and not args.refresh:

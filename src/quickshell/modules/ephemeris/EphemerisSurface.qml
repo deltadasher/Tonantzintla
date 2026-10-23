@@ -64,8 +64,13 @@ PanelWindow {
                 Math.max(240, widgetLoader.item.preferredSurfaceHeight));
 
         if (widgetLoader.status === Loader.Ready && widgetLoader.item
-                && widgetLoader.item.preferredSurfaceWidth !== undefined)
-            layout.width = Math.min(layout.width, widgetLoader.item.preferredSurfaceWidth);
+                && Number.isFinite(Number(widgetLoader.item.preferredSurfaceWidth))
+                && Number(widgetLoader.item.preferredSurfaceWidth) > 0) {
+            layout.width = Math.min(root.safeArea.width,
+                Math.max(240, Number(widgetLoader.item.preferredSurfaceWidth)));
+            if (!sourcePositioned)
+                layout.x = root.safeArea.x + (root.safeArea.width - layout.width) / 2;
+        }
         if (sourcePositioned && layout.placement !== "horizon") {
             Registry.attachLayout(layout, {
                 x: displayedAnchorX,
@@ -86,7 +91,9 @@ PanelWindow {
     // applied once to the complete union, avoiding darker overlap at the lip.
     readonly property color instrumentColor: Theme.void_
     readonly property bool softwareRenderer: safeViewport.GraphicsInfo.api === GraphicsInfo.Software
-    readonly property bool gravityRequested: Settings.panelMaterial === "gravity"
+    readonly property string materialOverride: Settings.appearanceFor(root.activeInstrument)
+    readonly property string panelMaterial: materialOverride === "inherit" ? Settings.panelMaterial : materialOverride
+    readonly property bool gravityRequested: root.panelMaterial === "gravity"
         && !root.immersiveWidget && Quickshell.env("TONANTZINTLA_DISABLE_GRAVITY") !== "1"
     readonly property bool gravityReady: gravityBacking.status === Loader.Ready
         && gravityBacking.item && gravityBacking.item.usable
@@ -102,6 +109,12 @@ PanelWindow {
     anchors { top: true; right: true; bottom: true; left: true }
 
     function close() { ShellState.closeEphemeris(); }
+    function customize() {
+        if (!transition.interactive) return;
+        ShellState.openWidgetSettings(root.activeInstrument, root.widgetLayout.x,
+            root.widgetLayout.y, root.widgetLayout.width, root.widgetLayout.height,
+            root.outputName);
+    }
     function focusWidget() {
         if (!transition.interactive) return;
         if (widgetLoader.item && widgetLoader.item.focusPrimary) widgetLoader.item.focusPrimary();
@@ -210,6 +223,16 @@ PanelWindow {
     mask: Region { item: safeViewport }
     Item {
         id: safeViewport
+        property var opticalBackdrop: opticalField
+        OpticalBackdrop {
+            id: opticalField
+            anchors.fill: parent
+            scope: "instruments"
+            geometryRevision: transition.contentProgress
+            active: transition.mounted && root.targetScreen
+            viewportSize: Qt.size(root.width, root.height)
+            viewportOffset: Qt.point(safeViewport.x, safeViewport.y)
+        }
         x: root.safeArea.x; y: root.safeArea.y
         width: root.safeArea.width; height: root.safeArea.height
         clip: true
@@ -285,8 +308,8 @@ PanelWindow {
                     radius: surfaceGeometry.radius
                     color: "transparent"
                     clip: true
-                    opacity: Settings.motion ? 0.80 + 0.20 * transition.contentProgress : 1
-                    scale: Settings.motion && Settings.motionStyle !== "rise"
+                    opacity: Theme.motionEnabled ? 0.80 + 0.20 * transition.contentProgress : 1
+                    scale: Theme.motionEnabled && Settings.motionStyle !== "rise"
                         ? 0.96 + 0.04 * transition.contentProgress : 1
 
                     Item {
@@ -317,9 +340,7 @@ PanelWindow {
                                     return;
                                 }
                                 mouse.accepted = true;
-                                const origin = mapToItem(null, 0, 0);
-                                ShellState.openWidgetSettings(root.activeInstrument,
-                                    origin.x, origin.y, width, height);
+                                root.customize();
                             }
                         }
                         EphemerisAtmosphere {
@@ -331,7 +352,7 @@ PanelWindow {
                         WabiSabiBlackHole {
                             anchors.centerIn: parent
                             width: Math.min(150, parent.width * 0.3); height: width * 0.7
-                            visible: Settings.motion && transition.phase !== "open" && transition.phase !== "closing"
+                            visible: Theme.motionEnabled && transition.phase !== "open" && transition.phase !== "closing"
                             opacity: 0.35 * (1 - transition.contentProgress)
                             diskColor: root.moduleTone; horizonColor: Theme.mantle
                         }
@@ -352,7 +373,7 @@ PanelWindow {
                                 enabled: transition.interactive
                                 visible: status === Loader.Ready
                                 opacity: transition.contentProgress
-                                transform: Translate { y: Settings.motion && Settings.motionStyle === "rise" ? (1 - transition.contentProgress) * 18 : 0 }
+                                transform: Translate { y: Theme.motionEnabled && Settings.motionStyle === "rise" ? (1 - transition.contentProgress) * 18 : 0 }
                                 source: root.compactInstrument ? Qt.resolvedUrl("widgets/catalog/QuickInstrument.qml") : Qt.resolvedUrl(Registry.sourceFor(root.activeInstrument))
                                 onLoaded: if (item && item.instrument !== undefined) item.instrument = root.activeInstrument
                             }
@@ -372,6 +393,30 @@ PanelWindow {
                     }
                 }
             }
+        }
+        Loader {
+            id: contextLoader
+            anchors.fill: parent
+            z: 20000
+            active: transition.mounted && ShellState.widgetSettingsVisible
+                && (!ShellState.activeWidgetSettingsOutput
+                    || ShellState.activeWidgetSettingsOutput === root.outputName)
+                && root.targetScreen
+            sourceComponent: WidgetQuickSettings {
+                modelData: root.modelData
+                viewportOrigin: Qt.point(safeViewport.x, safeViewport.y)
+            }
+            onActiveChanged: if (!active) Qt.callLater(function() {
+                if (transition.interactive) root.focusWidget();
+            })
+        }
+        InstrumentContextHandle {
+            panelBounds: Qt.rect(root.widgetLayout.x - safeViewport.x,
+                root.widgetLayout.y - safeViewport.y, root.widgetLayout.width,
+                root.widgetLayout.height)
+            viewportSize: Qt.size(safeViewport.width, safeViewport.height)
+            active: transition.interactive && !ShellState.widgetSettingsVisible
+            onCustomizationRequested: root.customize()
         }
     }
 }

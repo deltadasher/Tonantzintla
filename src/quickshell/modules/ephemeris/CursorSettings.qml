@@ -26,9 +26,11 @@ ColumnLayout {
         property bool chosen: false
         signal clicked()
         implicitWidth: caption.implicitWidth + 28
-        implicitHeight: 38
+        implicitHeight: Theme.controlHeight
         radius: Theme.radiusSmall
-        color: chosen ? Theme.accent : pointer.containsMouse || activeFocus ? Theme.controlHover : Theme.controlRest
+        color: pointer.pressed ? Theme.controlPressed : chosen ? Theme.accent : pointer.containsMouse || activeFocus ? Theme.controlHover : Theme.controlRest
+        border.width: activeFocus ? 1 : 0
+        border.color: chosen ? Theme.moon : Theme.focusRing
         opacity: enabled ? 1 : 0.45
         activeFocusOnTab: enabled
         Accessible.role: Accessible.Button
@@ -40,9 +42,9 @@ ColumnLayout {
             id: caption
             anchors.centerIn: parent
             text: button.text
-            color: button.chosen ? Theme.void_ : pointer.containsMouse || button.activeFocus ? Theme.moon : Theme.muted
+            color: button.chosen && !pointer.pressed ? Theme.void_ : pointer.containsMouse || button.activeFocus ? Theme.moon : Theme.muted
             font.family: Theme.fontMono
-            font.pixelSize: 11
+            font.pixelSize: Theme.textCaption
             font.weight: button.chosen ? Font.Bold : Font.Normal
         }
         MouseArea {

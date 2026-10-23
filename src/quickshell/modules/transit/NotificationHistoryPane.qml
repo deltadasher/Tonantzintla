@@ -85,6 +85,11 @@ Item {
             }
         }
 
+        RowLayout {
+            Layout.fillWidth:true
+            ActionButton { text:"Test notification";onClicked:Notifications.preview("Notification preview","This is a local, silent preview.") }
+            Text { Layout.fillWidth:true;text:Settings.doNotDisturb?"Preview is recorded; Do Not Disturb suppresses its popup.":Settings.notificationRightClickClose?"Right-click a notification to dismiss it.":"Use Dismiss or Delete to remove a notification.";color:Theme.muted;font.family:Theme.fontText;font.pixelSize:11;wrapMode:Text.Wrap }
+        }
         ListView {
             id: historyList
             Layout.fillWidth: true
@@ -133,14 +138,15 @@ Item {
                 }
             }
 
-            Text {
-                anchors.centerIn: parent
-                visible: historyList.count === 0
-                text: Settings.doNotDisturb ? "NO SOUND" : "NO NOTIFICATIONS"
-                color: Theme.muted
-                font.family: Theme.fontMono
-                font.pixelSize: 10
-                font.letterSpacing: 1
+            Loader {
+                anchors.centerIn:parent
+                active:historyList.count===0
+                sourceComponent:Column {
+                    width:Math.min(historyList.width-24,260);spacing:18
+                    Loader { active:Settings.notificationEmptyGraphic;visible:active;anchors.horizontalCenter:parent.horizontalCenter;width:150;height:100;sourceComponent:WabiSabiBlackHole { diskColor:Theme.muted;horizonColor:Theme.void_;opacity:.55 } }
+                    Text { width:parent.width;text:Settings.doNotDisturb?"A quiet observatory":"No notifications";horizontalAlignment:Text.AlignHCenter;color:Theme.moon;font.family:Theme.fontDisplay;font.pixelSize:19 }
+                    Text { width:parent.width;text:"New signals will appear here.";horizontalAlignment:Text.AlignHCenter;color:Theme.muted;font.family:Theme.fontText;font.pixelSize:12 }
+                }
             }
         }
     }

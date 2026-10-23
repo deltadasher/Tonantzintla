@@ -62,6 +62,7 @@ QtObject {
 
     function openEphemeris(tab, outputName, anchorX, anchorY, anchorWidth, anchorHeight,
             anchorEdge, anchorIslandId, anchorTarget) {
+        closeWidgetSettings();
         ephemerisTab = normalizeWidget(tab);
         quickInstrument = Number(anchorWidth || 0) > 0 && ["audio", "media"].indexOf(ephemerisTab) >= 0;
         if (outputName && String(outputName).length > 0)
@@ -153,25 +154,38 @@ QtObject {
     // a bar island. Kept separate from the island popover so both can never be
     // on screen at once.
     property string activeWidgetSettingsId: ""
+    property string activeWidgetSettingsOutput: ""
     property real activeWidgetGlobalX: 0
     property real activeWidgetGlobalY: 0
     property real activeWidgetWidth: 0
     property real activeWidgetHeight: 0
     readonly property bool widgetSettingsVisible: activeWidgetSettingsId !== ""
 
-    function openWidgetSettings(widgetId, gx, gy, gw, gh) {
+    function openWidgetSettings(widgetId, gx, gy, gw, gh, outputName) {
         if (barEditMode || !widgetId)
             return;
         closeIslandSettings();
         activeWidgetSettingsId = widgetId;
+        activeWidgetSettingsOutput = String(outputName || "");
         activeWidgetGlobalX = gx || 0;
         activeWidgetGlobalY = gy || 0;
         activeWidgetWidth = gw || 0;
         activeWidgetHeight = gh || 0;
     }
 
+    function reconcileOutputs(outputNames) {
+        const names = Array.isArray(outputNames) ? outputNames : [];
+        if (activeWidgetSettingsOutput && names.indexOf(activeWidgetSettingsOutput) < 0)
+            closeWidgetSettings();
+        if (ephemerisOutput && names.indexOf(ephemerisOutput) < 0) {
+            ephemerisOutput = "";
+            clearEphemerisAnchor();
+        }
+    }
+
     function closeWidgetSettings() {
         activeWidgetSettingsId = "";
+        activeWidgetSettingsOutput = "";
     }
 
     function enterBarEditMode() {

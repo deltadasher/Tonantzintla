@@ -30,9 +30,11 @@ Rectangle {
         && ShellState.ephemerisAnchorTarget === root
     readonly property bool hovered: pointer.containsMouse && !pointer.hoverSuppressed
         && !sourceActive
-    color: panelOpen ? Theme.controlActive : hovered || activeFocus ? Theme.barAccentVeil : "transparent"
+    color: pointer.pressed ? Theme.controlPressed : panelOpen ? Theme.controlSelected
+        : hovered ? Theme.barNeutralHover : "transparent"
     border.width: activeFocus ? 1 : 0
-    border.color: Theme.accentLine
+    border.color: Theme.accent
+    opacity: enabled ? 1 : 0.45
 
     default property alias iconContents: iconBody.data
     property string glyph: "⌕"
@@ -40,18 +42,18 @@ Rectangle {
     property string targetPanel: ""
     property string motionKind: "pulse"
     readonly property bool panelOpen: sourceActive
-    readonly property bool motionAllowed: Settings.motion && Settings.barIconMotion && Theme.motionScale > 0
+    readonly property bool motionAllowed: Theme.motionEnabled && Settings.barIconMotion
     property real iconPulse: 0
     onPanelOpenChanged: if (panelOpen && visible && motionAllowed) opening.restart()
     onMotionAllowedChanged: if (!motionAllowed) { opening.stop(); iconPulse = 0; }
     onActivated: if (!targetPanel.length && motionAllowed) opening.restart()
     signal activated
-    activeFocusOnTab: true
+    activeFocusOnTab: enabled
     Accessible.role: Accessible.Button
     Accessible.name: accessibleLabel
-    Accessible.onPressAction: activated()
-    Keys.onReturnPressed: activated()
-    Keys.onSpacePressed: activated()
+    Accessible.onPressAction: if (enabled) activated()
+    Keys.onReturnPressed: if (enabled) activated()
+    Keys.onSpacePressed: if (enabled) activated()
 
     ToolTip {
         // Focus retains its visible border for keyboard navigation, but does
@@ -61,7 +63,13 @@ Rectangle {
         delay: 500
         text: root.accessibleLabel
         background: Rectangle { color: Theme.mantle; radius: Theme.radiusSmall; border.color: Theme.accentLine }
-        contentItem: Text { text: root.accessibleLabel; color: Theme.moon; font.family: Theme.fontText; font.pixelSize: 12 }
+        contentItem: Text { text: root.accessibleLabel; color: Theme.moon; font.family: Theme.fontText; font.pixelSize: Theme.textLabel }
+    }
+
+    OpticalSurface {
+        parent: root
+        anchors.fill: parent; radius: root.radius
+        hovered: root.hovered; pressed: pointer.pressed; selected: root.panelOpen; focused: root.activeFocus
     }
 
     Item {
@@ -74,9 +82,9 @@ Rectangle {
             anchors.centerIn: parent
             text: root.glyph
             color: root.panelOpen || root.hovered ? Theme.accent : Theme.moon
-            font.family: Theme.fontIcon
+            font.family: Theme.iconFamily(text)
             font.pixelSize: Settings.compact ? 19 : 21
-            font.weight: Font.DemiBold
+            font.weight: Font.Normal
         }
     }
 

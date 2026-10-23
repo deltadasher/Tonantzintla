@@ -10,13 +10,57 @@ import "modules/transit"
 import "modules/umbra"
 import "modules/umbra/reveal"
 import "services"
+import "components"
 
 ShellRoot {
     id: root
+    Variants {
+        model: Quickshell.screens.filter(function(screen) { return !!Environment.nativeWallpaperFor(screen.name); })
+        NativeWallpaper {
+            readonly property var wallpaperEntry: Environment.nativeWallpaperFor(modelData.name) || ({})
+            preparedPath: wallpaperEntry.preview || ""
+            preparedWidth: wallpaperEntry.width || 1
+            preparedHeight: wallpaperEntry.height || 1
+            transitionPreview: wallpaperEntry.transitionPreview || ""
+            transitionWidth: wallpaperEntry.transitionWidth || 0
+            transitionHeight: wallpaperEntry.transitionHeight || 0
+            generation: wallpaperEntry.generation || 0
+            revealSerial: wallpaperEntry.revealSerial || 0
+            transitionName: wallpaperEntry.transition || "fade"
+            onSourcePresented: (outputName, generation) => Environment.reportNativeWallpaperPresented(outputName, generation)
+            onSourceFailed: (outputName, generation, message) => Environment.reportNativeWallpaperFailed(outputName, generation, message)
+        }
+    }
+    IpcHandler {
+        target: "wallpaper"
+        function apply(path: string): void {
+            if (!path || path.length > 4096 || path.indexOf("\u0000") >= 0 || path.charAt(0) !== "/") return;
+            Environment.applyWallpaper(path, Environment.kindFor(path));
+        }
+        function status(): string {
+            return JSON.stringify({renderer: Settings.wallpaperRenderer,
+                active: Environment.nativeWallpaperActive,
+                allPresented: Environment.nativeWallpaperAllPresented,
+                outputs: Object.keys(Environment.nativeWallpapers).map(function(name) {
+                    const entry = Environment.nativeWallpaperFor(name);
+                    return {output: name, source: entry.source, prepared: entry.preview,
+                        width: entry.width, height: entry.height, generation: entry.generation,
+                        error: entry.error || "",
+                        presented: Environment.nativePresented[name] === entry.generation};
+                })});
+        }
+    }
     LazyLoader {
         id: authenticationLoader
         active: true
         source: Qt.resolvedUrl("modules/auth/AuthenticationPrompt.qml")
+    }
+    IpcHandler {
+        target: "osd"
+        function status(kind: string, enabled: bool): void {
+            if (["capslock", "numlock", "airplane"].indexOf(kind) >= 0)
+                Osd.showStatus(kind, enabled);
+        }
     }
     IpcHandler {
         target: "authentication"
@@ -57,6 +101,13 @@ ShellRoot {
                 return [screens[index]];
         }
         return [screens[0]];
+    }
+
+    Connections {
+        target: Quickshell
+        function onScreensChanged() {
+            ShellState.reconcileOutputs(Quickshell.screens.map(function(screen) { return screen.name; }));
+        }
     }
 
     // Ephemeris remembers the output that launched it. Commands from outside
@@ -244,11 +295,6 @@ ShellRoot {
     Variants {
         model: ShellState.islandSettingsVisible ? root.focusedScreens : []
         IslandQuickSettings {}
-    }
-
-    Variants {
-        model: ShellState.widgetSettingsVisible ? root.focusedScreens : []
-        WidgetQuickSettings {}
     }
 
     Variants {

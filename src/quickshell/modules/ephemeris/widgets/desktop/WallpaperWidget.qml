@@ -1,28 +1,40 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls as Controls
+import Quickshell.Widgets
 import "../../../.."
 import "../../../../services"
+import "../../../../components"
 
 pragma ComponentBehavior: Bound
 
 Item {
     id: root
 
+    Component.onCompleted: Environment.ensureWallpapers()
+
     property string query: ""
     property string currentFilter: "All"
     property int orbitOffset: 0
     property bool searchOpen: false
     property bool optionsOpen: false
+    property int hoveredSatellite: -1
+    readonly property bool missingPreviews: !Environment.libraryLoading
+        && Environment.wallpapers.some(function(entry) { return !entry.preview; })
     Rectangle {
         anchors.bottom: parent.bottom
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottomMargin: 16
         width: 310; height: 40; radius: 12; z: 100
-        visible: Environment.libraryLoading || Environment.libraryError.length > 0
+        visible: !root.optionsOpen && (Environment.libraryLoading || Environment.libraryError.length > 0 || root.missingPreviews)
         color: Theme.mantle
         Text {
-            anchors.centerIn: parent; color: Theme.moon
-            text: Environment.libraryLoading ? "Loading library…" : "Library couldn’t load · Retry"
+            anchors.centerIn: parent; width: parent.width - 20; color: Theme.moon
+            font.family: Theme.fontMono; font.pixelSize: Theme.textCaption
+            horizontalAlignment: Text.AlignHCenter; wrapMode: Text.Wrap
+            text: Environment.libraryLoading ? "Loading library…"
+                : Environment.libraryError.length ? "Library couldn’t load · Retry"
+                : "Some previews unavailable · Originals can still be applied"
         }
         MouseArea {
             anchors.fill: parent
@@ -61,6 +73,7 @@ Item {
         if (root.currentFilter === "Online") return !root.hasOnlineWorlds ? textMatch : entry.source === "Online";
         return entry.source === root.currentFilter && textMatch;
     })
+    onFilteredWallpapersChanged: hoveredSatellite = -1
     readonly property var selectedEntry: filteredWallpapers.length > 0
         ? filteredWallpapers[((orbitOffset % filteredWallpapers.length) + filteredWallpapers.length) % filteredWallpapers.length]
         : null
@@ -103,7 +116,7 @@ Item {
             nextOffset = Math.floor(Math.random() * filteredWallpapers.length);
 
         pendingOrbitOffset = nextOffset;
-        if (!Settings.motion) {
+        if (!Theme.motionEnabled) {
             orbitOffset = pendingOrbitOffset;
             return;
         }
@@ -140,11 +153,26 @@ Item {
     }
 
     function beginDeployment() {
+        entranceDelay.stop();
         entranceAnimation.stop();
         deploymentAnimation.stop();
-        entrance = 0;
-        deployProgress = 0;
-        entranceDelay.restart();
+        entrance = Theme.motionEnabled ? 0 : 1;
+        deployProgress = Theme.motionEnabled ? 0 : 1;
+        if (Theme.motionEnabled) entranceDelay.restart();
+    }
+
+    Connections {
+        target: Theme
+        function onMotionEnabledChanged() {
+            if (Theme.motionEnabled) return;
+            entranceDelay.stop();
+            entranceAnimation.stop();
+            deploymentAnimation.stop();
+            root.entrance = root.deployProgress = 1;
+            // Complete an already requested shuffle without stranding satellites
+            // offscreen if the motion preference changes during the sequence.
+            if (root.shuffleRunning) shuffleSequence.complete();
+        }
     }
 
     // Data and query changes update delegates in place. Only the host reveal
@@ -165,7 +193,7 @@ Item {
         property: "entrance"
         from: 0
         to: 1
-        duration: Settings.motion ? 430 : 0
+        duration: Theme.duration(430)
         easing.type: Easing.OutBack
     }
 
@@ -175,16 +203,17 @@ Item {
         property: "deployProgress"
         from: 0
         to: 1
-        duration: Settings.motion ? 980 : 0
+        duration: Theme.duration(980)
         easing.type: Easing.OutCubic
     }
 
     NumberAnimation on ambientPhase {
         from: 0
         to: Math.PI * 2
-        duration: 28000
+        duration: Theme.duration(28000)
         loops: Animation.Infinite
-        running: root.visible && !root.shuffleRunning
+        running: Theme.motionEnabled && root.visible && !root.shuffleRunning
+        paused: root.hoveredSatellite >= 0
     }
 
     SequentialAnimation {
@@ -195,7 +224,7 @@ Item {
             property: "shuffleExit"
             from: 0
             to: 1
-            duration: 950
+            duration: Theme.duration(950)
             easing.type: Easing.InCubic
         }
         ScriptAction {
@@ -211,7 +240,7 @@ Item {
             property: "shuffleArrival"
             from: 0
             to: 1
-            duration: 1350
+            duration: Theme.duration(1350)
             easing.type: Easing.InOutQuad
         }
         ScriptAction {
@@ -348,7 +377,7 @@ Item {
 
                 Loader {
                     anchors.fill: parent
-                    active: root.shuffleRunning
+                    active: root.shuffleRunning && Theme.motionEnabled
                     z: -1
 
                     sourceComponent: Component {
@@ -397,7 +426,8 @@ Item {
                                             anchors.fill: parent
                                             sourceItem: satelliteBody
                                             live: true
-                                            recursive: true
+                                            textureSize: Qt.size(192, 192)
+                                            recursive: false
                                             opacity: 0.78
                                         }
                                         Rectangle {
@@ -419,14 +449,14 @@ Item {
                     radius: width / 2
                     color: Theme.mantle
                     border.width: 0
-                    CircularArtwork { anchors.fill: parent; source: root.previewUrl(satellite.entry) }
+                    CircularArtwork { anchors.fill: parent; decodeExtent: 256; source: root.previewUrl(satellite.entry) }
                 }
 
                 Rectangle {
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.top: parent.bottom
                     anchors.topMargin: 7
-                    width: satelliteName.implicitWidth + 18
+                    width: Math.min(300, satelliteName.implicitWidth + 20)
                     height: 26
                     radius: 13
                     color: Qt.rgba(Theme.mantle.r, Theme.mantle.g, Theme.mantle.b, 0.94)
@@ -435,14 +465,17 @@ Item {
                     Text {
                         id: satelliteName
                         anchors.centerIn: parent
+                        width: parent.width - 20
+                        horizontalAlignment: Text.AlignHCenter
+                        elide: Text.ElideMiddle
                         text: satellite.entry ? satellite.entry.name : ""
                         color: Theme.moon
-                        font.family: Theme.fontText
-                        font.pixelSize: 10
+                        font.family: Theme.fontMono
+                        font.pixelSize: Theme.textCaption
                         font.weight: Font.DemiBold
                     }
-                    Behavior on opacity { NumberAnimation { duration: 105 } }
-                    Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutBack } }
+                    Behavior on opacity { NumberAnimation { duration: Theme.duration(105) } }
+                    Behavior on scale { NumberAnimation { duration: Theme.duration(140); easing.type: Easing.OutBack } }
                 }
 
                 MouseArea {
@@ -451,6 +484,8 @@ Item {
                     enabled: !root.shuffleRunning
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
+                    onEntered: root.hoveredSatellite = satellite.index
+                    onExited: if (root.hoveredSatellite === satellite.index) root.hoveredSatellite = -1
                     onClicked: root.rotateTo(satellite.index + 1)
                     onDoubleClicked: if (satellite.entry) Environment.setWallpaper(satellite.entry)
                 }
@@ -464,13 +499,24 @@ Item {
             width: 268
             height: 268
             z: 5
-            scale: corePointer.containsMouse ? 1.035 : 1
+            readonly property bool canApply: root.selectedEntry && Environment.canSetWallpaper && !Environment.wallpaperBusy
+            activeFocusOnTab: canApply
+            Accessible.role: Accessible.Button
+            Accessible.name: root.selectedEntry ? "Apply wallpaper " + root.selectedEntry.name : "No wallpaper selected"
+            function apply() { if (canApply) Environment.setWallpaper(root.selectedEntry); }
+            Keys.onPressed: function(event) {
+                if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) {
+                    apply(); event.accepted = true;
+                }
+            }
+            Accessible.onPressAction: apply()
 
             Rectangle {
                 anchors.fill: parent
                 radius: width / 2
                 color: Theme.mantle
-                border.width: 0
+                border.width: worldCore.activeFocus || corePointer.containsMouse ? 2 : 0
+                border.color: Theme.accent
                 CircularArtwork { anchors.fill: parent; anchors.margins: 5; source: root.previewUrl(root.selectedEntry) }
                 Rectangle {
                     anchors.fill: parent; radius: width / 2
@@ -480,22 +526,29 @@ Item {
                         GradientStop { position: 1; color: Qt.rgba(Theme.void_.r, Theme.void_.g, Theme.void_.b, 0.86) }
                     }
                 }
-                Column {
-                    anchors.left: parent.left; anchors.right: parent.right; anchors.bottom: parent.bottom
-                    anchors.leftMargin: 30; anchors.rightMargin: 30; anchors.bottomMargin: 28
-                    spacing: 3
-                    Text {
-                        width: parent.width
-                        text: root.selectedEntry ? root.selectedEntry.name : "NO WORLD FOUND"
-                        color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 15; font.weight: Font.Bold
-                        horizontalAlignment: Text.AlignHCenter; elide: Text.ElideMiddle
-                    }
-                    Text {
-                        width: parent.width
-                        text: Environment.wallpaperBusy ? "APPLYING…" : "CLICK TO APPLY"
-                        color: Environment.wallpaperBusy ? Theme.warning : Theme.accent
-                        font.family: Theme.fontMono; font.pixelSize: 11; font.weight: Font.Bold; font.letterSpacing: 1
-                        horizontalAlignment: Text.AlignHCenter
+                Rectangle {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.bottom: parent.bottom; anchors.bottomMargin: 42
+                    width: parent.width - 60; height: 62; radius: 16
+                    color: Qt.rgba(Theme.void_.r, Theme.void_.g, Theme.void_.b, 0.90)
+                    Column {
+                        anchors.centerIn: parent; width: parent.width - 20
+                        spacing: 5
+                        Text {
+                            width: parent.width
+                            text: root.selectedEntry ? root.selectedEntry.name : "NO WORLD FOUND"
+                            color: Theme.moon; font.family: Theme.fontMono; font.pixelSize: Theme.textBody; font.weight: Font.DemiBold
+                            horizontalAlignment: Text.AlignHCenter; elide: Text.ElideMiddle
+                        }
+                        Text {
+                            width: parent.width
+                            text: Environment.wallpaperBusy ? "APPLYING…"
+                                : !root.selectedEntry ? "CHOOSE A WALLPAPER"
+                                : !Environment.canSetWallpaper ? "NO WALLPAPER BACKEND" : "APPLY WALLPAPER"
+                            color: Environment.wallpaperBusy || !Environment.canSetWallpaper ? Theme.warning : Theme.accent
+                            font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.Bold
+                            horizontalAlignment: Text.AlignHCenter
+                        }
                     }
                 }
             }
@@ -503,12 +556,11 @@ Item {
             MouseArea {
                 id: corePointer
                 anchors.fill: parent
-                enabled: root.selectedEntry && Environment.canSetWallpaper && !Environment.wallpaperBusy
+                enabled: worldCore.canApply
                 hoverEnabled: true
-                cursorShape: enabled ? Qt.PointingHandCursor : Qt.WaitCursor
-                onClicked: Environment.setWallpaper(root.selectedEntry)
+                cursorShape: Environment.wallpaperBusy ? Qt.BusyCursor : enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                onClicked: worldCore.apply()
             }
-            Behavior on scale { NumberAnimation { duration: Settings.motion ? 160 : 0; easing.type: Easing.OutBack } }
         }
 
         Rectangle {
@@ -522,11 +574,11 @@ Item {
                 anchors.centerIn: parent
                 text: "↻"
                 color: Theme.void_
-                font.family: Theme.fontDisplay
+                font.family: Theme.iconFamily(text)
                 font.pixelSize: 24
-                font.weight: Font.Bold
+                font.weight: Font.Normal
                 rotation: root.shuffleRunning ? 300 : 0
-                Behavior on rotation { NumberAnimation { duration: Settings.motion ? 920 : 0; easing.type: Easing.OutCubic } }
+                Behavior on rotation { NumberAnimation { duration: Theme.duration(920); easing.type: Easing.OutCubic } }
             }
             MouseArea { id: shufflePointer; anchors.fill: parent; enabled: !root.shuffleRunning; hoverEnabled: true; cursorShape: enabled ? Qt.PointingHandCursor : Qt.BusyCursor; onClicked: root.shuffleOrbit() }
             ToolTipBubble { text: root.shuffleRunning ? "RESHUFFLING" : "SHUFFLE"; shown: shufflePointer.containsMouse }
@@ -541,18 +593,18 @@ Item {
                 color: searchInput.activeFocus ? Theme.elevated : Theme.mantle
                 border.width: 0
                 clip: true
-                Text { anchors.left: parent.left; anchors.leftMargin: 17; anchors.verticalCenter: parent.verticalCenter; text: "⌕"; color: Theme.accent; font.family: Theme.fontDisplay; font.pixelSize: 19; font.weight: Font.Bold }
+                Text { anchors.left: parent.left; anchors.leftMargin: 17; anchors.verticalCenter: parent.verticalCenter; text: "⌕"; color: Theme.accent; font.family: Theme.iconFamily(text); font.pixelSize: 19; font.weight: Font.Normal }
                 TextInput {
                     id: searchInput
                     visible: root.searchOpen
                     anchors.left: parent.left; anchors.leftMargin: 50; anchors.right: parent.right; anchors.rightMargin: 48; anchors.verticalCenter: parent.verticalCenter
                     text: root.query; color: Theme.moon; selectionColor: Theme.accent; selectedTextColor: Theme.void_
-                    font.family: Theme.fontText; font.pixelSize: 12; clip: true
+                    font.family: Theme.fontMono; font.pixelSize: Theme.textLabel; clip: true
                     onTextChanged: root.query = text
                     Keys.onReturnPressed: root.runSearch()
                 }
-                Text { visible: root.searchOpen && !searchInput.text.length; anchors.left: searchInput.left; anchors.verticalCenter: parent.verticalCenter; text: "search wallpapers…"; color: Theme.lineBright; font.family: Theme.fontText; font.pixelSize: 12 }
-                Text { visible: root.searchOpen; anchors.right: parent.right; anchors.rightMargin: 17; anchors.verticalCenter: parent.verticalCenter; text: Environment.onlineBusy ? "⌁" : "↵"; color: Theme.cyan; font.family: Theme.fontMono; font.pixelSize: 14 }
+                Text { visible: root.searchOpen && !searchInput.text.length; anchors.left: searchInput.left; anchors.verticalCenter: parent.verticalCenter; text: "search wallpapers…"; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: Theme.textLabel }
+                Text { visible: root.searchOpen; anchors.right: parent.right; anchors.rightMargin: 17; anchors.verticalCenter: parent.verticalCenter; text: Environment.onlineBusy ? "⌁" : "↵"; color: Theme.cyan; font.family: Theme.iconFamily(text); font.pixelSize: 14 }
                 MouseArea {
                     anchors.left: parent.left; anchors.top: parent.top; anchors.bottom: parent.bottom; width: 50
                     hoverEnabled: true; cursorShape: Qt.PointingHandCursor
@@ -561,7 +613,7 @@ Item {
                         if (root.searchOpen) Qt.callLater(function() { searchInput.forceActiveFocus(); });
                     }
                 }
-                Behavior on width { NumberAnimation { duration: Settings.motion ? 240 : 0; easing.type: Easing.OutBack } }
+                Behavior on width { NumberAnimation { duration: Theme.duration(240); easing.type: Easing.OutBack } }
             }
 
             Repeater {
@@ -573,7 +625,7 @@ Item {
                     width: 52; height: 52; radius: 26
                     color: active ? modelData.tone : filterPointer.containsMouse ? Theme.elevated : Theme.mantle
                     border.width: 0
-                    Text { anchors.centerIn: parent; text: filterSatellite.modelData.glyph; color: filterSatellite.active ? Theme.void_ : Theme.muted; font.family: Theme.fontDisplay; font.pixelSize: 18; font.weight: Font.Bold }
+                    Text { anchors.centerIn: parent; text: filterSatellite.modelData.glyph; color: filterSatellite.active ? Theme.void_ : Theme.muted; font.family: filterSatellite.modelData.glyph === "A" ? Theme.fontDisplay : Theme.iconFamily(text); font.pixelSize: 18; font.weight: filterSatellite.modelData.glyph === "A" ? Font.Bold : Font.Normal }
                     MouseArea { id: filterPointer; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.activateFilter(filterSatellite.modelData.value) }
                     ToolTipBubble { text: filterSatellite.modelData.label; shown: filterPointer.containsMouse }
                 }
@@ -589,15 +641,15 @@ Item {
                     Text {
                         text: "▧"
                         color: libraryPointer.containsMouse ? Theme.void_ : Theme.accent
-                        font.family: Theme.fontDisplay
+                        font.family: Theme.iconFamily(text)
                         font.pixelSize: 18
-                        font.weight: Font.Bold
+                        font.weight: Font.Normal
                     }
                     Text {
                         text: "LIBRARY"
                         color: libraryPointer.containsMouse ? Theme.void_ : Theme.moon
                         font.family: Theme.fontMono
-                        font.pixelSize: 10
+                        font.pixelSize: Theme.textCaption
                         font.weight: Font.Bold
                         font.letterSpacing: 1
                     }
@@ -618,12 +670,18 @@ Item {
 
         Column {
             anchors.right: parent.right; anchors.rightMargin: 20; anchors.verticalCenter: parent.verticalCenter
-            spacing: 10; z: 12
+            spacing: 10; z: 31
             Rectangle {
                 width: 52; height: 52; radius: 26
+                activeFocusOnTab: true
+                Accessible.role: Accessible.Button
+                Accessible.name: "Wallpaper options"
+                Accessible.onPressAction: root.optionsOpen = !root.optionsOpen
+                Keys.onReturnPressed: root.optionsOpen = !root.optionsOpen
+                Keys.onSpacePressed: root.optionsOpen = !root.optionsOpen
                 color: root.optionsOpen ? Theme.accent : optionsPointer.containsMouse ? Theme.elevated : Theme.mantle
                 border.width: 0
-                Text { anchors.centerIn: parent; text: "⋯"; color: root.optionsOpen ? Theme.void_ : Theme.accent; font.family: Theme.fontDisplay; font.pixelSize: 24; font.weight: Font.Bold }
+                Text { anchors.centerIn: parent; text: "⋯"; color: root.optionsOpen ? Theme.void_ : Theme.accent; font.family: Theme.iconFamily(text); font.pixelSize: 24; font.weight: Font.Normal }
                 MouseArea { id: optionsPointer; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.optionsOpen = !root.optionsOpen }
                 ToolTipBubble { text: "OPTIONS"; shown: optionsPointer.containsMouse && !root.optionsOpen; anchors.left: undefined; anchors.right: parent.left; anchors.rightMargin: 8 }
             }
@@ -637,22 +695,62 @@ Item {
                     }
                 }
                 MouseArea { id: palettePointer; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Settings.adaptivePalette = !Settings.adaptivePalette }
-                ToolTipBubble { text: Settings.adaptivePalette ? "MATUGEN ONLINE" : "MATUGEN OFFLINE"; shown: palettePointer.containsMouse; anchors.left: undefined; anchors.right: parent.left; anchors.rightMargin: 8 }
+                ToolTipBubble { text: Settings.adaptivePalette ? "WALLPAPER COLORS ON" : "WALLPAPER COLORS OFF"; shown: palettePointer.containsMouse; anchors.left: undefined; anchors.right: parent.left; anchors.rightMargin: 8 }
             }
         }
 
         Rectangle {
             anchors.right: parent.right; anchors.rightMargin: 84; anchors.verticalCenter: parent.verticalCenter
-            width: root.optionsOpen ? 260 : 0; height: 310; radius: 130
+            width: root.optionsOpen ? Math.min(320, Math.max(180, parent.width - 100)) : 0; height: Math.min(620, Math.max(180, parent.height - 32)); radius: 60
             color: Qt.rgba(Theme.mantle.r, Theme.mantle.g, Theme.mantle.b, 0.97)
             border.width: 0
-            opacity: root.optionsOpen ? 1 : 0; clip: true; z: 11
+            opacity: root.optionsOpen ? 1 : 0; clip: true; z: 30
+            Flickable {
+                id: optionsScroll
+                objectName: "wallpaperOptionsScroll"
+                anchors.fill: parent; anchors.margins: 24
+                contentHeight: optionsLayout.implicitHeight
+                clip: true; boundsBehavior: Flickable.StopAtBounds
+                Controls.ScrollBar.vertical: Controls.ScrollBar {}
+                function revealFocus(item) {
+                    if (!item) return;
+                    let child=item;
+                    while(child && child!==optionsLayout) child=child.parent;
+                    if (!child) return;
+                    const point=item.mapToItem(optionsLayout,0,0);
+                    if(point.y<contentY) contentY=Math.max(0,point.y-4);
+                    else if(point.y+item.height>contentY+height) contentY=Math.min(Math.max(0,contentHeight-height),point.y+item.height-height+4);
+                }
+                Connections {
+                    target: root.Window.window
+                    function onActiveFocusItemChanged() { optionsScroll.revealFocus(root.Window.window.activeFocusItem); }
+                }
             ColumnLayout {
-                anchors.fill: parent; anchors.margins: 32; spacing: 12
+                id: optionsLayout
+                width: optionsScroll.width; spacing: 12
                 Text { text: "OPTIONS"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 14; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
-                Text { text: "OUTPUT"; color: Theme.muted; font.family: Theme.fontText; font.pixelSize: 11; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
-                RowLayout {
-                    Layout.alignment: Qt.AlignHCenter
+                SettingChoice {
+                    objectName: "wallpaperRendererChoice"
+                    Layout.fillWidth: true
+                    label: "Renderer"; value: Settings.wallpaperRenderer
+                    choices: [{label:"External",value:"external"},{label:"Native stills",value:"native"}]
+                    onSelected: function(value) {
+                        if(value === "native" && Settings.wallpaperKind === "video") Environment.wallpaperFeedback("Apply a still with the external renderer before enabling Native.",true);
+                        else Settings.wallpaperRenderer=value;
+                    }
+                }
+                Text {
+                    Layout.fillWidth: true; wrapMode: Text.Wrap
+                    text: Settings.wallpaperRenderer === "native"
+                        ? "Native stills: up to 2560 px on the longest edge. Larger images are reduced. Choosing a video restores all displays to the external renderer."
+                        : "External wallpaper renderer and its existing transitions."
+                    color: Theme.muted; font.family: Theme.fontText; font.pixelSize: Theme.textCaption
+                }
+                Text { text: "OUTPUT"; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
+                Flow {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: childrenRect.height
+                    spacing: 6
                     Repeater {
                         model: ["ALL"].concat(Environment.outputNames)
                         Rectangle {
@@ -661,31 +759,67 @@ Item {
                             required property int index
                             readonly property bool active: modelData === "ALL" ? Settings.wallpaperOutputs === "all" : Environment.outputsSelected(modelData)
                             width: 38; height: 38; radius: 19; color: active ? Theme.accent : Theme.elevated
-                            Text { anchors.centerIn: parent; text: outputDot.modelData === "ALL" ? "∞" : (outputDot.index + 1); color: outputDot.active ? Theme.void_ : Theme.muted; font.family: Theme.fontMono; font.pixelSize: 11; font.weight: Font.Bold }
+                            activeFocusOnTab: root.optionsOpen
+                            Accessible.role: Accessible.Button
+                            Accessible.name: "Wallpaper output " + modelData
+                            function choose() { modelData === "ALL" ? Environment.selectAllOutputs() : Environment.toggleOutput(modelData); }
+                            Accessible.onPressAction: choose()
+                            Keys.onReturnPressed: choose()
+                            Keys.onSpacePressed: choose()
+                            border.width: activeFocus ? 1 : 0; border.color: Theme.moon
+                            Text { anchors.centerIn: parent; text: outputDot.modelData === "ALL" ? "∞" : (outputDot.index + 1); color: outputDot.active ? Theme.void_ : Theme.muted; font.family: outputDot.modelData === "ALL" ? Theme.iconFamily(text) : Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: outputDot.modelData === "ALL" ? Font.Normal : Font.Bold }
                             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: outputDot.modelData === "ALL" ? Environment.selectAllOutputs() : Environment.toggleOutput(outputDot.modelData) }
                         }
                     }
                 }
-                Text { text: "TRANSITION"; color: Theme.muted; font.family: Theme.fontText; font.pixelSize: 11; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
-                RowLayout {
+                Text { text: "TRANSITION"; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
+                GridLayout {
+                    columns: optionsScroll.width < 220 ? 2 : 3
                     Layout.alignment: Qt.AlignHCenter
+                    enabled: Settings.wallpaperRenderer === "native" || Environment.hasAwww || Environment.hasSwww
                     Repeater {
-                        model: ["any", "fade", "grow", "wave"]
+                        model: Settings.wallpaperRenderer === "native" ? ["any", "fade", "grow", "wipe", "orbit", "none"] : ["any", "fade", "grow", "wave", "swipe", "diagonal"]
                         Rectangle {
                             id: transitionDot
                             required property string modelData
                             readonly property bool active: Settings.wallpaperTransition === modelData
-                            width: 38; height: 38; radius: 19; color: active ? Theme.cyan : Theme.elevated
-                            Text { anchors.centerIn: parent; text: transitionDot.modelData.charAt(0).toUpperCase(); color: transitionDot.active ? Theme.void_ : Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Bold }
+                            width: 62; height: 34; radius: 17; color: active ? Theme.cyan : Theme.elevated
+                            activeFocusOnTab: root.optionsOpen
+                            Accessible.role: Accessible.Button
+                            Accessible.name: modelData + " wallpaper transition"
+                            Accessible.onPressAction: Settings.wallpaperTransition = modelData
+                            Keys.onReturnPressed: Settings.wallpaperTransition = modelData
+                            Keys.onSpacePressed: Settings.wallpaperTransition = modelData
+                            border.width: activeFocus ? 2 : 0
+                            border.color: Theme.moon
+                            Text { anchors.centerIn: parent; text: transitionDot.modelData; color: transitionDot.active ? Theme.void_ : Theme.muted; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.Bold }
                             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Settings.wallpaperTransition = transitionDot.modelData }
                         }
                     }
                 }
-                Item { Layout.fillHeight: true }
-                Text { text: Environment.wallpaperStatus; color: Environment.canSetWallpaper ? Theme.success : Theme.warning; font.family: Theme.fontText; font.pixelSize: 10; Layout.alignment: Qt.AlignHCenter }
+                Text {
+                    visible: Settings.wallpaperRenderer === "native"
+                    Layout.fillWidth: true; wrapMode: Text.Wrap
+                    text: "Native reveal: " + Environment.nativeTransitionName(Settings.wallpaperTransition)
+                        + (Settings.wallpaperTransition === "any" ? " (Any uses the orbital reveal)" : Environment.nativeTransitionName(Settings.wallpaperTransition) !== Settings.wallpaperTransition ? " (mapped from " + Settings.wallpaperTransition + ")" : "")
+                    color: Theme.muted; font.family: Theme.fontText; font.pixelSize: Theme.textCaption
+                }
+                Text { Layout.fillWidth: true; wrapMode: Text.Wrap; text: Environment.wallpaperStatus; color: Environment.canSetWallpaper ? Theme.success : Theme.warning; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption }
+                Text {
+                    Layout.fillWidth: true; wrapMode: Text.Wrap; visible: text.length > 0
+                    text: Environment.wallpaperMessage
+                    color: Environment.wallpaperMessageError ? Theme.warning : Theme.muted
+                    font.family: Theme.fontText; font.pixelSize: Theme.textCaption
+                }
+                ActionButton {
+                    visible: Environment.wallpaperMessageError
+                    Layout.fillWidth: true; text: "Retry wallpaper"
+                    onClicked: Environment.retryWallpaper()
+                }
             }
-            Behavior on width { NumberAnimation { duration: Settings.motion ? 230 : 0; easing.type: Easing.OutBack } }
-            Behavior on opacity { NumberAnimation { duration: Settings.motion ? 120 : 0 } }
+            }
+            Behavior on width { NumberAnimation { duration: Theme.duration(230); easing.type: Easing.OutBack } }
+            Behavior on opacity { NumberAnimation { duration: Theme.duration(120) } }
         }
     }
 
@@ -698,64 +832,34 @@ Item {
         width: label.implicitWidth + 18; height: 27; radius: 13
         color: Theme.mantle; border.width: 0
         opacity: shown ? 1 : 0; scale: shown ? 1 : 0.82; z: 30
-        Text { id: label; anchors.centerIn: parent; text: parent.text; color: Theme.moon; font.family: Theme.fontText; font.pixelSize: 10; font.weight: Font.DemiBold }
-        Behavior on opacity { NumberAnimation { duration: 90 } }
-        Behavior on scale { NumberAnimation { duration: 130; easing.type: Easing.OutBack } }
+        Text { id: label; anchors.centerIn: parent; text: parent.text; color: Theme.moon; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.DemiBold }
+        Behavior on opacity { NumberAnimation { duration: Theme.duration(90) } }
+        Behavior on scale { NumberAnimation { duration: Theme.duration(130); easing.type: Easing.OutBack } }
     }
 
-    component CircularArtwork: Canvas {
-        id: artworkCanvas
+    component CircularArtwork: ClippingRectangle {
+        id: artwork
         property string source: ""
-        property string loadedSource: ""
-
-        renderTarget: Canvas.Image
-        antialiasing: true
-
-        function syncImage() {
-            if (loadedSource.length > 0 && loadedSource !== source)
-                unloadImage(loadedSource);
-            loadedSource = source;
-            if (source.length > 0)
-                loadImage(source);
-            requestPaint();
-        }
-
-        onSourceChanged: syncImage()
-        onImageLoaded: requestPaint()
-        onWidthChanged: requestPaint()
-        onHeightChanged: requestPaint()
-        Component.onCompleted: syncImage()
-
+        property int decodeExtent: 512
+        radius: Math.min(width, height) / 2
+        color: Theme.elevated
+        clip: true
         Image {
-            id: sizeProbe
-            source: artworkCanvas.source
-            visible: false
+            id: preview
+            anchors.fill: parent
+            source: artwork.source
+            sourceSize: Qt.size(artwork.decodeExtent, artwork.decodeExtent)
             asynchronous: true
-            onStatusChanged: artworkCanvas.requestPaint()
+            fillMode: Image.PreserveAspectCrop
         }
-
-        onPaint: {
-            const ctx = getContext("2d");
-            ctx.clearRect(0, 0, width, height);
-            if (!source.length || !isImageLoaded(source))
-                return;
-
-            const size = sizeProbe.sourceSize;
-            if (!size.width || !size.height)
-                return;
-            const scale = Math.max(width / size.width, height / size.height);
-            const drawWidth = size.width * scale;
-            const drawHeight = size.height * scale;
-            const drawX = (width - drawWidth) / 2;
-            const drawY = (height - drawHeight) / 2;
-
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(width / 2, height / 2, Math.min(width, height) / 2, 0, Math.PI * 2, false);
-            ctx.closePath();
-            ctx.clip();
-            ctx.drawImage(source, drawX, drawY, drawWidth, drawHeight);
-            ctx.restore();
+        Text {
+            anchors.centerIn: parent
+            visible: preview.status !== Image.Ready
+            text: "✦"
+            color: Theme.accent
+            font.family: Theme.iconFamily(text)
+            font.weight: Font.Normal
+            font.pixelSize: Math.max(18, Math.min(48, artwork.width / 4))
         }
     }
 }

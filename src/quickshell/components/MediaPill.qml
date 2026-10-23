@@ -8,18 +8,22 @@ import "../services"
 ClippingRectangle {
     id: root
 
+    property var media: Media
+    property bool compactContent: Settings.compact
+    readonly property bool artVisible: Settings.barMediaShowArt
+    readonly property bool controlsVisible: Settings.barMediaShowControls
     property bool embedded: false
     property string outputName: ""
     property var anchorHost: null
     readonly property bool sourceActive: ShellState.ephemerisVisible
         && ShellState.ephemerisAnchorTarget === root
-    implicitWidth: Media.available ? (Settings.compact ? 320 : 400) : 0
-    implicitHeight: Settings.compact ? 36 : 42
+    implicitWidth: root.media.available ? Math.min(Math.max(180, Math.min(480, Settings.barMediaWidth)), root.compactContent ? 320 : 480) : 0
+    implicitHeight: root.compactContent ? 36 : 42
     radius: embedded ? 9 : height / 2
     color: sourceActive ? Theme.void_ : embedded ? "transparent"
         : mediaHover.hovered ? Theme.elevated : Theme.mantle
     border.width: 0
-    opacity: Media.available ? 1 : 0
+    opacity: root.media.available ? 1 : 0
     clip: true
 
     HoverHandler {
@@ -33,18 +37,18 @@ ClippingRectangle {
         acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
         onClicked: function(mouse) {
             if (mouse.button === Qt.MiddleButton)
-                Media.next();
+                root.media.next();
             else if (mouse.button === Qt.RightButton)
-                Media.raise();
+                root.media.raise();
             else
                 anchorHost ? anchorHost.toggleEphemeris("media", root)
                     : ShellState.toggleEphemeris("media", outputName);
         }
         onWheel: function(event) {
             if (event.angleDelta.y > 0)
-                Media.previous();
+                root.media.previous();
             else
-                Media.next();
+                root.media.next();
             event.accepted = true;
         }
     }
@@ -56,17 +60,20 @@ ClippingRectangle {
         spacing: 8
 
         ClippingRectangle {
-            Layout.preferredWidth: Settings.compact ? 30 : 36
+            visible: root.artVisible
+            Layout.preferredWidth: root.compactContent ? 30 : 36
             Layout.preferredHeight: Layout.preferredWidth
-            radius: Settings.compact ? 8 : 9
+            radius: root.compactContent ? 8 : 9
             color: Theme.elevated
             border.width: 0
             clip: true
 
             Image {
                 id: thumbnail
+                objectName: "media-artwork"
                 anchors.fill: parent
-                source: Media.artUrl
+                source: root.artVisible ? root.media.artUrl : ""
+                sourceSize: Qt.size(96, 96)
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
                 visible: status === Image.Ready
@@ -74,15 +81,15 @@ ClippingRectangle {
             Rectangle {
                 anchors.fill: parent
                 color: Theme.accent
-                opacity: Media.playing ? 0.06 : 0.14
+                opacity: root.media.playing ? 0.06 : 0.14
             }
             Text {
                 anchors.centerIn: parent
                 visible: thumbnail.status !== Image.Ready
-                text: Media.mediaKind === "VIDEO" ? "▻" : "♪"
+                text: root.media.mediaKind === "VIDEO" ? "▻" : "♪"
                 color: Theme.accent
-                font.family: Theme.fontMono
-                font.pixelSize: Settings.compact ? 13 : 15
+                font.family: Theme.iconFamily(text)
+                font.pixelSize: root.compactContent ? 13 : 15
             }
             Rectangle {
                 anchors.right: parent.right
@@ -91,7 +98,7 @@ ClippingRectangle {
                 width: 7
                 height: 7
                 radius: 4
-                color: Media.playing ? Theme.success : Theme.warning
+                color: root.media.playing ? Theme.success : Theme.warning
 
             }
         }
@@ -102,10 +109,10 @@ ClippingRectangle {
 
             Text {
                 Layout.fillWidth: true
-                text: Media.title
+                text: root.media.title
                 color: Theme.moon
                 font.family: Theme.fontText
-                font.pixelSize: Settings.compact ? 12 : 13
+                font.pixelSize: root.compactContent ? 12 : 13
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
             }
@@ -116,11 +123,11 @@ ClippingRectangle {
 
                 Text {
                     Layout.fillWidth: true
-                    text: Settings.showMediaTime && Media.length > 0
-                        ? Media.timeText : Media.artist
+                    text: Settings.showMediaTime && root.media.length > 0
+                        ? root.media.timeText : root.media.artist
                     color: Theme.muted
                     font.family: Theme.fontMono
-                    font.pixelSize: Settings.compact ? 10 : 11
+                    font.pixelSize: root.compactContent ? 10 : 11
                     font.weight: Font.Bold
                     elide: Text.ElideRight
                 }
@@ -130,13 +137,13 @@ ClippingRectangle {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 4
-                visible: Settings.showMediaProgress && Media.length > 0
+                visible: Settings.showMediaProgress && root.media.length > 0
                 radius: 2
                 color: Theme.barNeutralHover
                 clip: true
 
                 Rectangle {
-                    width: Math.max(3, parent.width * Media.progress)
+                    width: Math.max(3, parent.width * root.media.progress)
                     height: parent.height
                     radius: parent.radius
                     color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.86)
@@ -152,12 +159,13 @@ ClippingRectangle {
         }
 
         RowLayout {
+            visible: root.controlsVisible
             spacing: 1
 
             Repeater {
                 model: [
                     { "glyph": "‹", "action": "previous", "label": "Previous track" },
-                    { "glyph": Media.playing ? "Ⅱ" : "▶", "action": "toggle", "label": Media.playing ? "Pause" : "Play" },
+                    { "glyph": root.media.playing ? "Ⅱ" : "▶", "action": "toggle", "label": root.media.playing ? "Pause" : "Play" },
                     { "glyph": "›", "action": "next", "label": "Next track" }
                 ]
 
@@ -165,11 +173,11 @@ ClippingRectangle {
                     id: control
                     required property var modelData
                     Layout.preferredWidth: control.modelData.action === "toggle" ? 36 : 30
-                    Layout.preferredHeight: Settings.compact ? 30 : 36
+                    Layout.preferredHeight: root.compactContent ? 30 : 36
                     radius: 10
-                    readonly property bool supported: Media.available && (modelData.action === "previous"
-                        ? Media.player.canGoPrevious : modelData.action === "next"
-                        ? Media.player.canGoNext : Media.player.canTogglePlaying)
+                    readonly property bool supported: root.media.available && (modelData.action === "previous"
+                        ? root.media.player.canGoPrevious : modelData.action === "next"
+                        ? root.media.player.canGoNext : root.media.player.canTogglePlaying)
                     color: controlPointer.containsMouse || activeFocus ? Theme.accentVeil : "transparent"
                     opacity: supported ? 1 : 0.35
                     activeFocusOnTab: supported
@@ -181,9 +189,9 @@ ClippingRectangle {
 
                     function activate() {
                         if (!supported) return;
-                        if (control.modelData.action === "previous") Media.previous();
-                        else if (control.modelData.action === "next") Media.next();
-                        else Media.toggle();
+                        if (control.modelData.action === "previous") root.media.previous();
+                        else if (control.modelData.action === "next") root.media.next();
+                        else root.media.toggle();
                     }
 
                     ToolTip {
@@ -200,9 +208,9 @@ ClippingRectangle {
                         color: controlPointer.containsMouse || control.activeFocus
                             ? (control.modelData.action === "toggle" ? Theme.success : Theme.accent)
                             : Theme.muted
-                        font.family: Theme.fontMono
+                        font.family: Theme.iconFamily(text)
                         font.pixelSize: control.modelData.action === "toggle" ? 19 : 20
-                        font.weight: control.modelData.action === "toggle" ? Font.Bold : Font.Medium
+                        font.weight: Font.Normal
                     }
                     MouseArea {
                         id: controlPointer

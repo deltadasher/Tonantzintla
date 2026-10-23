@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import "../../../.."
 import "../../../../services"
+import "../../../../components"
 
 Item {
     id: root
@@ -71,7 +72,7 @@ Item {
                     anchors.centerIn: parent
                     text: tile.glyph
                     color: tile.available ? Theme.accent : Theme.lineBright
-                    font.family: Theme.fontIcon
+                    font.family: Theme.iconFamily(text)
                     font.pixelSize: 22
                 }
             }
@@ -244,7 +245,7 @@ Item {
                         anchors.fill: parent
                         anchors.leftMargin: 14
                         anchors.rightMargin: 14
-                        Text { text: "󰉋"; color: Theme.accent; font.family: Theme.fontIcon; font.pixelSize: 19 }
+                        Text { text: "󰉋"; color: Theme.accent; font.family: Theme.iconFamily(text); font.pixelSize: 19 }
                         Text { Layout.fillWidth: true; text: "OPEN SCREENSHOT ARCHIVE"; color: Theme.moon; font.family: Theme.fontMono; font.pixelSize: 11; font.weight: Font.Bold }
                         Text { text: "~/Pictures/Screenshots"; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10 }
                     }
@@ -253,123 +254,120 @@ Item {
             }
 
             Rectangle {
-                Layout.preferredWidth: 292
+                Layout.preferredWidth: 320
                 Layout.fillHeight: true
                 radius: Theme.radiusLarge
                 color: Theme.mantle
-                border.width: 0
-                border.color: Environment.recording ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.52) : Theme.line
-
-                ColumnLayout {
+                Flickable {
                     anchors.fill: parent
-                    anchors.margins: 18
-                    spacing: 13
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 1
-                            Text { text: "SCREEN RECORDING"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 16; font.weight: Font.Black }
-                            Text { text: "GPU SCREEN RECORDER"; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10; font.letterSpacing: 0.9 }
-                        }
-                        Rectangle {
-                            Layout.preferredWidth: 11
-                            Layout.preferredHeight: 11
-                            radius: 6
-                            color: Environment.recording ? Theme.danger
-                                : Environment.canRecord ? Theme.success : Theme.warning
-                        }
-                    }
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 154
-                        radius: Theme.radiusMedium
-                        color: Environment.recording
-                            ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.10)
-                            : Theme.elevated
-
-                        ColumnLayout {
-                            anchors.centerIn: parent
-                            spacing: 7
-                            Text {
-                                Layout.alignment: Qt.AlignHCenter
-                                text: Environment.recording ? "●" : "◉"
-                                color: Environment.recording ? Theme.danger : Theme.accent
-                                font.family: Theme.fontMono
-                                font.pixelSize: 40
-                            }
-                            Text {
-                                Layout.alignment: Qt.AlignHCenter
-                                text: Environment.recording ? "STREAM ACTIVE" : "PORTAL READY"
-                                color: Theme.moon
-                                font.family: Theme.fontMono
-                                font.pixelSize: 11
-                                font.weight: Font.Black
-                            }
-                            Text {
-                                Layout.alignment: Qt.AlignHCenter
-                                text: Environment.canRecord
-                                    ? "60 FPS · H.264 · DESKTOP AUDIO" : "INSTALL GPU-SCREEN-RECORDER"
-                                color: Theme.muted
-                                font.family: Theme.fontMono
-                                font.pixelSize: 10
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 48
-                        radius: 12
-                        color: Environment.recording ? Theme.danger
-                            : recordPointer.containsMouse ? Theme.accent : Theme.accentVeil
-                        opacity: Environment.canRecord ? 1 : 0.45
+                    anchors.margins: 16
+                    contentHeight: captureOptions.implicitHeight
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
+                    ColumnLayout {
+                        id: captureOptions
+                        width: parent.width
+                        spacing: 10
                         Text {
-                            anchors.centerIn: parent
-                            text: Environment.recording ? "STOP AND FINALIZE" : "START PORTAL RECORDING"
-                            color: Environment.recording ? Theme.void_ : recordPointer.containsMouse ? Theme.void_ : Theme.moon
-                            font.family: Theme.fontMono
-                            font.pixelSize: 11
+                            text: "SCREEN RECORDING"
+                            color: Theme.moon
+                            font.family: Theme.fontDisplay
+                            font.pixelSize: 17
                             font.weight: Font.Black
                         }
-                        MouseArea {
-                            id: recordPointer
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            enabled: Environment.canRecord
-                            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ForbiddenCursor
+                        Text {
+                            Layout.fillWidth: true
+                            text: Environment.recordingState === "idle" ? "Ready"
+                                : Environment.recordingState === "pending" ? "Preparing"
+                                : Environment.recordingState === "recording" ? "Recording"
+                                : Environment.recordingState === "finalizing" ? "Finalizing"
+                                : Environment.recordingState === "saved" ? "Saved" : "Capture error"
+                            color: Environment.recordingState === "error" ? Theme.danger
+                                : Environment.recording ? Theme.rose : Theme.accent
+                            font.family: Theme.fontDisplay
+                            font.pixelSize: 24
+                            font.weight: Font.Bold
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: Environment.canRecord ? Environment.recordingMessage : "Install GPU Screen Recorder to record."
+                            wrapMode: Text.Wrap
+                            color: Theme.muted
+                            font.family: Theme.fontText
+                            font.pixelSize: Theme.textCaption
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            visible: Environment.recordingState === "saved" && Environment.recordingOutput.length > 0
+                            text: Environment.recordingOutput.split("/").pop()
+                            elide: Text.ElideMiddle
+                            color: Theme.moon
+                            font.family: Theme.fontMono
+                            font.pixelSize: Theme.textCaption
+                        }
+                        SettingChoice {
+                            Layout.fillWidth: true
+                            label: "Frame rate"
+                            choices: [{label: "30 FPS", value: 30}, {label: "60 FPS", value: 60}]
+                            value: Settings.captureFps
+                            enabled: !Environment.recordingBusy
+                            onSelected: function(value) { Settings.captureFps = value; }
+                        }
+                        SettingChoice {
+                            Layout.fillWidth: true
+                            label: "Countdown before portal"
+                            choices: [{label: "Off", value: 0}, {label: "3s", value: 3}, {label: "5s", value: 5}, {label: "10s", value: 10}]
+                            value: Settings.captureCountdown
+                            enabled: !Environment.recordingBusy
+                            onSelected: function(value) { Settings.captureCountdown = value; }
+                        }
+                        SettingToggle {
+                            Layout.fillWidth: true
+                            label: "Desktop audio"
+                            checked: Settings.captureDesktopAudio
+                            enabled: !Environment.recordingBusy
+                            onToggled: Settings.captureDesktopAudio = !Settings.captureDesktopAudio
+                        }
+                        SettingToggle {
+                            Layout.fillWidth: true
+                            label: "Microphone"
+                            detail: "Default input · gain " + Audio.inputPercent + "%" + (Audio.inputMuted ? " · muted" : "")
+                            checked: Settings.captureMicrophone
+                            enabled: !Environment.recordingBusy
+                            onToggled: Settings.captureMicrophone = !Settings.captureMicrophone
+                        }
+                        SettingToggle {
+                            Layout.fillWidth: true
+                            label: "Include pointer"
+                            checked: Settings.capturePointer
+                            enabled: !Environment.recordingBusy
+                            onToggled: Settings.capturePointer = !Settings.capturePointer
+                        }
+                        ActionButton {
+                            Layout.fillWidth: true
+                            text: Environment.recordingState === "pending" ? "Cancel capture"
+                                : Environment.recording ? "Stop and save" : "Start portal recording"
+                            pending: Environment.recordingState === "finalizing"
+                            destructive: Environment.recordingBusy
+                            enabled: Environment.canRecord && Environment.recordingState !== "finalizing"
                             onClicked: {
-                                if (Environment.recording)
-                                    Environment.stopRecording();
-                                else {
-                                    ShellState.closeEphemeris();
-                                    Environment.startRecording();
-                                }
+                                if (Environment.recordingBusy) Environment.stopRecording();
+                                else Environment.startRecording();
                             }
                         }
-                    }
-
-                    Text {
-                        Layout.fillWidth: true
-                        text: "The desktop portal chooses a monitor or window. Audio and cursor capture are enabled by default."
-                        wrapMode: Text.WordWrap
-                        color: Theme.muted
-                        font.family: Theme.fontText
-                        font.pixelSize: 11
-                        lineHeight: 1.25
-                    }
-
-                    Item { Layout.fillHeight: true }
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 42
-                        radius: 11
-                        color: recordingFolderPointer.containsMouse ? Theme.barNeutralHover : Theme.barNeutral
-                        Text { anchors.centerIn: parent; text: "OPEN RECORDING ARCHIVE"; color: Theme.moon; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Bold }
-                        MouseArea { id: recordingFolderPointer; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Environment.openRecordingFolder() }
+                        Text {
+                            Layout.fillWidth: true
+                            text: "The desktop portal chooses the monitor or window. Recording is confirmed after the first frame; saved is confirmed only when the recorder finishes."
+                            wrapMode: Text.Wrap
+                            color: Theme.muted
+                            font.family: Theme.fontText
+                            font.pixelSize: Theme.textCaption
+                        }
+                        ActionButton {
+                            Layout.fillWidth: true
+                            text: "Open recordings"
+                            onClicked: Environment.openRecordingFolder()
+                        }
                     }
                 }
             }

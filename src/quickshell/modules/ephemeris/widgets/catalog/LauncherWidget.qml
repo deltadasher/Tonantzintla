@@ -19,8 +19,12 @@ Item {
     property string selectionQuery: ""
     property string selectionCategory: "all"
     property string feedback: ""
+    readonly property bool toolMode: category==="emoji" || category==="files"
     readonly property bool inputAtBottom: Settings.barPosition === "bottom"
-    readonly property real preferredSurfaceHeight: Math.min(760, 250 + Math.max(1, results.length) * 68)
+    readonly property real preferredSurfaceWidth: Settings.launcherWidth > 0 ? Math.max(480, Math.min(1000, Settings.launcherWidth)) : 0
+    readonly property real preferredSurfaceHeight: toolMode ? 700 : Settings.launcherVisibleRows > 0
+        ? 250 + Math.max(3, Math.min(10, Settings.launcherVisibleRows)) * 68
+        : Math.min(760, 250 + Math.max(1, results.length) * 68)
     readonly property var applications: Model.applications(DesktopEntries.applications.values)
     readonly property var entries: applications.concat(Model.surfaceCommands(Registry.widgets(Settings)), settingsCommands, sessionCommands)
     readonly property var results: Model.filter(entries, query, category, LaunchHistory.favorites, Settings.enableCalculator)
@@ -65,11 +69,13 @@ Item {
     }
 
     function moveSelection(delta) {
+        if(toolMode && toolLoader.item) { toolLoader.item.moveSelection(delta*(category==="emoji"?toolLoader.item.columns:1));return; }
         selection = Model.moveSelection(results, selection, delta);
         keepSelectionVisible();
     }
 
     function activate(entry) {
+        if(toolMode && toolLoader.item) { toolLoader.item.activateSelected();return; }
         if (!entry || entry.enabled === false)
             return;
         feedback = "";
@@ -200,13 +206,23 @@ Item {
             visible: !root.inputAtBottom
         }
 
+        Loader {
+            id:toolLoader
+            Layout.fillWidth:true
+            Layout.fillHeight:true
+            active:root.toolMode
+            visible:active
+            source:root.category==="emoji" ? Qt.resolvedUrl("../../../tools/EmojiPane.qml") : Qt.resolvedUrl("../../../tools/FilePane.qml")
+            onLoaded:item.query=Qt.binding(function() { return root.query; })
+        }
         ListView {
+            visible:!root.toolMode
             id: resultList
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
             spacing: 4
-            model: root.results
+            model: root.toolMode ? [] : root.results
             boundsBehavior: Flickable.StopAtBounds
             reuseItems: true
 
@@ -414,7 +430,8 @@ Item {
                     spacing: 6
                     Repeater {
                         model: [{ id: "all", name: "ALL" }, { id: "apps", name: "APPS" },
-                            { id: "actions", name: "ACTIONS" }, { id: "saved", name: "SAVED" }]
+                            { id: "actions", name: "ACTIONS" }, { id: "saved", name: "SAVED" },
+                            { id:"emoji",name:"EMOJI" }, { id:"files",name:"FILES" }]
                         Rectangle {
                             id: categoryChip
                             required property var modelData
@@ -478,7 +495,9 @@ Item {
                     text: root.query
                     onTextChanged: { root.query = text; root.feedback = ""; }
                     Keys.onPressed: function(event) {
-                        if (event.key === Qt.Key_Down) {
+                        if(root.category==="emoji" && toolLoader.item && (event.key===Qt.Key_Left || event.key===Qt.Key_Right) && (event.modifiers & Qt.AltModifier)) {
+                            toolLoader.item.moveSelection(event.key===Qt.Key_Left?-1:1);event.accepted=true;
+                        } else if (event.key === Qt.Key_Down) {
                             root.moveSelection(1); event.accepted = true;
                         } else if (event.key === Qt.Key_Up) {
                             root.moveSelection(-1); event.accepted = true;
@@ -498,7 +517,7 @@ Item {
                     anchors.leftMargin: 16
                     anchors.verticalCenter: parent.verticalCenter
                     visible: searchInput.text.length === 0
-                    text: "Find apps, actions or settings…"
+                    text: root.category==="emoji" ? "Find an emoji…" : root.category==="files" ? "Filter this folder…" : "Find apps, actions or settings…"
                     color: Theme.muted
                     font.family: Theme.fontText
                     font.pixelSize: 14
@@ -508,7 +527,7 @@ Item {
 
         Text {
             Layout.fillWidth: true
-            text: root.feedback || "↑↓  SELECT     ↵  OPEN     >  ACTIONS     CTRL P  SAVE"
+            text: root.feedback || (root.toolMode ? "↑↓ SELECT   ALT ←→ EMOJI   ↵ OPEN / COPY" : "↑↓  SELECT     ↵  OPEN     >  ACTIONS     CTRL P  SAVE")
             color: root.feedback ? Theme.accent : Theme.muted
             font.family: Theme.fontMono
             font.pixelSize: 9

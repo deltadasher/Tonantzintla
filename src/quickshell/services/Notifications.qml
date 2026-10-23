@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell.Services.Notifications
+import Quickshell.Io
 import ".."
 import "NotificationModel.js" as Model
 
@@ -15,6 +16,69 @@ QtObject {
     property ListModel history: ListModel {}
     property ListModel popups: ListModel {}
     property double now: Date.now()
+    property bool soundAvailable: false
+    property string soundState: "unchecked"
+    property string soundStatus: "Choose a local WAV and check support. Sound is off by default."
+    readonly property bool soundBusy: soundProcess.running
+    property double lastSoundAt: 0
+    property string soundRequestPath: ""
+    property string soundOperation: "check"
+
+    function checkSound() { startSound("check"); }
+    function startSound(operation) {
+        if (soundProcess.running) return;
+        soundRequestPath=Settings.notificationSoundPath;
+        soundOperation=operation;
+        soundState=operation === "play" ? "playing" : "checking";
+        soundStatus=operation === "play" ? "Playing notification sound…" : "Checking local sound and pw-play…";
+        soundProcess.command=["python3",Environment.script("notification-sound.py"),operation,soundRequestPath,String(Settings.notificationSoundVolume)];
+        soundProcess.running=true;
+    }
+    function playSound() {
+        if (!Settings.notificationSoundsEnabled || Settings.doNotDisturb || soundProcess.running) return;
+        const current=Date.now();
+        if (current-lastSoundAt<2000) return;
+        lastSoundAt=current;
+        startSound("play");
+    }
+    property Connections soundSettings: Connections {
+        target: Settings
+        function onNotificationSoundPathChanged() {
+            root.soundAvailable=false;
+            root.soundState="unchecked";
+            root.soundStatus="Sound selection changed; check support for the new file.";
+        }
+        function onNotificationSoundsEnabledChanged() {
+            if (!Settings.notificationSoundsEnabled && root.soundOperation === "play" && soundProcess.running) {
+                soundProcess.running=false;
+                root.soundState="disabled";
+                root.soundStatus="Notification sound disabled.";
+            }
+        }
+    }
+    property Process soundProcess: Process {
+        id: soundProcess
+        stdout: StdioCollector {
+            onStreamFinished: {
+                if (root.soundRequestPath !== Settings.notificationSoundPath
+                        || (root.soundOperation === "play" && !Settings.notificationSoundsEnabled)) return;
+                try {
+                    const result=JSON.parse(text);
+                    root.soundAvailable=result.available === true;
+                    root.soundState=String(result.state || "error");
+                    root.soundStatus=String(result.message || "Sound check failed.");
+                } catch (_) {
+                    root.soundAvailable=false;root.soundState="error";root.soundStatus="Sound helper did not return a valid result.";
+                }
+            }
+        }
+        onExited: function(code,status) {
+            if (code !== 0 && (root.soundOperation !== "play" || Settings.notificationSoundsEnabled)) {
+                root.soundAvailable=false;root.soundState="error";root.soundStatus="Sound helper failed to run.";
+            }
+        }
+    }
+
 
     function notificationFor(uid) {
         return liveNotifications[uid] || null;
@@ -120,11 +184,13 @@ QtObject {
         entry.groupKey = String(notification.desktopEntry || notification.appName || "System").trim().toLowerCase();
         remember(entry);
 
-        if (!Settings.doNotDisturb && (!ShellState.deepFocus || critical))
+        if (!Settings.doNotDisturb && (!ShellState.deepFocus || critical)) {
             insertOrFuse(popups, makeEntry(uid, notification.appName,
                 notification.summary, notification.body,
                 notification.image || notification.appIcon,
                 critical, urgency, actions), 12000);
+            playSound();
+        }
     }
 
     function preview(summary, body) {

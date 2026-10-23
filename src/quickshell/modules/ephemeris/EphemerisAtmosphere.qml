@@ -12,7 +12,7 @@ Item {
         : Settings.atmosphereStyle === "cinematic" ? 1.42 : 1
     readonly property int starCount: Settings.atmosphereStyle === "quiet" ? 5
         : Settings.atmosphereStyle === "cinematic" ? 11 : 8
-    readonly property bool live: Settings.motion && Settings.animateStars && !ShellState.deepFocus && visible
+    readonly property bool live: Theme.motionEnabled && Settings.animateStars && !ShellState.deepFocus && visible
 
     clip: true
     opacity: Settings.animateStars ? Math.min(0.72, 0.48 * density) * presentation : 0
@@ -26,7 +26,7 @@ Item {
         y: parent.height * 0.20 - height * 0.48
         color: root.primary
         opacity: 0.035 * root.density
-        Behavior on color { ColorAnimation { duration: 420 } }
+        Behavior on color { ColorAnimation { duration: Theme.duration(420) } }
     }
 
     Rectangle {
@@ -37,7 +37,7 @@ Item {
         y: parent.height - height * 0.56
         color: root.secondary
         opacity: 0.026 * root.density
-        Behavior on color { ColorAnimation { duration: 420 } }
+        Behavior on color { ColorAnimation { duration: Theme.duration(420) } }
     }
 
     Item {
@@ -69,7 +69,7 @@ Item {
             RotationAnimation on rotation {
                 from: 0
                 to: 360
-                duration: 48000
+                duration: Theme.duration(48000)
                 loops: Animation.Infinite
                 running: root.live
             }
@@ -108,10 +108,10 @@ Item {
             NumberAnimation {
                 from: -comet.width
                 to: root.width + 20
-                duration: 18000
+                duration: Theme.duration(18000)
                 easing.type: Easing.InOutSine
             }
-            PauseAnimation { duration: 3200 }
+            PauseAnimation { duration: Theme.duration(3200) }
         }
 
         Rectangle {

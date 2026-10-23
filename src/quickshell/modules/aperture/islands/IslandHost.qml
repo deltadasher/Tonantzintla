@@ -44,9 +44,9 @@ Loader {
 
     // Grid reflow is still deterministic, but the island should travel to its
     // new slot instead of teleporting when a preset or drop changes the order.
-    Behavior on x { NumberAnimation { duration: Settings.motion ? 260 : 0; easing.type: Easing.OutCubic } }
-    Behavior on y { NumberAnimation { duration: Settings.motion ? 260 : 0; easing.type: Easing.OutCubic } }
-    Behavior on width { NumberAnimation { duration: Settings.motion ? 180 : 0; easing.type: Easing.OutCubic } }
-    Behavior on height { NumberAnimation { duration: Settings.motion ? 180 : 0; easing.type: Easing.OutCubic } }
-    Behavior on opacity { NumberAnimation { duration: Settings.motion ? 180 : 0; easing.type: Easing.OutCubic } }
+    Behavior on x { NumberAnimation { duration: Theme.duration(260); easing.type: Easing.OutCubic } }
+    Behavior on y { NumberAnimation { duration: Theme.duration(260); easing.type: Easing.OutCubic } }
+    Behavior on width { NumberAnimation { duration: Theme.duration(180); easing.type: Easing.OutCubic } }
+    Behavior on height { NumberAnimation { duration: Theme.duration(180); easing.type: Easing.OutCubic } }
+    Behavior on opacity { NumberAnimation { duration: Theme.duration(180); easing.type: Easing.OutCubic } }
 }

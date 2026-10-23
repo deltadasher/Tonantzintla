@@ -175,7 +175,7 @@ Rectangle {
                                     spacing: 10
                                     Text {
                                         text: root.glyphs[tile.modelData]; color: tile.chosen ? Theme.accent : Theme.muted
-                                        font.family: Theme.fontIcon; font.pixelSize: 17
+                                        font.family: Theme.iconFamily(text); font.pixelSize: 17
                                         Layout.preferredWidth: 20
                                         horizontalAlignment: Text.AlignHCenter
                                     }

@@ -1,9 +1,11 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 import "../.."
 import "../../components"
 import "../../services"
 import "../../components/SettingsSearch.js" as Search
+import "EphemerisRegistry.js" as Registry
 
 pragma ComponentBehavior: Bound
 
@@ -16,6 +18,7 @@ Item {
     Component.onCompleted: Settings.checkpointAppearance()
     property real sectionReveal: 1
     property int selectedExtension: -1
+    property string appearanceModule: "calendar"
 
     function extensionAlwaysOn(id) {
         return id === "authentication" || id === "parallax" || id === "transit" || id === "clipboard" || id === "optics";
@@ -26,9 +29,9 @@ Item {
     component ToggleGrid: GridLayout {
         id: toggleGrid
         property var toggleRows: []
-        columns: 2
-        columnSpacing: 10
-        rowSpacing: 10
+        columns: width < 600 ? 1 : 2
+        columnSpacing: Theme.spaceMd
+        rowSpacing: Theme.spaceMd
 
         Repeater {
             model: toggleGrid.toggleRows
@@ -47,8 +50,15 @@ Item {
     Connections {
         target: ShellState
         function onSettingsSectionChanged() {
-            root.sectionReveal = 0;
-            sectionDelay.restart();
+            settingsFlick.contentY = 0;
+            sectionIntro.stop();
+            if (Theme.motionEnabled) {
+                root.sectionReveal = 0;
+                sectionDelay.restart();
+            } else {
+                sectionDelay.stop();
+                root.sectionReveal = 1;
+            }
         }
     }
 
@@ -69,7 +79,7 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        spacing: 12
+        spacing: Theme.spaceLg
 
         RowLayout {
             Layout.fillWidth: true
@@ -77,7 +87,7 @@ Item {
                 text: "SETTINGS"
                 color: Theme.moon
                 font.family: Theme.fontDisplay
-                font.pixelSize: 22
+                font.pixelSize: Theme.textTitle
                 font.weight: Font.Black
             }
             Item { Layout.fillWidth: true }
@@ -86,7 +96,7 @@ Item {
                 text: Environment.version
                 color: Theme.muted
                 font.family: Theme.fontMono
-                font.pixelSize: 11
+                font.pixelSize: Theme.textCaption
                 font.letterSpacing: 1
             }
         }
@@ -130,7 +140,7 @@ Item {
             visible: root.query.trim().length === 0
             Layout.fillWidth: true
             Layout.fillHeight: true
-            spacing: 18
+            spacing: Theme.spaceLg
 
             Rectangle {
                 Layout.preferredWidth: 168
@@ -147,8 +157,10 @@ Item {
                     Repeater {
                         model: [
                             { "key": "appearance", "label": "Appearance" },
+                            { "key": "optics", "label": "Control optics" },
                             { "key": "launcher", "label": "Panels" },
                             { "key": "umbra", "label": "Lock screen" },
+                            { "key": "umbra-layout", "label": "Lock composition" },
                             { "key": "system", "label": "System" },
                             { "key": "niri", "label": "Niri settings" },
                             { "key": "extensions", "label": "Features" }
@@ -160,16 +172,20 @@ Item {
                             activeFocusOnTab: true
                             Accessible.role: Accessible.Button
                             Accessible.name: modelData.label
-                            Accessible.onPressAction: ShellState.settingsSection = modelData.key
-                            Keys.onReturnPressed: ShellState.settingsSection = modelData.key
-                            Keys.onSpacePressed: ShellState.settingsSection = modelData.key
+                            Accessible.onPressAction: choose()
+                            Keys.onReturnPressed: choose()
+                            Keys.onSpacePressed: choose()
                             readonly property bool active: ShellState.settingsSection === modelData.key
                             Layout.fillWidth: true
                             Layout.preferredHeight: 40
-                            radius: 12
-                            color: active ? Theme.accent
-                                : sectionPointer.containsMouse || activeFocus ? Theme.controlHover : "transparent"
-                            border.width: 0
+                            radius: Theme.radiusMedium
+                            color: sectionPointer.pressed ? Theme.controlPressed : active ? Theme.accent
+                                : sectionPointer.containsMouse ? Theme.controlHover : "transparent"
+                            border.width: activeFocus ? 1 : 0
+                            border.color: active ? Theme.moon : Theme.focusRing
+                            Accessible.checked: active
+                            function choose() { ShellState.settingsSection = modelData.key; }
+
 
                             RowLayout {
                                 anchors.fill: parent
@@ -186,9 +202,9 @@ Item {
                                 Text {
                                     Layout.fillWidth: true
                                     text: sectionButton.modelData.label
-                                    color: sectionButton.active ? Theme.void_ : Theme.moon
+                                    color: sectionButton.active && !sectionPointer.pressed ? Theme.void_ : Theme.moon
                                     font.family: Theme.fontText
-                                    font.pixelSize: 13
+                                    font.pixelSize: Theme.textBody
                                     font.weight: sectionButton.active ? Font.DemiBold : Font.Normal
                                 }
                             }
@@ -199,8 +215,8 @@ Item {
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: {
-                                    ShellState.settingsSection = sectionButton.modelData.key;
-                                    settingsFlick.contentY = 0;
+                                    sectionButton.forceActiveFocus();
+                                    sectionButton.choose();
                                 }
                             }
                             Behavior on color { ColorAnimation { duration: Theme.motionFast } }
@@ -219,6 +235,19 @@ Item {
                 boundsBehavior: Flickable.StopAtBounds
                 contentWidth: width
                 contentHeight: pageLoader.height
+                ScrollBar.vertical: ScrollBar {
+                    id: settingsScrollBar
+                    policy: ScrollBar.AsNeeded
+                    active: true
+                    width: 4
+                    padding: 0
+                    contentItem: Rectangle {
+                        implicitWidth: 4
+                        implicitHeight: 32
+                        radius: 2
+                        color: settingsScrollBar.hovered || settingsScrollBar.pressed ? Theme.accent : Theme.lineBright
+                    }
+                }
 
                 Loader {
                     id: pageLoader
@@ -228,12 +257,27 @@ Item {
                     opacity: root.sectionReveal
                     transform: Translate { y: (1 - root.sectionReveal) * 16 }
                     sourceComponent: ShellState.settingsSection === "appearance" ? appearancePage
+                        : ShellState.settingsSection === "optics" ? opticsPage
                         : ShellState.settingsSection === "launcher" ? launcherPage
+                        : ShellState.settingsSection === "umbra-layout" ? umbraLayoutPage
                         : ShellState.settingsSection === "umbra" ? umbraPage
                         : ShellState.settingsSection === "extensions" ? extensionsPage
                         : ShellState.settingsSection === "niri" ? niriPage
                         : systemPage
                 }
+            }
+        }
+    }
+
+    Component {
+        id: umbraLayoutPage
+        Item {
+            width: pageLoader.width
+            implicitHeight: editorLoader.item ? editorLoader.item.implicitHeight : 0
+            Loader {
+                id: editorLoader
+                width: parent.width
+                source: Qt.resolvedUrl("../umbra/UmbraLayoutEditor.qml")
             }
         }
     }
@@ -249,16 +293,45 @@ Item {
     }
 
     Component {
+        id: opticsPage
+        ColumnLayout {
+            width: pageLoader.width
+            spacing: Theme.spaceMd
+            SettingToggle {
+                Layout.fillWidth: true
+                label: "Optical controls"
+                detail: "Etched, frosted or refractive finishes. Instrument backgrounds remain solid."
+                checked: Settings.opticalControls
+                onToggled: Settings.opticalControls = !Settings.opticalControls
+            }
+            Loader {
+                id: opticsSettingsLoader
+                Layout.fillWidth: true
+                active: Settings.opticalControls
+                source: Qt.resolvedUrl("../../components/OpticsSettings.qml")
+                onLoaded: if (item) item.width = Qt.binding(function() { return opticsSettingsLoader.width; })
+            }
+        }
+    }
+
+    Component {
         id: appearancePage
         ColumnLayout {
             width: pageLoader.width
-            spacing: 10
+            spacing: Theme.spaceMd
 
+            Text { text: "Color and typography"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 16 }
             SettingToggle {
                 Layout.fillWidth: true
                 label: "Wallpaper colors"
                 checked: Settings.adaptivePalette
                 onToggled: Settings.adaptivePalette = !Settings.adaptivePalette
+            }
+
+            Loader {
+                Layout.fillWidth: true
+                Layout.preferredHeight: item ? item.implicitHeight : 0
+                source: Qt.resolvedUrl("../../components/SpectralControls.qml")
             }
 
             SettingChoice {
@@ -275,9 +348,9 @@ Item {
 
             GridLayout {
                 Layout.fillWidth: true
-                columns: 2
-                columnSpacing: 10
-                rowSpacing: 10
+                columns: width < 720 ? 1 : 2
+                columnSpacing: Theme.spaceMd
+                rowSpacing: Theme.spaceMd
 
                 SettingTextField {
                     Layout.fillWidth: true
@@ -325,6 +398,12 @@ Item {
                 }
             }
 
+            Text { text: "Surface and controls"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 16 }
+            ActionButton {
+                Layout.fillWidth: true
+                text: "Configure control optics"
+                onClicked: ShellState.settingsSection = "optics"
+            }
             SettingChoice {
                 Layout.fillWidth: true
                 label: "Panel material"
@@ -336,6 +415,24 @@ Item {
                 onSelected: function(value) { Settings.panelMaterial = value; }
             }
 
+            SettingChoice {
+                Layout.fillWidth: true
+                label: "Instrument appearance"
+                detail: "Choose an instrument to give it an independent material. Changes apply on its next visible frame."
+                value: root.appearanceModule
+                choices: Registry.widgets().filter(function(entry) { return entry.id !== "walls"; }).map(function(entry) {
+                    return {label: entry.title, value: entry.id};
+                })
+                onSelected: function(value) { root.appearanceModule = value; }
+            }
+            SettingChoice {
+                Layout.fillWidth: true
+                label: "Material for this instrument"
+                value: Settings.appearanceFor(root.appearanceModule)
+                choices: [{label: "Use global", value: "inherit"}, {label: "Classic", value: "classic"}, {label: "Gravity", value: "gravity"}]
+                onSelected: function(value) { Settings.setModuleAppearance(root.appearanceModule, value); }
+            }
+            Text { text: "Motion and atmosphere"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 16 }
             SettingChoice {
                 Layout.fillWidth: true
                 label: "Panel animation"
@@ -633,6 +730,11 @@ Item {
                     { "key": "osdBrightness", "label": "Brightness feedback" }
                 ]
             }
+            Loader {
+                Layout.fillWidth: true
+                Layout.preferredHeight: item ? item.implicitHeight : 0
+                source: Qt.resolvedUrl("../osd/OsdSettings.qml")
+            }
             SettingChoice {
                 Layout.fillWidth: true
                 label: "Max search results"
@@ -834,7 +936,14 @@ Item {
                     { "label": "BOTTOM RIGHT", "value": "bottom-right" },
                     { "label": "BOTTOM LEFT", "value": "bottom-left" }
                 ]
-                onSelected: function(value) { Settings.notificationPosition = value; }
+                onSelected: function(value) { Settings.notificationPosition = value; Settings.notificationCustomPosition = false; }
+            }
+
+            Loader {
+                id: notificationSettingsLoader
+                Layout.fillWidth: true
+                source: "../transit/NotificationSettings.qml"
+                onLoaded: item.width = Qt.binding(function() { return notificationSettingsLoader.width; })
             }
 
             SettingToggle {

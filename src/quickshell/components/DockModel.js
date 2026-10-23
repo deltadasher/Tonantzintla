@@ -70,3 +70,14 @@ function movePin(raw, id, delta) {
     }
     return JSON.stringify(list);
 }
+
+// Niri emits workspace/output changes; derive scope without polling or extra state.
+function scopedWindows(windows, workspaces, scope, output) {
+    if (scope !== "output" && scope !== "workspace") return windows;
+    const allowed = Object.create(null);
+    workspaces.forEach(function(space) {
+        if (space.output === output && (scope === "output" || space.is_active === true))
+            allowed[space.id] = true;
+    });
+    return windows.filter(function(win) { return allowed[win.workspace_id] === true; });
+}

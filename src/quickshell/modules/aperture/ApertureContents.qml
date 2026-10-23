@@ -11,6 +11,16 @@ import "islands"
 Item {
     id: window
 
+    property var opticalBackdrop: previewMode ? null : opticalField
+    OpticalBackdrop {
+        id: opticalField
+        anchors.fill: parent
+        scope: "aperture"
+        active: !window.previewMode && window.visible && window.hasIslands
+        viewportSize: Qt.size(window.screenWidth, window.screenHeight)
+        viewportOffset: Qt.point(window.isRight ? window.screenWidth - window.width : 0,
+            window.isBottom ? window.screenHeight - window.height : 0)
+    }
     property string outputName: ""
     property bool previewMode: false
     property string edge: ""
@@ -33,7 +43,7 @@ Item {
     property real systemReveal: 0
     property real rightReveal: 0
     opacity: ShellState.deepFocus ? 0.4 : 1
-    Behavior on opacity { NumberAnimation { duration: Settings.motion ? 220 : 0 } }
+    Behavior on opacity { NumberAnimation { duration: Theme.duration(220) } }
 
     implicitWidth: isVertical ? (bodyThickness + shellMargin * 2) : 0
     implicitHeight: isVertical ? 0 : (bodyThickness + shellMargin * 2)
@@ -166,19 +176,20 @@ Item {
             border.width: 1
             border.color: isHovered ? Theme.accent : Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.18)
 
-            Behavior on implicitWidth { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-            Behavior on implicitHeight { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-            Behavior on color { ColorAnimation { duration: 120 } }
-            Behavior on border.color { ColorAnimation { duration: 120 } }
+            Behavior on implicitWidth { NumberAnimation { duration: Theme.duration(160); easing.type: Easing.OutCubic } }
+            Behavior on implicitHeight { NumberAnimation { duration: Theme.duration(160); easing.type: Easing.OutCubic } }
+            Behavior on color { ColorAnimation { duration: Theme.duration(120) } }
+            Behavior on border.color { ColorAnimation { duration: Theme.duration(120) } }
 
             RowLayout {
                 anchors.centerIn: parent
                 spacing: 4
                 Text {
+                    font.family: Theme.iconFamily(text)
                     text: startDropSlot.isHovered ? "✦" : "⇣"
                     color: startDropSlot.isHovered ? Theme.accent : Theme.muted
                     font.pixelSize: 10
-                    font.bold: true
+                    font.weight: Font.Normal
                 }
                 Text {
                     visible: !window.isVertical && startDropSlot.isHovered
@@ -223,19 +234,20 @@ Item {
             border.width: 1
             border.color: isHovered ? Theme.accent : Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.18)
 
-            Behavior on implicitWidth { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-            Behavior on implicitHeight { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-            Behavior on color { ColorAnimation { duration: 120 } }
-            Behavior on border.color { ColorAnimation { duration: 120 } }
+            Behavior on implicitWidth { NumberAnimation { duration: Theme.duration(160); easing.type: Easing.OutCubic } }
+            Behavior on implicitHeight { NumberAnimation { duration: Theme.duration(160); easing.type: Easing.OutCubic } }
+            Behavior on color { ColorAnimation { duration: Theme.duration(120) } }
+            Behavior on border.color { ColorAnimation { duration: Theme.duration(120) } }
 
             RowLayout {
                 anchors.centerIn: parent
                 spacing: 4
                 Text {
+                    font.family: Theme.iconFamily(text)
                     text: centerDropSlot.isHovered ? "✦" : "⇣"
                     color: centerDropSlot.isHovered ? Theme.accent : Theme.muted
                     font.pixelSize: 10
-                    font.bold: true
+                    font.weight: Font.Normal
                 }
                 Text {
                     visible: !window.isVertical && centerDropSlot.isHovered
@@ -284,19 +296,20 @@ Item {
             border.width: 1
             border.color: isHovered ? Theme.accent : Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.18)
 
-            Behavior on implicitWidth { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-            Behavior on implicitHeight { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-            Behavior on color { ColorAnimation { duration: 120 } }
-            Behavior on border.color { ColorAnimation { duration: 120 } }
+            Behavior on implicitWidth { NumberAnimation { duration: Theme.duration(160); easing.type: Easing.OutCubic } }
+            Behavior on implicitHeight { NumberAnimation { duration: Theme.duration(160); easing.type: Easing.OutCubic } }
+            Behavior on color { ColorAnimation { duration: Theme.duration(120) } }
+            Behavior on border.color { ColorAnimation { duration: Theme.duration(120) } }
 
             RowLayout {
                 anchors.centerIn: parent
                 spacing: 4
                 Text {
+                    font.family: Theme.iconFamily(text)
                     text: endDropSlot.isHovered ? "✦" : "⇣"
                     color: endDropSlot.isHovered ? Theme.accent : Theme.muted
                     font.pixelSize: 10
-                    font.bold: true
+                    font.weight: Font.Normal
                 }
                 Text {
                     visible: !window.isVertical && endDropSlot.isHovered
@@ -320,20 +333,20 @@ Item {
 
     SequentialAnimation {
         id: startupSequence
-        NumberAnimation { target: window; property: "leftReveal"; to: 1; duration: Settings.motion ? 180 : 0; easing.type: Easing.OutBack }
-        NumberAnimation { target: window; property: "workspaceReveal"; to: 1; duration: Settings.motion ? 150 : 0; easing.type: Easing.OutBack }
-        NumberAnimation { target: window; property: "mediaReveal"; to: 1; duration: Settings.motion ? 180 : 0; easing.type: Easing.OutBack }
-        NumberAnimation { target: window; property: "centerReveal"; to: 1; duration: Settings.motion ? 170 : 0; easing.type: Easing.OutCubic }
+        NumberAnimation { target: window; property: "leftReveal"; to: 1; duration: Theme.duration(180); easing.type: Easing.OutBack }
+        NumberAnimation { target: window; property: "workspaceReveal"; to: 1; duration: Theme.duration(150); easing.type: Easing.OutBack }
+        NumberAnimation { target: window; property: "mediaReveal"; to: 1; duration: Theme.duration(180); easing.type: Easing.OutBack }
+        NumberAnimation { target: window; property: "centerReveal"; to: 1; duration: Theme.duration(170); easing.type: Easing.OutCubic }
         ParallelAnimation {
-            NumberAnimation { target: window; property: "systemReveal"; to: 1; duration: Settings.motion ? 210 : 0; easing.type: Easing.OutBack }
-            NumberAnimation { target: window; property: "rightReveal"; to: 1; duration: Settings.motion ? 260 : 0; easing.type: Easing.OutBack }
+            NumberAnimation { target: window; property: "systemReveal"; to: 1; duration: Theme.duration(210); easing.type: Easing.OutBack }
+            NumberAnimation { target: window; property: "rightReveal"; to: 1; duration: Theme.duration(260); easing.type: Easing.OutBack }
         }
     }
 
     Behavior on implicitHeight {
-        NumberAnimation { duration: Settings.motion ? Theme.motionNormal : 0; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: Theme.motionNormal; easing.type: Easing.OutCubic }
     }
     Behavior on implicitWidth {
-        NumberAnimation { duration: Settings.motion ? Theme.motionNormal : 0; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: Theme.motionNormal; easing.type: Easing.OutCubic }
     }
 }

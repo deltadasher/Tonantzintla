@@ -25,9 +25,11 @@ Item {
         source: root.artSource
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
-        cache: true
+        cache: false
+        sourceSize: Qt.size(256, 256)
         visible: false
-        layer.enabled: true
+        layer.enabled: root.artSource.toString().length > 0
+        layer.textureSize: Qt.size(256, 256)
     }
 
     Rectangle {
@@ -36,7 +38,8 @@ Item {
         radius: width / 2
         color: "white"
         visible: false
-        layer.enabled: true
+        layer.enabled: root.artSource.toString().length > 0
+        layer.textureSize: Qt.size(256, 256)
     }
 
     MultiEffect {

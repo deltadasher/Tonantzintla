@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+import re
 import subprocess
 
 
@@ -33,6 +34,8 @@ def main() -> None:
         if "\t" not in line:
             continue
         entry_id, preview = line.split("\t", 1)
+        if not re.fullmatch(r"[0-9]{1,20}", entry_id):
+            continue
         current_ids.add(entry_id)
         is_image = "[[ binary data" in preview
         content = preview.strip()
@@ -70,6 +73,12 @@ def main() -> None:
                 "search": "image" if is_image else content.lower(),
             }
         )
+
+    # Cache files belong only to currently indexed entries; old images are not retained forever.
+    for name in os.listdir(cache_dir):
+        if re.fullmatch(r"[0-9]+\.png", name) and name[:-4] not in current_ids:
+            try: os.unlink(os.path.join(cache_dir, name))
+            except OSError: pass
 
     known_sizes = {
         entry_id: size for entry_id, size in known_sizes.items()

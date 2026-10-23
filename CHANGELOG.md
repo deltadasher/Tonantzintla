@@ -1,5 +1,63 @@
 # Changelog
 
+## Unreleased — observatory instruments
+
+- Add opt-in native still wallpapers in the existing shell, retaining External as
+  the portable default. Prepared2560px images use finite fade/grow/wipe/orbit
+  reveals with one512px old-image proxy, exact decode bounds, rendered-frame
+  readiness and retained-image failure recovery. Video remains external.
+- Add public wallpaper apply/status IPC through the existing service; preserve
+  per-output source intent across restart and restore external outputs before
+  dropping native surfaces. Retiring an existing external daemon remains manual.
+
+- Prepare optical wallpaper stills on demand in the existing one-shot helper;
+  share one serialized decode lane with the lazy library, validate768px output,
+  bound queued/results state and discard stale same-path generations. Qt no longer
+  decodes the full original PNG for control optics; helper cost remains separate.
+- Add optional `blackhole render-loop status|auto|basic|threaded` with independent
+  saved policy, explicit Qt override precedence and auto recovery. Portable default
+  remains auto; basic trades render parallelism/animation timing for local resource
+  savings, without an FPS claim.
+
+- Add a scoped next-start graphics preference (`blackhole graphics
+  status|auto|opengl|vulkan`), preserving explicit Qt overrides and portable
+  automatic selection. OpenGL recovery is available without opening the shell.
+- Bundle a licensed, glyph-preserving subset for ordinary default icons, with
+  unchanged configured/custom-font fallback; instantiate clock weather only when
+  its existing display predicate is true.
+- Correct wallpaper sampling under rotated optical controls with an affine basis,
+  without additional textures or continuous update work.
+- Installed dual-output Vulkan/basic + native-still workload:433.029 MB peak
+  QS+niri RSS across385 samples; settled stage416.309 MB, final421.683 MB with
+  Control optics reopened. Actual helpers were not instrumented; the separate
+  private helper-inclusive peak was468.869 MB. This is a measured local normal-
+  session pass, not a universal or secure-authentication memory guarantee.
+
+- Add wallpaper-still Lens/Frosted control finishes, family overrides, opacity,
+  roundness and optical parameters; finite moving option lenses and switch-thumb
+  motion preserve stable hit targets, keyboard focus and reduced motion.
+- Extend Umbra composition with snapping/alignment, eight resize handles,
+  rotation, per-region opacity, 100-step undo/redo and real miniature state.
+- Add selected Aperture clock/telemetry faces, bounded trace history, metric
+  choices, media geometry/content controls and actual launcher width/rows.
+- Extend dock window scope, persistent visibility, layer/space reservation,
+  backing/indicator choices and fixed-target neighbor magnification.
+- Add clamped visual placement editors for OSD/notifications, vertical OSD,
+  notification width/behavior choices and optional bounded local sound playback.
+
+- Load the wallpaper index on first Parallax use, and keep icon glyphs on one font weight to avoid unnecessary fallback font mappings.
+
+- Shared optical controls, reversible panel motion and per-instrument material choices.
+- F10/context customization on the visible instrument, bounded keyboard controls,
+  semantic spectral-color overrides with contrast validation, and output-aware island settings.
+- Remove desktop background widgets entirely; keep information in Aperture and on-demand instruments.
+- Umbra composition editor, clock faces, bounded background loops and capability-gated fingerprint UI.
+- Launcher emoji/files, calculator history, pinned notes, durable clipboard pins and owned-watcher pause.
+- Local/enhanced LRC lyrics, spectrum choices, recording controls/lifecycle feedback and OSD placement/status controls.
+- Bounded visual allocations and resource lifetimes; a read-only 450 MB RSS budget checker. See docs/memory-budget.md for the measurement contract and host acceptance limits.
+- Release unused jemalloc pages promptly on shell launches; reduce large JPEG preview decoding and conversion thread counts.
+- Fix repeated settings persistence, large clipboard restores, note switching after oversized paste and recorder finalization feedback.
+
 ## 1.1 - 2026-09-12
 
 LOOKS OVERHAUL

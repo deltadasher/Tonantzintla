@@ -18,6 +18,34 @@ Item {
     onEnabledControlChanged: if (!enabledControl) interacting = false
 
     implicitHeight: 54
+    activeFocusOnTab: enabledControl
+    enabled: enabledControl
+    opacity: enabledControl ? 1 : 0.6
+    Accessible.role: Accessible.Slider
+    Accessible.name: "Track position"
+
+    function nudge(delta) {
+        if (!enabledControl) return;
+        previewProgress = Math.max(0, Math.min(1, progress + delta));
+        seekRequested(previewProgress);
+    }
+    Keys.onLeftPressed: nudge(-0.01)
+    Keys.onRightPressed: nudge(0.01)
+    Keys.onPressed: function(event) {
+        if (!enabledControl) return;
+        if (event.key === Qt.Key_Home || event.key === Qt.Key_End) {
+            seekRequested(event.key === Qt.Key_Home ? 0 : 1);
+            event.accepted = true;
+        }
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        radius: Theme.radiusSmall
+        color: "transparent"
+        border.width: root.activeFocus ? 2 : 0
+        border.color: Theme.accent
+    }
 
     onTrackKeyChanged: {
         interacting = false;
@@ -75,8 +103,8 @@ Item {
                 context.beginPath();
                 context.moveTo(x, center - bar);
                 context.lineTo(x, center + bar);
-                context.strokeStyle = ratio <= shown ? Theme.accent : Theme.lineBright;
-                context.globalAlpha = (ratio <= shown ? 0.96 : 0.34) * (heard ? 1 : 0.6);
+                context.strokeStyle = ratio <= shown ? Theme.accent : Theme.muted;
+                context.globalAlpha = (ratio <= shown ? 0.96 : 0.48) * (heard ? 1 : 0.85);
                 context.lineWidth = Math.max(2, width / count * 0.42);
                 context.stroke();
             }
@@ -84,16 +112,25 @@ Item {
             const playhead = shown * width;
             context.beginPath();
             context.arc(playhead, center, root.interacting ? 7 : 5, 0, Math.PI * 2);
-            context.fillStyle = Theme.moon;
+            context.fillStyle = root.interacting || root.activeFocus ? Theme.accent : Theme.moon;
             context.fill();
         }
         Connections {
             target: Spectrum
+            enabled: root.visible && Media.playing
             function onValuesChanged() { wave.requestPaint(); }
         }
         Connections {
             target: root
             function onProgressChanged() { wave.requestPaint(); }
+            function onInteractingChanged() { wave.requestPaint(); }
+            function onActiveFocusChanged() { wave.requestPaint(); }
+        }
+        Connections {
+            target: Theme
+            function onAccentChanged() { wave.requestPaint(); }
+            function onMutedChanged() { wave.requestPaint(); }
+            function onMoonChanged() { wave.requestPaint(); }
         }
         Component.onCompleted: requestPaint()
     }
@@ -105,7 +142,7 @@ Item {
         enabled: root.enabledControl
         hoverEnabled: true
         cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-        onPressed: function(mouse) { root.interacting = true; root.updateFromX(mouse.x); }
+        onPressed: function(mouse) { root.forceActiveFocus(Qt.MouseFocusReason); root.interacting = true; root.updateFromX(mouse.x); }
         onPositionChanged: function(mouse) { if (pressed) root.updateFromX(mouse.x); }
         onReleased: function(mouse) {
             if (!root.interacting) return;

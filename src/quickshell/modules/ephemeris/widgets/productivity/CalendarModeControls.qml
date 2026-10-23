@@ -43,7 +43,7 @@ Row {
             }
 
             Behavior on color {
-                ColorAnimation { duration: Settings.motion ? 160 : 0 }
+                ColorAnimation { duration: Theme.duration(160) }
             }
         }
     }

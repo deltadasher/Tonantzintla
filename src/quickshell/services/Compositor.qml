@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "KeyboardLayoutModel.js" as KeyboardLayoutModel
 
 // Stable compositor API for the shell. The backend uses Niri's
 // newline-delimited JSON event stream and short-lived action sockets.
@@ -12,6 +13,8 @@ QtObject {
     property var workspaces: []
     property var windows: []
     property int focusedWindowId: -1
+    property var keyboardLayouts: KeyboardLayoutModel.empty()
+    readonly property string keyboardLayoutName: KeyboardLayoutModel.currentName(keyboardLayouts)
     readonly property string socketPath: Quickshell.env("NIRI_SOCKET")
     readonly property bool available: socketPath.length > 0
     readonly property string focusedOutput: {
@@ -50,6 +53,8 @@ QtObject {
         onConnectedChanged: {
             if (connected)
                 write("\"EventStream\"\n");
+            else
+                root.keyboardLayouts = KeyboardLayoutModel.empty();
         }
 
         parser: SplitParser {
@@ -62,6 +67,12 @@ QtObject {
                     message = JSON.parse(line);
                 } catch (error) {
                     console.warn("[Tonantzintla/Compositor] Invalid event:", error);
+                    return;
+                }
+
+                const keyboardState = KeyboardLayoutModel.apply(root.keyboardLayouts, message);
+                if (keyboardState !== root.keyboardLayouts) {
+                    root.keyboardLayouts = keyboardState;
                     return;
                 }
 
