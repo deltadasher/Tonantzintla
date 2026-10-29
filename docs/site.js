@@ -81,7 +81,7 @@
         status.textContent = 'Copying commands…';
         try {
             await navigator.clipboard.writeText(code.textContent.trim());
-            status.textContent = 'Copied. Read the installation notes before running.';
+            status.textContent = 'Copied. Read the guide before you run it, bestie.';
         } catch {
             const selection = window.getSelection();
             if (selection) {
