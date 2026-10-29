@@ -1,8 +1,7 @@
 Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono)
 
-The files jetbrains-mono-regular.woff2 and jetbrains-mono-medium.woff2 are Latin
-subsets of JetBrains Mono NL 2.225 (Regular and Medium), converted to WOFF2 for
-this website. No glyphs were redrawn.
+The file jetbrains-mono-regular.woff2 is a Latin subset of JetBrains Mono NL
+2.225 Regular, converted to WOFF2 for this website. No glyphs were redrawn.
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 
