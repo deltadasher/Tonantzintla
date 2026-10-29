@@ -9,6 +9,13 @@ mark, locally bundled typefaces, desktop captures and silent demo remain the
 project's visual identity. The detail pages link to each instrument's source;
 they describe one shell with five focused instruments, not separate runtimes.
 
+Text is set in a Latin WOFF2 subset of JetBrains Mono NL (Regular and Medium,
+about 13 KB each, licensed in `fonts/jetbrains-mono-OFL.txt`), matching the
+shell's own type; Avayx remains the wordmark. The homepage Principles section
+makes factual claims: the 450 MB budget comes from `docs/memory-budget.md`, the
+network services from `src/libexec`, and the four test suites from `tools/check`.
+Update the copy when any of those change.
+
 `site.js` handles accessible instrument tabs (including arrows, Home and End),
 direct panel links, every demo trigger, native modal cleanup and focus return,
 clipboard success/denial feedback, and optional in-view decoration. The FAQ uses
