@@ -197,7 +197,7 @@ Item {
                                     Layout.preferredWidth: 6
                                     Layout.preferredHeight: sectionButton.active ? 16 : 6
                                     radius: 3
-                                    color: sectionButton.active ? Theme.void_ : Theme.lineBright
+                                    color: sectionButton.active ? Theme.onAccent : Theme.lineBright
                                 }
                                 Text {
                                     Layout.fillWidth: true
@@ -300,7 +300,7 @@ Item {
             SettingToggle {
                 Layout.fillWidth: true
                 label: "Optical controls"
-                detail: "Etched, frosted or refractive finishes. Instrument backgrounds remain solid."
+                detail: "Etched, frosted or refractive finishes. Control finishes are independent of the panel material."
                 checked: Settings.opticalControls
                 onToggled: Settings.opticalControls = !Settings.opticalControls
             }
@@ -319,6 +319,14 @@ Item {
         ColumnLayout {
             width: pageLoader.width
             spacing: Theme.spaceMd
+
+            Loader {
+                id: themeStudioLoader
+                Layout.fillWidth: true
+                Layout.preferredHeight: item ? item.implicitHeight : 0
+                source: Qt.resolvedUrl("../../components/ThemeStudio.qml")
+                onLoaded: if (item) item.width = Qt.binding(function() { return themeStudioLoader.width; })
+            }
 
             Text { text: "Color and typography"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 16 }
             SettingToggle {
@@ -404,16 +412,6 @@ Item {
                 text: "Configure control optics"
                 onClicked: ShellState.settingsSection = "optics"
             }
-            SettingChoice {
-                Layout.fillWidth: true
-                label: "Panel material"
-                value: Settings.panelMaterial
-                choices: [
-                    { "label": "CLASSIC", "value": "classic" },
-                    { "label": "GRAVITY", "value": "gravity" }
-                ]
-                onSelected: function(value) { Settings.panelMaterial = value; }
-            }
 
             SettingChoice {
                 Layout.fillWidth: true
@@ -429,7 +427,7 @@ Item {
                 Layout.fillWidth: true
                 label: "Material for this instrument"
                 value: Settings.appearanceFor(root.appearanceModule)
-                choices: [{label: "Use global", value: "inherit"}, {label: "Classic", value: "classic"}, {label: "Gravity", value: "gravity"}]
+                choices: [{label: "Use global", value: "inherit"}, {label: "Classic", value: "classic"}, {label: "Gravity", value: "gravity"}, {label: "Frosted", value: "frosted"}, {label: "Liquid glass", value: "liquid"}]
                 onSelected: function(value) { Settings.setModuleAppearance(root.appearanceModule, value); }
             }
             Text { text: "Motion and atmosphere"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 16 }

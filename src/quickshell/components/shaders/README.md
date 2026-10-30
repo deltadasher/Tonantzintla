@@ -56,3 +56,19 @@ GPU path when hosted on a real renderer. `test_optical_material.py` runs the sam
 lifecycle under isolated software rendering. These checks do not establish the
 full-shell 450 MB RSS requirement; that requires the coordinator's native session
 measurement, including Niri and any transient helpers.
+
+## Bar and panel liquid glass
+
+`LiquidSurface.qml` and `liquid-surface.frag` implement optional wallpaper-based
+bar/panel glass. The October 29 correction uses curved normals, ray refraction,
+local-pixel frost, color dispersion and angle-dependent reflection. Its image
+request is bounded at 1024 × 1024 and enables mipmaps. No frame timer is added.
+
+Build the source and shipped output together (modern OpenGL/ES variants):
+
+```sh
+/usr/lib/qt6/bin/qsb --glsl '150,300 es,330' --hlsl 50 --msl 12 -o liquid-surface.frag.qsb liquid-surface.frag
+```
+
+See `docs/liquid-glass-correction.md` in the source checkout for provenance,
+comparison evidence and verification boundaries.

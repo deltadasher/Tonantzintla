@@ -152,6 +152,25 @@ command = "gpu-screen-recorder"
 official_packages = ["gpu-screen-recorder"]
 
 [[groups]]
+id = "screen-reading"
+label = "Local screen reading"
+description = "Optional on-device text and QR extraction in Optics Bay."
+profiles = ["full"]
+required = false
+
+[[groups.capabilities]]
+id = "tesseract"
+label = "Text recognition (English model included for new installs)"
+command = "tesseract"
+official_packages = ["tesseract", "tesseract-data-eng"]
+
+[[groups.capabilities]]
+id = "zbarimg"
+label = "QR recognition"
+command = "zbarimg"
+official_packages = ["zbar"]
+
+[[groups]]
 id = "parallax"
 label = "Parallax Archive"
 description = "Image/video wallpapers, online search, and animated transitions."

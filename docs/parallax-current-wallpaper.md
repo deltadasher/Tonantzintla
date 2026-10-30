@@ -1,0 +1,9 @@
+# Parallax selection — October 29, 2026
+
+Parallax opens on the wallpaper recorded as current in shell settings and displays up to seven shuffled alternatives around it. It samples entries from the whole available library by default, without preferring a source category or retaining a fixed sorted run. Optional user-selected filters and search constrain the alternatives; the current wallpaper stays visible even when excluded by those filters.
+
+The former shuffle changed only an offset into the ordered library, so neighbors stayed in the same sequence. The new model uses a Fisher–Yates shuffle and samples without replacement. The active wallpaper is deduplicated against file paths/URLs and is included once. When another wallpaper is previewed at the center, the current wallpaper moves into the orbit with an **IN USE** label. Reopening or shuffling brings the current wallpaper back to the center. An unindexed current still uses its source path as its preview; videos require an available indexed thumbnail.
+
+The existing orbit and shuffle choreography are retained. No wallpaper is automatically applied. Selection remains a preview until Apply is activated. Library/query changes cancel a pending shuffle cleanly; reduced motion swaps the selection immediately. Small libraries do not duplicate thumbnails to fill the orbit. No sorting preference, persistent shuffle setting, timer, service or wallpaper scan is added.
+
+Verification covers current-first opening, randomized alternatives, deduplication, filter exclusion, unindexed stills, singleton libraries, reopening, previewing while retaining the current wallpaper, animated shuffle completion and cancellation. Native fixtures use isolated preferences and fixture wallpapers; GPU renders were inspected on both the source and older installed-shell variants.

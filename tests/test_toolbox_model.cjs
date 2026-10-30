@@ -1,6 +1,8 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const ctx=vm.createContext({});
-vm.runInContext(fs.readFileSync('src/quickshell/modules/ephemeris/widgets/catalog/LauncherModel.js','utf8').replace('.pragma library',''),ctx);
+const units=vm.createContext({});
+vm.runInContext(fs.readFileSync("src/quickshell/components/UnitConversion.js","utf8").replace(".pragma library",""),units);
+const ctx=vm.createContext({Units:units});
+vm.runInContext(fs.readFileSync('src/quickshell/modules/ephemeris/widgets/catalog/LauncherModel.js','utf8').replace(/^\.(?:pragma|import).*$/gm,''),ctx);
 test('calculator precedence, powers, scientific functions and degree mode',()=>{
  assert.equal(typeof ctx.calculate,'function');
  for(const [text,want] of [['2+3*4',14],['(2+3)*4',20],['2^3^2',512],['-2^2',-4],['2^-2',.25],['sqrt(81)+3!',15],['1e3/4',250],['min(2,3)+max(4,1)',6]]) assert.equal(ctx.calculate(text,false,0).value,want,text);

@@ -8,7 +8,8 @@ Item {
     id: root
 
     property color diskColor: Theme.accent
-    property color horizonColor: "#000000"
+    // The event horizon is part of the mark, not a theme surface.
+    readonly property color horizonColor: "#000000"
 
     implicitWidth: 300
     implicitHeight: 156
@@ -24,7 +25,6 @@ Item {
         Connections {
             target: root
             function onDiskColorChanged() { glyph.requestPaint(); }
-            function onHorizonColorChanged() { glyph.requestPaint(); }
         }
 
         onPaint: {

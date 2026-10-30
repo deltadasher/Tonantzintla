@@ -19,7 +19,7 @@ BarIsland {
             anchors.centerIn: parent
             width: 32; height: 24
             diskColor: Theme.accent
-            horizonColor: Theme.void_
+
         }
     }
 }

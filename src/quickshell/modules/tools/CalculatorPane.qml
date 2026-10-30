@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import "../.."
 import "../../components"
+import "../../components/UnitConversion.js" as Units
 import "../../services"
 import "../ephemeris/widgets/catalog/LauncherModel.js" as MathModel
 Item {
@@ -14,7 +15,7 @@ Item {
     property real answer:0
     function focusPrimary() { input.forceActiveFocus(); }
     function evaluate() {
-        const calculated=MathModel.calculate(expression,degrees,answer);
+        const calculated=Units.convert(expression) || MathModel.calculate(expression,degrees,answer);
         error=calculated.error;
         if(calculated.ok) { result=calculated.text;answer=calculated.value;ToolboxState.remember(expression,result); }
     }
@@ -33,9 +34,14 @@ Item {
                 id:input;anchors.fill:parent;anchors.margins:12;verticalAlignment:TextInput.AlignVCenter
                 text:root.expression;onTextChanged:root.expression=text;maximumLength:256
                 color:Theme.moon;selectionColor:Theme.accent;selectedTextColor:Theme.void_;font.family:Theme.fontMono;font.pixelSize:21;clip:true
-                Accessible.name:"Expression";activeFocusOnTab:true
+                Accessible.name:"Expression or unit conversion";activeFocusOnTab:true
                 Keys.onReturnPressed:root.evaluate();Keys.onEnterPressed:root.evaluate()
             }
+        }
+        Text {
+            Layout.fillWidth:true
+            text:"Convert: 5 km to mi · 72 F to C · 1 GiB to MB"
+            color:Theme.muted;font.family:Theme.fontText;font.pixelSize:12;wrapMode:Text.Wrap
         }
         RowLayout {
             Layout.fillWidth:true

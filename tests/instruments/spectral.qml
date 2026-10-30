@@ -45,12 +45,12 @@ Window {
                     window.check(String(Theme.accent) === "#ffeedd", "valid input changes live theme");
                     window.check(Settings.canUndoAppearance, "palette included in appearance undo");
                     typeColor("#797979");
-                    window.check(String(Theme.accent) === "#ffeedd" && !panel.statusOk, "gray fails contrast on elevated controls");
+                    window.check(String(Theme.accent) === "#797979" && panel.statusOk, "gray exact accent accepted");
                     typeColor("#080910");
-                    window.check(String(Theme.accent) === "#ffeedd", "bad contrast does not apply");
-                    window.check(!panel.statusOk && panel.statusMessage.length > 0, "contrast rejection explained");
+                    window.check(String(Theme.accent) === "#080910", "dark exact accent accepted");
+                    window.check(panel.statusOk && !Theme.isLight, "dark accent selects dark automatic mode");
                     typeColor("#xyzxyz");
-                    window.check(String(Theme.accent) === "#ffeedd" && !panel.statusOk, "invalid hex does not apply");
+                    window.check(String(Theme.accent) === "#080910" && !panel.statusOk, "invalid hex preserves exact accent");
                     Settings.undoAppearance();
                     window.check(Object.keys(Settings.spectralColors).length === 0, "appearance undo restores palette");
                     typeColor("#080910");

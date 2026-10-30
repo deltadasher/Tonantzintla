@@ -76,7 +76,7 @@ Rectangle {
                 width: Theme.switchKnob + (pointer.pressed && Theme.motionEnabled ? 6 : 0)
                 height: Theme.switchKnob
                 radius: Math.min(Theme.radiusSmall, height / 2)
-                color: root.checked ? Theme.void_ : Theme.muted
+                color: root.checked ? (typeof Theme.onAccent === "undefined" ? Theme.void_ : Theme.onAccent) : Theme.muted
                 Behavior on width { NumberAnimation { duration: Theme.motionFast; easing.type: Easing.OutCubic } }
                 Behavior on radius { NumberAnimation { duration: Theme.motionFast } }
                 Behavior on x {

@@ -21,7 +21,7 @@ QtObject {
     property bool preferencesLoading: false
     property var appearanceCheckpoint: null
     property int checkpointRevision: 0
-    readonly property var appearanceKeys: ["umbraBackgroundMode", "umbraBackgroundPath", "umbraClockVariant", "umbraLayout", "opticalControls", "controlMaterialScopes", "barClockFace", "barTelemetryFace", "barTelemetryMetrics", "barMediaWidth", "barMediaShowArt", "barMediaShowControls", "launcherWidth", "launcherVisibleRows", "islandDensity", "controlMaterial", "controlOpacity", "controlRadius", "opticalStrength", "opticalFrost", "opticalDispersion", "umbraFingerprintLook", "umbraFingerprintShowText", "spectralColors", "moduleAppearance", "compact", "motion", "barIconMotion", "animateStars", "atmosphereStyle", "adaptivePalette", "motionStyle", "panelMaterial", "motionSpeedProfile", "accentName", "typographyProfile", "fontText", "fontDisplay", "fontMono", "fontIcon", "barMode", "barMargin", "barOpacity", "barHeightProfile", "barPosition", "barLayoutHorizontal", "barLayoutVertical", "barOutputOverrides", "barIslandPlacements", "ephemerisStyle"]
+    readonly property var appearanceKeys: ["themeMode", "barMaterial", "surfaceFrost", "surfaceRefraction", "surfaceTint", "panelGlassOpacity", "barCornerRadius", "barEdgeStyle", "barWorkspaceStyle", "umbraBackgroundMode", "umbraBackgroundPath", "umbraClockVariant", "umbraLayout", "opticalControls", "controlMaterialScopes", "barClockFace", "barTelemetryFace", "barTelemetryMetrics", "barMediaWidth", "barMediaShowArt", "barMediaShowControls", "launcherWidth", "launcherVisibleRows", "islandDensity", "controlMaterial", "controlOpacity", "controlRadius", "opticalStrength", "opticalFrost", "opticalDispersion", "umbraFingerprintLook", "umbraFingerprintShowText", "spectralColors", "moduleAppearance", "compact", "motion", "barIconMotion", "animateStars", "atmosphereStyle", "adaptivePalette", "paletteSeedColor", "motionStyle", "panelMaterial", "motionSpeedProfile", "accentName", "typographyProfile", "fontText", "fontDisplay", "fontMono", "fontIcon", "barMode", "barMargin", "barOpacity", "barHeightProfile", "barPosition", "barLayoutHorizontal", "barLayoutVertical", "barOutputOverrides", "barIslandPlacements", "ephemerisStyle"]
     readonly property bool canUndoAppearance: appearanceCheckpoint !== null && checkpointRevision === externalRevision
         && JSON.stringify(appearanceCheckpoint) !== JSON.stringify(appearanceSnapshot())
 
@@ -53,10 +53,10 @@ QtObject {
     function appearanceFor(module) {
         const map = moduleAppearance;
         const value = map && typeof map === "object" ? map[module] : "inherit";
-        return ["classic", "gravity"].indexOf(value) >= 0 ? value : "inherit";
+        return ["classic", "gravity", "frosted", "liquid"].indexOf(value) >= 0 ? value : "inherit";
     }
     function setModuleAppearance(module, value) {
-        if (!/^[a-z][a-z0-9_-]{0,31}$/.test(module) || ["inherit", "classic", "gravity"].indexOf(value) < 0) return;
+        if (!/^[a-z][a-z0-9_-]{0,31}$/.test(module) || ["inherit", "classic", "gravity", "frosted", "liquid"].indexOf(value) < 0) return;
         const map = Object.assign({}, moduleAppearance || {});
         if (value === "inherit") delete map[module]; else map[module] = value;
         moduleAppearance = map;
@@ -148,7 +148,17 @@ QtObject {
     property alias joinedSurfaces: settingsAdapter.joinedSurfaces
     property alias animateStars: settingsAdapter.animateStars
     property alias atmosphereStyle: settingsAdapter.atmosphereStyle
+    property alias paletteSeedColor: settingsAdapter.paletteSeedColor
     property alias adaptivePalette: settingsAdapter.adaptivePalette
+    property alias themeMode: settingsAdapter.themeMode
+    property alias barMaterial: settingsAdapter.barMaterial
+    property alias surfaceFrost: settingsAdapter.surfaceFrost
+    property alias surfaceRefraction: settingsAdapter.surfaceRefraction
+    property alias surfaceTint: settingsAdapter.surfaceTint
+    property alias panelGlassOpacity: settingsAdapter.panelGlassOpacity
+    property alias barCornerRadius: settingsAdapter.barCornerRadius
+    property alias barEdgeStyle: settingsAdapter.barEdgeStyle
+    property alias barWorkspaceStyle: settingsAdapter.barWorkspaceStyle
     property alias panelMaterial: settingsAdapter.panelMaterial
     property alias motionStyle: settingsAdapter.motionStyle
     property alias accentName: settingsAdapter.accentName
@@ -696,7 +706,17 @@ QtObject {
             property bool joinedSurfaces: false
             property bool animateStars: true
             property string atmosphereStyle: "nominal"
+            property string paletteSeedColor: ""
             property bool adaptivePalette: false
+            property string themeMode: "auto"
+            property string barMaterial: "classic"
+            property real surfaceFrost: 0.45
+            property real surfaceRefraction: 0.65
+            property real surfaceTint: 0.12
+            property real panelGlassOpacity: 0.82
+            property int barCornerRadius: 10
+            property string barEdgeStyle: "none"
+            property string barWorkspaceStyle: "orbital"
             property string panelMaterial: "gravity"
             property string motionStyle: "rise"
             property string accentName: "violet"

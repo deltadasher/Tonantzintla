@@ -688,7 +688,7 @@ ClippingRectangle {
                     y: parent.height * 0.055
                     visible: !Lyrics.available
                     diskColor: Theme.accent
-                    horizonColor: Theme.void_
+
                     rotation: -2.4 + (Theme.motionEnabled ? root.spectrumEnergy * 1.8 : 0)
                     scale: 0.985 + (Theme.motionEnabled ? root.spectrumEnergy * 0.035 : 0)
                     opacity: 0.09 + root.spectrumEnergy * 0.06

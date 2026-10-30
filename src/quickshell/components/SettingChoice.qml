@@ -113,7 +113,7 @@ Rectangle {
                             width: Math.min(implicitWidth, parent.width - 16)
                             elide: Text.ElideRight
                             text: option.modelData.label
-                            color: option.active && !optionPointer.pressed ? Theme.void_ : optionPointer.containsMouse || option.activeFocus ? Theme.moon : Theme.muted
+                            color: option.active && !optionPointer.pressed ? (typeof Theme.onAccent === "undefined" ? Theme.void_ : Theme.onAccent) : optionPointer.containsMouse || option.activeFocus ? Theme.moon : Theme.muted
                             font.family: Theme.fontMono
                             font.pixelSize: Theme.textCaption
                             font.weight: option.active ? Font.Bold : Font.Normal

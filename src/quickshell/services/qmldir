@@ -20,3 +20,5 @@ singleton IdleLock 1.0 IdleLock.qml
 singleton Weather 1.0 Weather.qml
 singleton Authentication 1.0 Authentication.qml
 singleton FeatureRegistry 1.0 FeatureRegistry.qml
+singleton ScreenExtract 1.0 ScreenExtract.qml
+WallpaperPalettePreview 1.0 WallpaperPalettePreview.qml

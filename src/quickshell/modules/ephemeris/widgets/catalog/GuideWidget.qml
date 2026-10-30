@@ -12,7 +12,7 @@ Item {
     property int hoveredControl: -1
     property string hoveredKey: ""
     readonly property real preferredSurfaceHeight: currentTab === 1 ? 820 : 640
-    readonly property var tabs: ["Overview", "Keys", "Lock"]
+    readonly property var tabs: ["Overview", "Keys"]
     readonly property var bindings: [
         { "keys": "META + ENTER", "name": "Open terminal" },
         { "keys": "META + UP / DOWN", "name": "Change workspace" },
@@ -149,7 +149,7 @@ Item {
         }
         Loader {
             Layout.fillWidth: true; Layout.fillHeight: true
-            sourceComponent: root.currentTab === 0 ? overviewPage : root.currentTab === 1 ? keysPage : lockPage
+            sourceComponent: root.currentTab === 0 ? overviewPage : keysPage
         }
     }
 
@@ -168,7 +168,7 @@ Item {
                     WabiSabiBlackHole {
                         anchors.right: parent.right; anchors.rightMargin: 12; anchors.verticalCenter: parent.verticalCenter
                         width: Math.min(210, parent.width * 0.38); height: width * 0.72
-                        diskColor: Theme.accent; horizonColor: Theme.void_
+                        diskColor: Theme.accent
                     }
                     ColumnLayout {
                         anchors.left: parent.left; anchors.leftMargin: 22; anchors.verticalCenter: parent.verticalCenter
@@ -185,7 +185,6 @@ Item {
                     ManualAction { Layout.fillWidth: true; title: "Find something"; detail: "Applications and shell actions"; onActivated: ShellState.openEphemeris("apps") }
                     ManualAction { Layout.fillWidth: true; title: "Make it yours"; detail: "Appearance, bar and Niri settings"; onActivated: ShellState.openEphemeris("settings") }
                     ManualAction { Layout.fillWidth: true; title: "Resonance"; detail: "Playback, lyrics and audio controls"; onActivated: ShellState.openEphemeris("media") }
-                    ManualAction { Layout.fillWidth: true; title: "Umbra"; detail: "Lock guidance and a safe preview"; onActivated: root.currentTab = 2 }
                 }
                 Text {
                     Layout.fillWidth: true; wrapMode: Text.Wrap
@@ -337,52 +336,4 @@ Item {
     }
 
 
-    Component {
-        id: lockPage
-        Flickable {
-            id: lockView
-            clip: true; contentWidth: width; contentHeight: lockContent.implicitHeight
-            boundsBehavior: Flickable.StopAtBounds
-            ColumnLayout {
-                id: lockContent
-                width: lockView.width; spacing: 16
-                Rectangle {
-                    Layout.fillWidth: true; implicitHeight: 190; radius: 24; color: Theme.controlRest
-                    WabiSabiBlackHole {
-                        anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter
-                        width: Math.min(210, parent.width * 0.38); height: width * 0.72
-                        diskColor: Theme.accent; horizonColor: Theme.void_
-                    }
-                    ColumnLayout {
-                        anchors.left: parent.left; anchors.leftMargin: 22; anchors.verticalCenter: parent.verticalCenter
-                        width: parent.width * 0.54; spacing: 10
-                        Text { text: "UMBRA"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 32; font.bold: true }
-                        Text { Layout.fillWidth: true; text: "Your session, behind the horizon."; color: Theme.muted; font.family: Theme.fontText; font.pixelSize: 14; wrapMode: Text.Wrap }
-                    }
-                }
-                ManualAction {
-                    Layout.fillWidth: true
-                    title: Settings.idleLockEnabled ? "Automatic lock · " + Settings.idleLockMinutes + " min" : "Automatic lock is off"
-                    detail: "Configure the timeout in Lock screen settings."
-                    onActivated: { ShellState.settingsSection = "umbra"; ShellState.openEphemeris("settings"); }
-                }
-                Text {
-                    Layout.fillWidth: true; wrapMode: Text.Wrap
-                    text: "Preview shows the design without securing the session. Lock now starts the real lock and requires authentication to return."
-                    color: Theme.muted; font.family: Theme.fontText; font.pixelSize: 13
-                }
-                GridLayout {
-                    Layout.fillWidth: true; columns: lockView.width < 420 ? 1 : 2
-                    columnSpacing: 12; rowSpacing: 12
-                    ManualAction { Layout.fillWidth: true; title: "Preview"; detail: "No authentication required"; onActivated: { ShellState.closeEphemeris(); Umbra.preview(); } }
-                    ManualAction { Layout.fillWidth: true; primary: true; title: "Lock now"; detail: "Secure the current session"; onActivated: { ShellState.closeEphemeris(); Umbra.launchLock(); } }
-                }
-                Text {
-                    Layout.fillWidth: true; wrapMode: Text.Wrap
-                    text: "Idle-inhibiting applications can delay automatic locking. A saved timeout alone does not confirm that a lock was acquired."
-                    color: Theme.muted; font.family: Theme.fontText; font.pixelSize: 12
-                }
-            }
-        }
-    }
 }

@@ -147,7 +147,7 @@ Item {
                 Layout.preferredWidth: 64
                 Layout.preferredHeight: 52
                 diskColor: Theme.accent
-                horizonColor: Theme.void_
+
             }
 
             Text {
