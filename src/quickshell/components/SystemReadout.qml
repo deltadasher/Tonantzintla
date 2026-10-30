@@ -25,7 +25,7 @@ Rectangle {
     implicitWidth: row.implicitWidth + 18
     implicitHeight: compactContent ? 34 : 38
     radius: 9
-    color: sourceActive ? Theme.controlSelected : hover.hovered ? Theme.barNeutralHover : "transparent"
+    color: "transparent"
     border.width: 0
 
     property bool tooltipSuppressed: false

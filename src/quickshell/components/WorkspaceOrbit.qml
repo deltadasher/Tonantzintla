@@ -134,9 +134,7 @@ Item {
                     width: cell.active ? 30 : cellPointer.containsMouse ? 27 : 23
                     height: width
                     radius: 9
-                    color: cell.active ? "transparent"
-                        : cell.urgent ? Qt.rgba(Theme.warning.r, Theme.warning.g, Theme.warning.b, 0.14)
-                        : cellPointer.containsMouse ? Theme.barNeutralHover : "transparent"
+                    color: "transparent"
                     border.width: 0
                     scale: cellPointer.containsMouse && !cell.active ? 1.06 : 1
 
@@ -197,13 +195,6 @@ Item {
                     color: "transparent"
                     border.width: cell.activeFocus ? 1 : 0
                     border.color: Theme.accent
-                    Rectangle {
-                        visible: root.style !== "orbital" && cellPointer.containsMouse
-                        anchors.fill: parent
-                        radius: 9
-                        color: Theme.barNeutralHover
-                        opacity: 0.25
-                    }
                 }
 
                 MouseArea {

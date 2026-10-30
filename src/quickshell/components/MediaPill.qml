@@ -178,7 +178,7 @@ ClippingRectangle {
                     readonly property bool supported: root.media.available && (modelData.action === "previous"
                         ? root.media.player.canGoPrevious : modelData.action === "next"
                         ? root.media.player.canGoNext : root.media.player.canTogglePlaying)
-                    color: controlPointer.containsMouse || activeFocus ? Theme.accentVeil : "transparent"
+                    color: "transparent"
                     opacity: supported ? 1 : 0.35
                     activeFocusOnTab: supported
                     Accessible.role: Accessible.Button
