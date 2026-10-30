@@ -230,7 +230,6 @@ Item {
         duration: Theme.duration(28000)
         loops: Animation.Infinite
         running: Theme.motionEnabled && root.visible && !root.shuffleRunning
-        paused: root.hoveredSatellite >= 0
     }
 
     SequentialAnimation {
@@ -541,7 +540,7 @@ Item {
                 anchors.fill: parent
                 radius: width / 2
                 color: Theme.mantle
-                border.width: worldCore.activeFocus || corePointer.containsMouse ? 2 : 0
+                border.width: worldCore.activeFocus ? 2 : 0
                 border.color: Theme.accent
                 CircularArtwork { anchors.fill: parent; anchors.margins: 5; source: root.previewUrl(root.selectedEntry) }
                 Rectangle {

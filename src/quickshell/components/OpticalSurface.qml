@@ -27,9 +27,8 @@ Rectangle {
     visible: Settings.opticalControls
     opacity: enabled ? 1 : 0.35
     color: "transparent"
-    border.width: 1
-    border.color: focused ? Theme.focusRing : Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b,
-        pressed ? 0.04 : hovered || selected ? 0.14 : 0.055)
+    border.width: focused ? 1 : 0
+    border.color: Theme.focusRing
     gradient: Gradient {
         GradientStop { position: 0; color: Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, (root.pressed ? 0.015 : root.hovered ? 0.09 : 0.035) * Theme.controlFillOpacity) }
         GradientStop { position: 0.45; color: "transparent" }
