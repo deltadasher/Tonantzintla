@@ -39,18 +39,11 @@ Rectangle {
     implicitWidth: root.isVertical ? (Settings.compact ? 36 : 40) : (layoutGrid.implicitWidth + 16)
     implicitHeight: root.isVertical ? (layoutGrid.implicitHeight + 8) : (Settings.compact ? 34 : 38)
     radius: 9
-    color: pointer.pressed ? Theme.controlPressed : root.warning
-        ? Qt.rgba(Theme.warning.r, Theme.warning.g, Theme.warning.b, 0.12)
-        : sourceActive ? Theme.controlSelected : hovered ? Theme.barNeutralHover : "transparent"
+    color: "transparent"
     border.width: activeFocus ? 1 : 0
     border.color: Theme.accent
     opacity: enabled ? 1 : 0.45
 
-    OpticalSurface {
-        parent: root
-        anchors.fill: parent; radius: root.radius
-        hovered: root.hovered; pressed: pointer.pressed; selected: root.sourceActive; focused: root.activeFocus
-    }
 
     GridLayout {
         id: layoutGrid

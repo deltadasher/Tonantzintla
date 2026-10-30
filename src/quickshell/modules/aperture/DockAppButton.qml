@@ -29,13 +29,6 @@ Item {
     Accessible.role: Accessible.Button
     Accessible.name: name + (active ? ", focused" : running ? ", running" : "")
     Accessible.onPressAction: if (enabled) activated()
-    OpticalSurface {
-        anchors.fill: parent; anchors.margins: 3
-        hovered: root.hovered; pressed: pointer.pressed
-        selected: root.active; focused: root.activeFocus
-        opacity: root.active || root.hovered || root.activeFocus ? 1 : 0
-        Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
-    }
     Item {
         anchors.centerIn: parent
         width: root.iconSize; height: width
@@ -66,8 +59,8 @@ Item {
         width: root.vertical ? 3 : root.active ? 16 : 5
         height: root.vertical ? (root.active ? 16 : 5) : 3
         radius: 2
-        visible: root.running && root.showIndicator
-        color: root.active ? Theme.accent : Theme.moon
+        visible: root.activeFocus || (root.running && root.showIndicator)
+        color: root.active || root.activeFocus ? Theme.accent : Theme.moon
     }
     MouseArea {
         id: pointer

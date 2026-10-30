@@ -34,7 +34,7 @@ Item {
             width: 28
             height: 28
             radius: 8
-            color: trayPointer.containsMouse ? Theme.barNeutralHover : "transparent"
+            color: "transparent"
 
             function openMenu() {
                 if (modelData && modelData.hasMenu)
@@ -106,7 +106,7 @@ Item {
             width: 28
             height: 28
             radius: 8
-            color: overflowPointer.containsMouse ? Theme.controlActive : Theme.controlRest
+            color: "transparent"
             Text {
                 anchors.centerIn: parent
                 text: root.expanded ? "«" : "⋯"

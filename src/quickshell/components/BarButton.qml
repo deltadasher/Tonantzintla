@@ -30,8 +30,7 @@ Rectangle {
         && ShellState.ephemerisAnchorTarget === root
     readonly property bool hovered: pointer.containsMouse && !pointer.hoverSuppressed
         && !sourceActive
-    color: pointer.pressed ? Theme.controlPressed : panelOpen ? Theme.controlSelected
-        : hovered ? Theme.barNeutralHover : "transparent"
+    color: "transparent"
     border.width: activeFocus ? 1 : 0
     border.color: Theme.accent
     opacity: enabled ? 1 : 0.45
@@ -66,11 +65,6 @@ Rectangle {
         contentItem: Text { text: root.accessibleLabel; color: Theme.moon; font.family: Theme.fontText; font.pixelSize: Theme.textLabel }
     }
 
-    OpticalSurface {
-        parent: root
-        anchors.fill: parent; radius: root.radius
-        hovered: root.hovered; pressed: pointer.pressed; selected: root.panelOpen; focused: root.activeFocus
-    }
 
     Item {
         id: iconBody

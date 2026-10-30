@@ -44,8 +44,7 @@ Rectangle {
     implicitWidth: isVertical ? (Settings.compact ? 36 : 40) : Math.max(126, row.implicitWidth + 18)
     implicitHeight: Settings.compact ? 34 : 38
     radius: 10
-    color: pointer.pressed ? Theme.controlPressed : sourceActive ? Theme.controlSelected
-        : hovered ? Theme.barNeutralHover : "transparent"
+    color: "transparent"
     border.width: activeFocus ? 1 : 0
     border.color: Theme.accent
 
