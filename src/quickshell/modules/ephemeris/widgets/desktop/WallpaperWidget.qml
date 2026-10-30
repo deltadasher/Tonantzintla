@@ -5,13 +5,14 @@ import Quickshell.Widgets
 import "../../../.."
 import "../../../../services"
 import "../../../../components"
+import "../../../../components/WallpaperOrbit.js" as WallpaperOrbit
 
 pragma ComponentBehavior: Bound
 
 Item {
     id: root
 
-    Component.onCompleted: Environment.ensureWallpapers()
+    Component.onCompleted: { Environment.ensureWallpapers(); rebuildOrbit(); }
 
     property string query: ""
     property string currentFilter: "All"
@@ -54,7 +55,25 @@ Item {
     property bool shuffleRunning: false
     property int shuffleStage: 0
     property real shuffleStartPhase: 0
-    property int pendingOrbitOffset: 0
+    property var pendingOrbitWallpapers: []
+    property var orbitWallpapers: []
+    readonly property int satelliteCount: Math.max(0, orbitWallpapers.length - 1)
+    readonly property var currentEntry: WallpaperOrbit.current(Environment.wallpapers, Settings.wallpaperPath, Settings.wallpaperKind)
+    readonly property bool selectedIsCurrent: isCurrent(selectedEntry)
+    onCurrentEntryChanged: rebuildOrbit()
+    onVisibleChanged: if (visible) rebuildOrbit()
+
+    function isCurrent(entry) {
+        return !!entry && !!currentEntry && WallpaperOrbit.key(entry) === WallpaperOrbit.key(currentEntry);
+    }
+    function rebuildOrbit() {
+        hoveredSatellite = -1;
+        shuffleSequence.stop();
+        shuffleRunning = false; shuffleStage = 0;
+        shuffleExit = 0; shuffleArrival = 1;
+        orbitWallpapers = WallpaperOrbit.sample(filteredWallpapers, currentEntry, 8);
+        orbitOffset = 0;
+    }
 
     readonly property var filters: [
         { "label": "EVERYTHING", "value": "All", "glyph": "✦", "tone": Theme.accent },
@@ -73,10 +92,16 @@ Item {
         if (root.currentFilter === "Online") return !root.hasOnlineWorlds ? textMatch : entry.source === "Online";
         return entry.source === root.currentFilter && textMatch;
     })
-    onFilteredWallpapersChanged: hoveredSatellite = -1
-    readonly property var selectedEntry: filteredWallpapers.length > 0
-        ? filteredWallpapers[((orbitOffset % filteredWallpapers.length) + filteredWallpapers.length) % filteredWallpapers.length]
+    onFilteredWallpapersChanged: rebuildOrbit()
+    readonly property var selectedEntry: orbitWallpapers.length > 0
+        ? orbitWallpapers[((orbitOffset % orbitWallpapers.length) + orbitWallpapers.length) % orbitWallpapers.length]
         : null
+
+    WallpaperPalettePreview {
+        id:selectedPalette
+        source:root.selectedEntry ? root.selectedEntry.preview || "" : ""
+        active:root.visible && !!root.selectedEntry && !root.shuffleRunning
+    }
 
     function previewUrl(entry) {
         if (!entry || !entry.preview) return "";
@@ -97,30 +122,21 @@ Item {
     }
 
     function orbitEntry(slot) {
-        if (!filteredWallpapers.length) return null;
-        const index = ((orbitOffset + slot) % filteredWallpapers.length + filteredWallpapers.length)
-            % filteredWallpapers.length;
-        return filteredWallpapers[index];
+        if (!orbitWallpapers.length) return null;
+        const index = ((orbitOffset + slot) % orbitWallpapers.length + orbitWallpapers.length)
+            % orbitWallpapers.length;
+        return orbitWallpapers[index];
     }
 
     function rotateTo(slot) { orbitOffset += slot; }
     function shuffleOrbit() {
-        if (filteredWallpapers.length <= 1 || shuffleRunning)
-            return;
-
-        let nextOffset = orbitOffset;
-        while (((nextOffset % filteredWallpapers.length) + filteredWallpapers.length)
-                % filteredWallpapers.length
-                === ((orbitOffset % filteredWallpapers.length) + filteredWallpapers.length)
-                % filteredWallpapers.length)
-            nextOffset = Math.floor(Math.random() * filteredWallpapers.length);
-
-        pendingOrbitOffset = nextOffset;
+        if (shuffleRunning || filteredWallpapers.length <= 1) return;
+        pendingOrbitWallpapers = WallpaperOrbit.sample(filteredWallpapers, currentEntry, 8);
         if (!Theme.motionEnabled) {
-            orbitOffset = pendingOrbitOffset;
+            orbitWallpapers = pendingOrbitWallpapers;
+            orbitOffset = 0;
             return;
         }
-
         shuffleStartPhase = positiveAngle(orbitPhase + ambientPhase);
         shuffleRunning = true;
         shuffleStage = 1;
@@ -153,6 +169,7 @@ Item {
     }
 
     function beginDeployment() {
+        rebuildOrbit();
         entranceDelay.stop();
         entranceAnimation.stop();
         deploymentAnimation.stop();
@@ -230,7 +247,8 @@ Item {
         ScriptAction {
             script: {
                 root.shuffleStage = 2;
-                root.orbitOffset = root.pendingOrbitOffset;
+                root.orbitWallpapers = root.pendingOrbitWallpapers;
+                root.orbitOffset = 0;
                 root.shuffleExit = 0;
                 root.shuffleArrival = 0;
             }
@@ -245,7 +263,7 @@ Item {
         }
         ScriptAction {
             script: {
-                const count = Math.max(1, Math.min(7, root.filteredWallpapers.length));
+                const count = Math.max(1, root.satelliteCount);
                 const step = Math.PI * 2 / count;
                 root.orbitPhase = root.positiveAngle(Math.PI + step);
                 root.ambientPhase = 0;
@@ -270,13 +288,13 @@ Item {
         }
 
         Repeater {
-            model: Math.min(7, root.filteredWallpapers.length)
+            model: root.satelliteCount
 
             Item {
                 id: satellite
                 required property int index
                 readonly property var entry: root.orbitEntry(index + 1)
-                readonly property int orbitCount: Math.max(1, Math.min(7, root.filteredWallpapers.length))
+                readonly property int orbitCount: Math.max(1, root.satelliteCount)
                 readonly property real orbitStep: Math.PI * 2 / orbitCount
                 readonly property real baseAngle: -Math.PI / 2 + index * orbitStep
                 readonly property real restingAngle: baseAngle + root.orbitPhase + root.ambientPhase
@@ -450,6 +468,14 @@ Item {
                     color: Theme.mantle
                     border.width: 0
                     CircularArtwork { anchors.fill: parent; decodeExtent: 256; source: root.previewUrl(satellite.entry) }
+                    Rectangle {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.bottom: parent.bottom; anchors.bottomMargin: 8
+                        visible: root.isCurrent(satellite.entry)
+                        width: 58; height: 19; radius: 9
+                        color: Theme.accent
+                        Text { anchors.centerIn: parent; text: "IN USE"; color: Theme.onAccent; font.family: Theme.fontMono; font.pixelSize: 10; font.bold: true }
+                    }
                 }
 
                 Rectangle {
@@ -502,7 +528,7 @@ Item {
             readonly property bool canApply: root.selectedEntry && Environment.canSetWallpaper && !Environment.wallpaperBusy
             activeFocusOnTab: canApply
             Accessible.role: Accessible.Button
-            Accessible.name: root.selectedEntry ? "Apply wallpaper " + root.selectedEntry.name : "No wallpaper selected"
+            Accessible.name: root.selectedEntry ? (root.selectedIsCurrent ? "Current wallpaper " : "Apply wallpaper ") + root.selectedEntry.name : "No wallpaper selected"
             function apply() { if (canApply) Environment.setWallpaper(root.selectedEntry); }
             Keys.onPressed: function(event) {
                 if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) {
@@ -544,6 +570,7 @@ Item {
                             width: parent.width
                             text: Environment.wallpaperBusy ? "APPLYING…"
                                 : !root.selectedEntry ? "CHOOSE A WALLPAPER"
+                                : root.selectedIsCurrent ? "IN USE"
                                 : !Environment.canSetWallpaper ? "NO WALLPAPER BACKEND" : "APPLY WALLPAPER"
                             color: Environment.wallpaperBusy || !Environment.canSetWallpaper ? Theme.warning : Theme.accent
                             font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.Bold
@@ -561,6 +588,26 @@ Item {
                 cursorShape: Environment.wallpaperBusy ? Qt.BusyCursor : enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                 onClicked: worldCore.apply()
             }
+        }
+
+        PaletteConstellation {
+            anchors.centerIn:worldCore
+            z:22
+            visible:!!root.selectedEntry && !root.optionsOpen && !root.shuffleRunning
+            choices:selectedPalette.choices
+            swatches:selectedPalette.swatches
+            selectedSeed:selectedPalette.previewSeed
+            applying:AdaptivePalette.busy
+            applied:Settings.adaptivePalette && AdaptivePalette.ready && Settings.paletteSeedColor === selectedPalette.previewSeed
+            automatic:Settings.adaptivePalette && Settings.paletteSeedColor === ""
+            canAutomatic:!!Settings.wallpaperPath
+            applicationError:AdaptivePalette.error
+            customColors:Object.keys(Settings.spectralColors || {}).length > 0
+            status:selectedPalette.status
+            error:selectedPalette.error
+            reveal:root.deployProgress
+            onChooseSeed:function(seed) { selectedPalette.seed = seed; }
+            onApplySeed:function(seed) { AdaptivePalette.setSeed(seed); }
         }
 
         Rectangle {

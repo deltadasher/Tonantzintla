@@ -36,7 +36,7 @@ Rectangle {
         text: root.pending ? "Working…" : root.text
         textFormat: Text.PlainText
         elide: Text.ElideRight
-        color: root.selected ? Theme.void_ : root.destructive ? Theme.danger : Theme.moon
+        color: root.selected ? (typeof Theme.onAccent === "undefined" ? Theme.void_ : Theme.onAccent) : root.destructive ? Theme.danger : Theme.moon
         font.family: Theme.fontText
         font.pixelSize: 12
         font.weight: Font.DemiBold

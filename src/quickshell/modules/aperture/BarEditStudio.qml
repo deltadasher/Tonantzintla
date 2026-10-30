@@ -7,6 +7,7 @@ import "../.."
 import "../../components"
 import "../../components/BarLayout.js" as BarLayout
 import "islands"
+import "../../components/EditHistory.js" as EditHistory
 
 PanelWindow {
     id: root
@@ -56,11 +57,10 @@ PanelWindow {
     // through the small handle instead of competing with the bar.
     property bool sideDrawerOpen: false
     property string toastText: "Drag islands on the bar to move them · Esc to finish"
-    property string undoLayout: ""
-    property string undoPlacements: ""
-    property bool hasUndo: false
-    property bool undoDockEnabled: true
-    property string undoDockOutput: ""
+    property var editHistory: EditHistory.create()
+    property bool applyingLayoutEdit: false
+    readonly property bool hasUndo: editHistory.past.length > 0
+    readonly property bool hasRedo: editHistory.future.length > 0
 
     Component.onCompleted: {
         bottomDrawerRevealed = true;
@@ -90,23 +90,54 @@ PanelWindow {
         { id: "silver",  name: "Silver", hex: "#d4d8e8" }
     ]
 
-    function rememberUndo() {
-        undoLayout = rawLayout;
-        undoPlacements = Settings.barIslandPlacements;
-        undoDockEnabled = Settings.dockEnabled;
-        undoDockOutput = Settings.dockOutput;
-        hasUndo = true;
+    function layoutSnapshot() {
+        return { horizontal: Settings.barLayoutHorizontal, vertical: Settings.barLayoutVertical,
+            placements: Settings.barIslandPlacements, dockEnabled: Settings.dockEnabled,
+            dockOutput: Settings.dockOutput };
     }
 
-    function applyUndo() {
-        if (!hasUndo) return;
-        if (isVertical) Settings.barLayoutVertical = undoLayout;
-        else Settings.barLayoutHorizontal = undoLayout;
-        Settings.barIslandPlacements = undoPlacements;
-        Settings.dockEnabled = undoDockEnabled;
-        Settings.dockOutput = undoDockOutput;
-        hasUndo = false;
-        showToast("Layout reverted");
+    function editLayout(action) {
+        const before = layoutSnapshot();
+        applyingLayoutEdit = true;
+        try {
+            action();
+            editHistory = EditHistory.record(editHistory, before, layoutSnapshot());
+        } finally { applyingLayoutEdit = false; }
+    }
+
+    function restoreLayout(redo) {
+        const result = redo ? EditHistory.redo(editHistory, layoutSnapshot())
+                            : EditHistory.undo(editHistory, layoutSnapshot());
+        editHistory = result.history;
+        if (!result.state) return;
+        applyingLayoutEdit = true;
+        try {
+            Settings.barLayoutHorizontal = result.state.horizontal;
+            Settings.barLayoutVertical = result.state.vertical;
+            Settings.barIslandPlacements = result.state.placements;
+            Settings.dockEnabled = result.state.dockEnabled;
+            Settings.dockOutput = result.state.dockOutput;
+        } finally { applyingLayoutEdit = false; }
+        showToast(redo ? "Layout edit redone" : "Layout edit undone");
+    }
+
+    function applyUndo() { restoreLayout(false); }
+    function applyRedo() { restoreLayout(true); }
+
+    function invalidateLayoutHistory() {
+        if (!applyingLayoutEdit && (hasUndo || hasRedo)) {
+            editHistory = EditHistory.create();
+            showToast("Layout changed elsewhere · undo history cleared");
+        }
+    }
+
+    Connections {
+        target: Settings
+        function onBarLayoutHorizontalChanged() { root.invalidateLayoutHistory(); }
+        function onBarLayoutVerticalChanged() { root.invalidateLayoutHistory(); }
+        function onBarIslandPlacementsChanged() { root.invalidateLayoutHistory(); }
+        function onDockEnabledChanged() { root.invalidateLayoutHistory(); }
+        function onDockOutputChanged() { root.invalidateLayoutHistory(); }
     }
 
     function exitStudio() {
@@ -119,65 +150,71 @@ PanelWindow {
     }
 
     function addIsland(zone, id) {
-        rememberUndo();
-        if (id === "dock") {
-            Settings.dockEnabled = true;
-            Settings.dockOutput = outputName;
-            Settings.placeIsland(outputName, id, currentEdge, zone, [id]);
-            return;
-        }
-        // The placement map only repositions islands that exist in the base
-        // layout. Add the widget to that layout first, then pin it to the
-        // edge/output being edited so it becomes visible immediately.
-        Settings.addIslandToZone(isVertical, zone, id);
-        // Spawn into the edge this studio is editing. Writing only to the
-        // primary layout leaves a new island on whichever edge happened to be
-        // active before the editor opened.
-        const layout = Settings.getEdgeBarLayout(outputName, currentEdge);
-        const ordered = layout[zone].filter(function(other) { return other !== id; });
-        ordered.push(id);
-        Settings.placeIsland(outputName, id, currentEdge, zone, ordered);
-        showToast("Added " + id + " to " + zone);
+        editLayout(function() {
+            if (id === "dock") {
+                Settings.dockEnabled = true;
+                Settings.dockOutput = outputName;
+                Settings.placeIsland(outputName, id, currentEdge, zone, [id]);
+                return;
+            }
+            // The placement map only repositions islands that exist in the base
+            // layout. Add the widget to that layout first, then pin it to the
+            // edge/output being edited so it becomes visible immediately.
+            Settings.addIslandToZone(isVertical, zone, id);
+            // Spawn into the edge this studio is editing. Writing only to the
+            // primary layout leaves a new island on whichever edge happened to be
+            // active before the editor opened.
+            const layout = Settings.getEdgeBarLayout(outputName, currentEdge);
+            const ordered = layout[zone].filter(function(other) { return other !== id; });
+            ordered.push(id);
+            Settings.placeIsland(outputName, id, currentEdge, zone, ordered);
+            showToast("Added " + id + " to " + zone);
+        });
     }
 
     function removeIsland(id) {
-        rememberUndo();
-        if (id === "dock") { Settings.dockEnabled = false; return; }
-        Settings.clearIslandPlacement(outputName, id);
-        Settings.removeIslandFromLayout(isVertical, id);
-        showToast("Removed " + id);
+        editLayout(function() {
+            if (id === "dock") { Settings.dockEnabled = false; return; }
+            Settings.clearIslandPlacement(outputName, id);
+            Settings.removeIslandFromLayout(isVertical, id);
+            showToast("Removed " + id);
+        });
     }
 
     function moveIsland(zone, fromIdx, toIdx) {
-        rememberUndo();
-        Settings.moveIsland(isVertical, zone, fromIdx, toIdx);
+        editLayout(function() {
+            Settings.moveIsland(isVertical, zone, fromIdx, toIdx);
+        });
     }
 
     function transferIsland(fromZone, toZone, id) {
-        rememberUndo();
-        Settings.clearIslandPlacement(outputName, id);
-        Settings.transferIsland(isVertical, fromZone, toZone, id);
-        showToast("Moved " + id + " to " + toZone);
+        editLayout(function() {
+            Settings.clearIslandPlacement(outputName, id);
+            Settings.transferIsland(isVertical, fromZone, toZone, id);
+            showToast("Moved " + id + " to " + toZone);
+        });
     }
 
     function applyPresetLayout(preset) {
-        rememberUndo();
-        Settings.clearIslandPlacement(outputName, "");
-        const layoutObj = {
-            start: preset.start.slice(),
-            center: preset.center.slice(),
-            end: preset.end.slice()
-        };
-        Settings.saveBarLayout(false, layoutObj);
-        Settings.saveBarLayout(true, layoutObj);
-        showToast("Applied " + preset.name);
+        editLayout(function() {
+            Settings.clearIslandPlacement(outputName, "");
+            const layoutObj = {
+                start: preset.start.slice(),
+                center: preset.center.slice(),
+                end: preset.end.slice()
+            };
+            Settings.saveBarLayout(false, layoutObj);
+            Settings.saveBarLayout(true, layoutObj);
+            showToast("Applied " + preset.name);
+        });
     }
 
     function resetLayout() {
-        rememberUndo();
-        Settings.clearIslandPlacement(outputName, "");
-        Settings.resetBarLayout(isVertical);
-        showToast("Reset to default profile");
+        editLayout(function() {
+            Settings.clearIslandPlacement(outputName, "");
+            Settings.resetBarLayout(isVertical);
+            showToast("Reset to default profile");
+        });
     }
 
     ApertureShortcuts {
@@ -185,6 +222,7 @@ PanelWindow {
         studioActions: true
         onCloseRequested: root.exitStudio()
         onUndoRequested: root.applyUndo()
+        onRedoRequested: root.applyRedo()
         onTabRequested: function(tab) { root.activeTab = tab; }
     }
 
@@ -301,7 +339,7 @@ PanelWindow {
         color: Qt.rgba(Theme.mantle.r, Theme.mantle.g, Theme.mantle.b, 0.94)
         border.width: 0
         border.color: Theme.accent
-        opacity: 0.0
+        opacity: toastTimer.running ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: Theme.duration(180) } }
 
         RowLayout {
@@ -332,11 +370,13 @@ PanelWindow {
     Item {
         id: bottomDrawer
         anchors.horizontalCenter: parent.horizontalCenter
+        anchors.horizontalCenterOffset: root.sideDrawerOpen
+            ? Math.min(0, sideDrawer.x - 36 - (root.width + width) / 2) : 0
         anchors.bottom: parent.bottom
         anchors.bottomMargin: root.bottomDrawerRevealed
             ? root.bottomDrawerClearance : -height
-        width: Math.min(1080, parent.width - (root.sideDrawerOpen ? 310 : 48))
-        height: 310
+        width: Math.min(1080, parent.width - (root.sideDrawerOpen ? 340 : 48))
+        height: root.activeTab === "colors" ? Math.min(500, root.height - root.bottomDrawerClearance - 90) : 310
 
         EdgeFluidSurface {
             anchors.fill: parent
@@ -433,6 +473,25 @@ PanelWindow {
 
                 Item { Layout.fillWidth: true }
 
+                ActionButton {
+                    text: "Undo"
+                    enabled: root.hasUndo
+                    Accessible.name: "Undo layout edit"
+                    ToolTip.visible: hoveredHistoryUndo.hovered
+                    ToolTip.text: "Undo layout edit (Ctrl+Z)"
+                    HoverHandler { id: hoveredHistoryUndo }
+                    onClicked: root.applyUndo()
+                }
+                ActionButton {
+                    text: "Redo"
+                    enabled: root.hasRedo
+                    Accessible.name: "Redo layout edit"
+                    ToolTip.visible: hoveredHistoryRedo.hovered
+                    ToolTip.text: "Redo layout edit (Ctrl+Shift+Z)"
+                    HoverHandler { id: hoveredHistoryRedo }
+                    onClicked: root.applyRedo()
+                }
+
                 // Done Button
                 StudioControl {
                     id: doneHControl
@@ -467,141 +526,32 @@ PanelWindow {
                 // ==========================================
                 // PAGE 1: COLORS & THEMES
                 // ==========================================
-                Item {
+                ScrollView {
+                    id: appearanceScroll
                     anchors.fill: parent
                     visible: root.activeTab === "colors"
-
+                    clip: true
+                    contentWidth: availableWidth
+                    contentHeight: appearanceBody.implicitHeight
+                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                     ColumnLayout {
-                        anchors.fill: parent
-                        spacing: 12
-
-                        // Accent Swatches
-                        ColumnLayout {
+                        id: appearanceBody
+                        width: appearanceScroll.availableWidth
+                        spacing: 8
+                        Loader {
+                            id: barAppearanceLoader
                             Layout.fillWidth: true
-                            spacing: 6
-                            Text {
-                                text: "Accent color"
-                                color: Theme.accent
-                                font.family: Theme.fontMono
-                                font.pixelSize: Theme.textCaption
-                                font.bold: true
-                            }
-
-                            RowLayout {
-                                Layout.fillWidth: true
-                                spacing: 10
-
-                                Repeater {
-                                    model: root.colorSwatches
-
-                                    StudioControl {
-                                        id: colorHoverControl
-                                        accessibleLabel: "Accent color: " + modelData.name
-                                        Layout.fillWidth: true
-                                        implicitHeight: 52
-                                        radius: 10
-                                        color: Settings.accentName === modelData.id
-                                            ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.22)
-                                            : (colorHoverControl.hovered ? Theme.controlActive : Theme.controlRest)
-
-                                        RowLayout {
-                                            anchors.centerIn: parent
-                                            spacing: 8
-
-                                            Rectangle {
-                                                implicitWidth: 20; implicitHeight: 20; radius: 10
-                                                color: modelData.hex
-                                                border.width: 0
-                                            }
-
-                                            ColumnLayout {
-                                                spacing: 1
-                                                Text {
-                                                    font.family: Theme.fontText
-                                                    text: modelData.name
-                                                    color: Settings.accentName === modelData.id ? Theme.moon : Theme.muted
-                                                    font.pixelSize: Theme.textCaption
-                                                    font.bold: Settings.accentName === modelData.id
-                                                }
-                                                Text {
-                                                    text: modelData.id.toUpperCase()
-                                                    color: Theme.muted
-                                                    font.family: Theme.fontMono
-                                                    font.pixelSize: Theme.textMicro
-                                                }
-                                            }
-                                        }
-
-                                        onActivated: {
-                                                Settings.accentName = modelData.id;
-                                                root.showToast("Accent shifted to " + modelData.name);
-                                            }
-                                    }
-                                }
-                            }
+                            Layout.preferredHeight: item ? item.implicitHeight : 0
+                            active: root.activeTab === "colors"
+                            source: Qt.resolvedUrl("../../components/BarAppearanceControls.qml")
+                            onLoaded: if (item) item.width = Qt.binding(function() { return barAppearanceLoader.width; })
                         }
-
-                        // Desktop presets
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 6
-                            Text {
-                                text: "Appearance presets"
-                                color: Theme.muted
-                                font.family: Theme.fontMono
-                                font.pixelSize: Theme.textCaption
-                                font.bold: true
-                            }
-
-                            RowLayout {
-                                Layout.fillWidth: true
-                                spacing: 8
-
-                                Repeater {
-                                    model: [
-                                        { id: "expressive", name: "Expressive", desc: "Violet • Top • Capsules • Fluid" },
-                                        { id: "compact",   name: "Compact",   desc: "Cyan • Left • Rail • Snappy" },
-                                        { id: "solaris",     name: "Solaris",     desc: "Amber • Bottom • Docked" },
-                                        { id: "cyberpunk",   name: "Cyberpunk",   desc: "Rose • Right • Instant" },
-                                        { id: "minimalist",  name: "Zen Float",   desc: "Silver • Top • Minimal" }
-                                    ]
-
-                                    StudioControl {
-                                        id: themeBtnHControl
-                                        accessibleLabel: "Appearance preset: " + modelData.name
-                                        Layout.fillWidth: true
-                                        implicitHeight: 46
-                                        radius: 8
-                                        color: themeBtnHControl.hovered ? Theme.controlActive : Theme.controlRest
-
-                                        ColumnLayout {
-                                            anchors.centerIn: parent
-                                            spacing: 1
-                                            Text {
-                                                font.family: Theme.fontText
-                                                Layout.alignment: Qt.AlignHCenter
-                                                text: modelData.name
-                                                color: Theme.moon
-                                                font.pixelSize: Theme.textLabel
-                                                font.bold: true
-                                            }
-                                            Text {
-                                                font.family: Theme.fontText
-                                                Layout.alignment: Qt.AlignHCenter
-                                                text: modelData.desc
-                                                color: Theme.muted
-                                                Layout.maximumWidth: (bottomDrawer.width - 76) / 5 - 16
-                                                elide: Text.ElideRight
-                                                font.pixelSize: Theme.textMicro
-                                            }
-                                        }
-
-                                        onActivated: {
-                                                Settings.applyDesktopPreset(modelData.id);
-                                                root.showToast("Applied " + modelData.name + " theme profile");
-                                            }
-                                    }
-                                }
+                        ActionButton {
+                            text: "Global colors and instrument themes"
+                            onClicked: {
+                                root.exitStudio();
+                                ShellState.settingsSection = "appearance";
+                                ShellState.openEphemeris("settings");
                             }
                         }
                     }

@@ -21,7 +21,7 @@ BarIsland {
             width: root.isVertical ? 24 : 28
             height: root.isVertical ? 17 : 20
             diskColor: Theme.accent
-            horizonColor: Theme.void_
+
         }
     }
 

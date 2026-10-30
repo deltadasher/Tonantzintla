@@ -129,16 +129,17 @@ Item {
         Settings.placeIsland(outputName, id, targetEdge, zone, ordered);
     }
 
-    Rectangle {
-        visible: !window.capsules
-        x: window.shellMargin
-        y: window.shellMargin
+    LiquidSurface {
+        visible: !window.capsules && !ShellState.barEditMode
+        x: window.shellMargin; y: window.shellMargin
         width: window.isVertical ? window.bodyThickness : (window.width - window.shellMargin * 2)
         height: window.isVertical ? (window.height - window.shellMargin * 2) : window.bodyThickness
-        radius: window.docked ? 0 : 14
-        color: ShellState.barEditMode ? "transparent" : Qt.rgba(Theme.void_.r, Theme.void_.g, Theme.void_.b,
-            Settings.barSurfaceOpacity)
-        border.width: 0
+        radius: window.docked ? 0 : Math.max(0, Math.min(Math.min(width, height) / 2, Settings.barCornerRadius))
+        material: Settings.barMaterial
+        fillOpacity: Settings.barSurfaceOpacity
+        edgeStyle: Settings.barEdgeStyle
+        viewportSize: Qt.size(window.screenWidth, window.screenHeight)
+        viewportOrigin: window.barPointToScreen(x, y)
     }
 
     // Start Zone (Left in horizontal, Top in vertical)

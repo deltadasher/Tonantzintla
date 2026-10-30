@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Shapes
 import QtQuick.Layouts
 import "../../../.."
 import "../../../../components"
@@ -16,6 +17,10 @@ Item {
     property real previewValue: value
     property bool interacting: false
     readonly property real ratio: Math.max(0, Math.min(1, previewValue / maximumValue))
+    // A finite response to direct input, never an idle wave or a level sampler.
+    property real liquidResponse: 0
+    readonly property bool liquidAllowed: visible && enabled && !muted && !compact && Theme.motionEnabled
+    readonly property bool liquidAnimating: liquidSettle.running
     signal valueRequested(real value)
 
     implicitHeight: 42
@@ -27,7 +32,9 @@ Item {
     }
 
     function setFromPosition(position, commitNow) {
+        const previous = previewValue;
         previewValue = clamp(position / Math.max(1, track.width) * maximumValue);
+        respondToAdjustment(previous, previewValue);
         if (commitNow) {
             commitTimer.stop();
             valueRequested(Math.round(previewValue));
@@ -37,8 +44,30 @@ Item {
     }
 
     function nudge(delta) {
+        const previous = previewValue;
         previewValue = clamp(previewValue + delta);
+        respondToAdjustment(previous, previewValue);
         valueRequested(Math.round(previewValue));
+    }
+
+    function respondToAdjustment(previous, next) {
+        if (!liquidAllowed || Math.abs(next - previous) < 0.01) return;
+        liquidSettle.stop();
+        liquidResponse = Math.min(1, 0.4 + Math.abs(next - previous) / 16);
+        liquidSettle.start();
+    }
+
+    onLiquidAllowedChanged: {
+        if (!liquidAllowed) {
+            liquidSettle.stop();
+            liquidResponse = 0;
+        }
+    }
+
+    NumberAnimation {
+        id: liquidSettle
+        target: root; property: "liquidResponse"; to: 0
+        duration: Theme.duration(340); easing.type: Easing.OutCubic
     }
 
     onValueChanged: {
@@ -101,6 +130,36 @@ Item {
             radius: parent.radius
             color: Theme.warning
             opacity: root.previewValue > 100 ? 0.16 : 0.05
+        }
+
+        Shape {
+            id: meniscus
+            visible: root.liquidAllowed && root.liquidResponse > 0.001 && width > 1
+            width: Math.min(38, track.width * root.ratio)
+            height: track.height + 16
+            x: track.width * root.ratio - width
+            y: (track.height - height) / 2
+            readonly property real edgeTop: (height - track.height) / 2
+            readonly property real edgeBottom: edgeTop + track.height
+            readonly property real crest: root.liquidResponse * 8
+            // Only the fill contour changes; the thumb and input region stay put.
+            ShapePath {
+                strokeWidth: 0; strokeColor: "transparent"
+                fillColor: root.accentColor
+                startX: 0; startY: meniscus.edgeTop
+                PathCubic {
+                    x: meniscus.width; y: meniscus.edgeTop
+                    control1X: meniscus.width * 0.55; control1Y: meniscus.edgeTop
+                    control2X: meniscus.width * 0.7; control2Y: meniscus.edgeTop - meniscus.crest
+                }
+                PathLine { x: meniscus.width; y: meniscus.edgeBottom }
+                PathCubic {
+                    x: 0; y: meniscus.edgeBottom
+                    control1X: meniscus.width * 0.65; control1Y: meniscus.edgeBottom + meniscus.crest * 0.6
+                    control2X: meniscus.width * 0.45; control2Y: meniscus.edgeBottom
+                }
+                PathLine { x: 0; y: meniscus.edgeTop }
+            }
         }
 
         Rectangle {

@@ -157,7 +157,7 @@ Item {
             WabiSabiBlackHole {
                 x: parent.width * .50; y: parent.height * .15
                 width: parent.width * .42; height: width * .7
-                diskColor: Theme.accent; horizonColor: Theme.void_
+                diskColor: Theme.accent
             }
             Text {
                 x: parent.width*.045; y: parent.height*.60

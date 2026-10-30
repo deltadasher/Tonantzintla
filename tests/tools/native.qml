@@ -33,6 +33,15 @@ Window {
             if(window.step===0) {
                 Settings.toolboxState={};
                 launcher.active=true;
+                calculator.expression="1 MB to Mb";
+                window.requestActivate();calculator.focusPrimary();events.keyClick(Qt.Key_Return,Qt.NoModifier,-1);
+                window.check(calculator.result==="8 Mb" && calculator.answer===8,"native unit conversion keeps symbol case");
+                window.check(ToolboxState.history[0] && ToolboxState.history[0].result==="8 Mb","conversion enters shared history");
+                calculator.expression="1 kg to km";calculator.evaluate();
+                window.check(calculator.error.length>0 && calculator.answer===8,"incompatible units preserve last answer");
+                window.check(ToolboxState.history.length===1,"failed conversion excluded from history");
+                calculator.expression="ans*2";calculator.evaluate();
+                window.check(calculator.result==="16","conversion answer reusable in arithmetic");
                 calculator.expression="sqrt(81)+3!";calculator.advanced=true;
                 window.requestActivate();calculator.focusPrimary();events.keyClick(Qt.Key_Return,Qt.NoModifier,-1);
                 window.check(calculator.result==="15","calculator native Enter");
@@ -69,7 +78,11 @@ Window {
             } else if(window.step===2) {
                 notes.save();
                 window.check(launcher.item.toolMode && launcher.item.category==="files","native launcher file route");
-                launcher.item.selectCategory("all");window.check(!launcher.item.toolMode,"launcher returns to app search");launcher.active=false;
+                launcher.item.selectCategory("all");window.check(!launcher.item.toolMode,"launcher returns to app search");
+                launcher.visible=true;launcher.item.query="1 MB to Mb";
+                window.check(launcher.item.results.length===1 && launcher.item.selected.result==="8 Mb","native launcher conversion preserves case");
+                launcher.item.focusPrimary();events.keyClick(Qt.Key_Return,Qt.NoModifier,-1);
+                launcher.visible=false;launcher.active=false;
                 window.step++;
             } else if(window.step===3) { window.step++; } else {
                 if(notes.dirty || Settings.saveTimer.running || Settings.preferencesLoading)return;

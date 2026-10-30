@@ -33,6 +33,8 @@ pub const PROBED_COMMANDS: &[&str] = &[
     "grim",
     "slurp",
     "satty",
+    "tesseract",
+    "zbarimg",
     "gpu-screen-recorder",
     "awww",
     "mpvpaper",

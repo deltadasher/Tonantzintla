@@ -35,7 +35,7 @@ BarIsland {
     }
     readonly property bool isVertical: barWindow ? barWindow.isVertical : (Settings.barPosition === "left" || Settings.barPosition === "right")
 
-    readonly property string faceName: ["classic", "stacked", "compact"].indexOf(Settings.barClockFace) >= 0 ? Settings.barClockFace : "classic"
+    readonly property string faceName: ["classic", "stacked", "compact", "matrix"].indexOf(Settings.barClockFace) >= 0 ? Settings.barClockFace : "classic"
 
     SystemClock {
         id: islandClock

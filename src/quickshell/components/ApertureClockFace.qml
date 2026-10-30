@@ -9,8 +9,12 @@ Loader {
     property string variant: "classic"
     property bool vertical: false
     property bool compact: false
-    sourceComponent: variant === "compact" ? compactFace : variant === "stacked" ? stackedFace : classicFace
+    sourceComponent: variant === "matrix" ? matrixFace : variant === "compact" ? compactFace : variant === "stacked" ? stackedFace : classicFace
 
+    Component {
+        id: matrixFace
+        MatrixClockFace { dateTime: root.dateTime; vertical: root.vertical; compact: root.compact }
+    }
     Component {
         id: classicFace
         ColumnLayout {
@@ -26,7 +30,7 @@ Loader {
             Text {
                 visible: Settings.showDate && !root.vertical
                 text: Qt.formatDateTime(root.dateTime, Settings.dateFormat)
-                color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: Theme.textMicro
+                color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: typeof Theme.textMicro === "number" ? Theme.textMicro : 10
                 font.letterSpacing: 1.1; Layout.alignment: Qt.AlignHCenter
             }
             Rectangle {
@@ -34,7 +38,7 @@ Loader {
                 Layout.preferredWidth: 92; Layout.preferredHeight: 1; color: Theme.barHairlineHover
                 Rectangle {
                     width: parent.width * root.dateTime.getSeconds() / 59; height: 1; color: Theme.accent
-                    Behavior on width { NumberAnimation { duration: Theme.duration(240); easing.type: Easing.OutCubic } }
+                    Behavior on width { NumberAnimation { duration: typeof Theme.duration === "function" ? Theme.duration(240) : (Settings.motion && Settings.motionSpeedProfile !== "instant" ? 240 : 0); easing.type: Easing.OutCubic } }
                 }
             }
         }
@@ -54,7 +58,7 @@ Loader {
             spacing: 0
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: Qt.formatDateTime(root.dateTime, Settings.clock12h ? "hh" : "HH")
+                text: Qt.formatDateTime(root.dateTime, Settings.clock12h ? "hh AP" : "HH").split(" ")[0]
                 color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: root.compact ? 12 : 14; font.bold: true
             }
             Text {

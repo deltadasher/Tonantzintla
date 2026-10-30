@@ -57,7 +57,7 @@ ColumnLayout {
     }
     Text {
         Layout.fillWidth: true
-        text: "Tune the colors used by actions and measurements. The open interface is the preview; instrument backings stay solid."
+        text: "Tune the colors used by actions and measurements. The open interface is the preview. Automatic appearance follows your action color."
         wrapMode: Text.Wrap
         color: Theme.muted
         font.family: Theme.fontText
@@ -123,7 +123,7 @@ ColumnLayout {
     }
     Text {
         Layout.fillWidth: true
-        text: root.statusMessage.length ? root.statusMessage : "Enter #RRGGBB, then press Enter. Colors need at least 4.5:1 contrast against instrument and control backings."
+        text: root.statusMessage.length ? root.statusMessage : "Enter any #RRGGBB color, then press Enter. Your exact choice is preserved."
         wrapMode: Text.Wrap
         color: root.statusOk ? Theme.muted : Theme.warning
         font.family: Theme.fontText

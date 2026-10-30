@@ -15,7 +15,9 @@ NODE = shutil.which("node")
 @unittest.skipUnless(NODE, "Node.js is needed to execute the QML JavaScript model")
 class LauncherModelTests(unittest.TestCase):
     def evaluate(self, expression):
-        program = MODEL.read_text().replace(".pragma library", "", 1)
+        units = (ROOT / "src/quickshell/components/UnitConversion.js").read_text().replace(".pragma library", "", 1)
+        program = "const Units = (() => {" + units + "; return {convert};})();\n"
+        program += "\n".join(line for line in MODEL.read_text().splitlines() if not line.startswith((".pragma", ".import")))
         program += """
 const installed = [
     {id: 'firefox.desktop', name: 'Firefox', command: 'firefox', comment: 'Web browser'},
@@ -76,6 +78,21 @@ const entries = applications(installed).concat(actions);
         complex_calc = self.evaluate("evaluateMath('(10 + 5) * 2 ^ 3')")
         self.assertIsNotNone(complex_calc)
         self.assertEqual(complex_calc["result"], "120")
+
+    def test_unit_conversion_is_copyable_and_keeps_data_symbol_case(self):
+        results = self.evaluate("filter(entries, '1 MB to Mb', 'all', [])")
+        self.assertEqual(len(results), 1)
+        result = results[0]
+        self.assertEqual(result["result"], "8 Mb")
+        self.assertEqual(result["kind"], "calc")
+        self.assertTrue(result["enabled"])
+        self.assertEqual(self.evaluate("filter(entries, '1 km to m', 'saved', []).length"), 0)
+        self.assertEqual(self.evaluate("filter(entries, '1 km to m', 'all', [], false).length"), 0)
+        self.assertEqual(self.evaluate("filter(entries, '> 1 km to m', 'all', []).length"), 0)
+
+    def test_unit_queries_do_not_inject_results_into_ordinary_searches(self):
+        for query in ["7 days to die", "m to km", "1 kg to km", "10 USD to EUR", "1 cups app", "10 cm to banana"]:
+            self.assertEqual(self.evaluate("filter(entries, " + json.dumps(query) + ", 'all', []).length"), 0)
 
     def test_astronomical_facts(self):
         result = self.evaluate("astronomicalFact('speed of light')")

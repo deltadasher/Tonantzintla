@@ -35,11 +35,10 @@ function edit(current, role, value, backing) {
     if (value === "") { delete colors[role]; return {ok: true, colors: colors, message: "Channel uses its theme color."}; }
     var color = hex(value);
     if (!color) return {ok: false, colors: colors, message: "Use an opaque color such as #a99cff."};
-    if (!readable(color, backing)) return {ok: false, colors: colors, message: "Choose a lighter color for readable text on instrument surfaces."};
     colors[role] = color;
     return {ok: true, colors: colors, message: "Channel applied to the open interface."};
 }
 function resolve(current, role, fallback, backing) {
     var color = sanitize(current)[role];
-    return readable(color, backing) ? color : fallback;
+    return color || fallback;
 }

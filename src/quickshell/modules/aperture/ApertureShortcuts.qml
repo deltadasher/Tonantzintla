@@ -8,6 +8,7 @@ Item {
     property bool studioActions: false
     signal closeRequested()
     signal undoRequested()
+    signal redoRequested()
     signal tabRequested(string tab)
 
     Shortcut {
@@ -21,6 +22,12 @@ Item {
         context: Qt.WindowShortcut
         enabled: root.enabled && root.visible && root.studioActions
         onActivated: root.undoRequested()
+    }
+    Shortcut {
+        sequences: ["Ctrl+Shift+Z", "Ctrl+Y"]
+        context: Qt.WindowShortcut
+        enabled: root.enabled && root.visible && root.studioActions
+        onActivated: root.redoRequested()
     }
     Shortcut {
         sequence: "1"

@@ -21,6 +21,7 @@ TestCase {
     }
     SignalSpy { id: closed; target: shortcuts; signalName: "closeRequested" }
     SignalSpy { id: undone; target: shortcuts; signalName: "undoRequested" }
+    SignalSpy { id: redone; target: shortcuts; signalName: "redoRequested" }
     SignalSpy { id: tabbed; target: shortcuts; signalName: "tabRequested" }
 
     function init() {
@@ -28,7 +29,7 @@ TestCase {
         tryVerify(function() { return test.Window.window.active; });
         shortcuts.enabled = true;
         shortcuts.studioActions = true;
-        closed.clear(); undone.clear(); tabbed.clear();
+        closed.clear(); undone.clear(); redone.clear(); tabbed.clear();
         first.forceActiveFocus();
         verify(first.activeFocus);
     }
@@ -38,6 +39,10 @@ TestCase {
         verify(second.activeFocus);
         keyClick(Qt.Key_Z, Qt.ControlModifier);
         tryCompare(undone, "count", 1);
+        keyClick(Qt.Key_Z, Qt.ControlModifier | Qt.ShiftModifier);
+        tryCompare(redone, "count", 1);
+        keyClick(Qt.Key_Y, Qt.ControlModifier);
+        tryCompare(redone, "count", 2);
         const keys = [Qt.Key_1, Qt.Key_2, Qt.Key_3, Qt.Key_4];
         const tabs = ["colors", "position", "presets", "shelf"];
         for (let i = 0; i < keys.length; ++i) {
@@ -62,6 +67,8 @@ TestCase {
         shortcuts.studioActions = false;
         second.forceActiveFocus();
         keyClick(Qt.Key_Z, Qt.ControlModifier);
+        keyClick(Qt.Key_Y, Qt.ControlModifier);
+        compare(redone.count, 0);
         keyClick(Qt.Key_1);
         compare(undone.count, 0);
         compare(tabbed.count, 0);

@@ -84,8 +84,7 @@ PanelWindow {
     }
     readonly property color moduleTone: Theme.moduleAccent(root.activeInstrument)
     readonly property bool immersiveWidget: root.activeInstrument === "walls"
-    // Ephemeris is a reading surface. It remains opaque even when Aperture is
-    // configured as glass so wallpaper detail cannot compete with its content.
+    // Classic and gravity retain solid backing. Optional glass uses a tinted wallpaper still.
     readonly property real instrumentSurfaceOpacity: 1.0
     // Colour stays opaque inside the Canvas. The aperture-derived alpha is
     // applied once to the complete union, avoiding darker overlap at the lip.
@@ -93,6 +92,7 @@ PanelWindow {
     readonly property bool softwareRenderer: safeViewport.GraphicsInfo.api === GraphicsInfo.Software
     readonly property string materialOverride: Settings.appearanceFor(root.activeInstrument)
     readonly property string panelMaterial: materialOverride === "inherit" ? Settings.panelMaterial : materialOverride
+    readonly property bool glassRequested: ["frosted", "liquid"].indexOf(root.panelMaterial) >= 0 && !root.immersiveWidget
     readonly property bool gravityRequested: root.panelMaterial === "gravity"
         && !root.immersiveWidget && Quickshell.env("TONANTZINTLA_DISABLE_GRAVITY") !== "1"
     readonly property bool gravityReady: gravityBacking.status === Loader.Ready
@@ -252,7 +252,7 @@ PanelWindow {
                 Loader {
                     id: blobBacking
                     anchors.fill: parent
-                    active: root.blobExperiment && !root.immersiveWidget && !root.gravityReady
+                    active: root.blobExperiment && !root.immersiveWidget && !root.gravityReady && !root.glassRequested
                     source: active ? Qt.resolvedUrl("../../components/ExperimentalBlobBacking.qml") : ""
                     onLoaded: {
                         item.geometry = surfaceGeometry;
@@ -276,13 +276,26 @@ PanelWindow {
                     }
                 }
 
+                LiquidSurface {
+                    id: glassBacking
+                    x: surfaceGeometry.x; y: surfaceGeometry.y
+                    width: surfaceGeometry.width; height: surfaceGeometry.height
+                    radius: surfaceGeometry.radius
+                    visible: root.glassRequested && transition.mounted && root.targetScreen
+                    material: root.panelMaterial
+                    fillOpacity: Math.max(0.55, Settings.panelGlassOpacity)
+                    tint: root.moduleTone
+                    viewportSize: Qt.size(root.width, root.height)
+                    viewportOrigin: Qt.point(x, y)
+                }
+
                 InstrumentBridge {
                     anchors.fill: parent
                     geometry: surfaceGeometry
                     edge: root.anchorEdge
                     attached: root.anchoredInstrument
                     fillColor: root.instrumentColor
-                    visible: !root.immersiveWidget && !root.gravityReady
+                    visible: !root.immersiveWidget && !root.gravityReady && !root.glassRequested
                         && (!root.blobExperiment || blobBacking.status === Loader.Error)
                         && transition.revealProgress > 0.01
                     opacity: root.instrumentSurfaceOpacity
@@ -345,7 +358,7 @@ PanelWindow {
                         }
                         EphemerisAtmosphere {
                             anchors.fill: parent
-                            visible: !root.immersiveWidget && !root.gravityReady
+                            visible: !root.immersiveWidget && !root.gravityReady && !root.glassRequested
                             module: root.activeInstrument
                             presentation: transition.contentProgress
                         }
@@ -354,7 +367,7 @@ PanelWindow {
                             width: Math.min(150, parent.width * 0.3); height: width * 0.7
                             visible: Theme.motionEnabled && transition.phase !== "open" && transition.phase !== "closing"
                             opacity: 0.35 * (1 - transition.contentProgress)
-                            diskColor: root.moduleTone; horizonColor: Theme.mantle
+                            diskColor: root.moduleTone
                         }
                         Item {
                             id: keyCatcher

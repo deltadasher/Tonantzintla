@@ -1,4 +1,5 @@
 .pragma library
+.import "../../../../components/UnitConversion.js" as Units
 
 function stableHash(value) {
     let hash = 2166136261;
@@ -34,8 +35,8 @@ function surfaceCommands(widgets) {
     const aliases = { walls: "wallpaper wallpapers parallax background library", calendar: "calendar weather forecast sundial earth helio",
         media: "resonance music lyrics equalizer pitch pitcher", audio: "volume microphone output mixer pipewire routing",
         network: "wifi wi-fi bluetooth ethernet", battery: "battery power energy", system: "cpu memory temperature system monitor",
-        guide: "manual help keyboard bindings shortcuts", capture: "screenshot recording optics", notifications: "alerts history",
-        focus: "focus concentration", workspaces: "windows workspace overview", clipboard: "copy paste history" };
+        guide: "manual help keyboard bindings shortcuts", capture: "screenshot recording optics ocr scan qr read text", notifications: "alerts history",
+        calculator: "calculator calculation math unit conversion convert", focus: "focus concentration", workspaces: "windows workspace overview", clipboard: "copy paste history" };
     return widgets.filter(function(widget) { return widget.id !== "apps"; }).map(function(widget) {
         return { id: "surface:" + widget.id, kind: "surface", target: widget.id,
             name: widget.title, detail: "Open " + (widget.title || widget.id),
@@ -175,6 +176,13 @@ function evaluateMath(needle) {
         detail:trimmed+" · press Enter to copy",result:result.text,enabled:true};
 }
 
+function evaluateConversion(query) {
+    const result = Units.convert(query);
+    if (!result || !result.ok) return null;
+    return {id:"convert:" + String(query).trim(), kind:"calc", name:"= " + result.text,
+        detail:String(query).trim() + " · press Enter to copy", result:result.text, enabled:true};
+}
+
 function terminalCommand(query) {
     const trimmed = String(query || "").trim();
     if (trimmed.startsWith("!") || trimmed.startsWith("$ ")) {
@@ -222,6 +230,9 @@ function filter(entries, query, category, favorites, enableCalc) {
         const cmd = terminalCommand(query);
         if (cmd) special.push(cmd);
         if (enableCalc !== false) {
+            // Keep byte/bit symbol case; search normalization lowercases the query.
+            const conversion = evaluateConversion(query);
+            if (conversion) special.push(conversion);
             const math = evaluateMath(needle);
             if (math) special.push(math);
             const astro = !named.length && needle.length > 2 ? astronomicalFact(needle) : null;

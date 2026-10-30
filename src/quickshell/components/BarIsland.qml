@@ -52,15 +52,35 @@ Rectangle {
     implicitHeight: !islandVisible ? 0 : (isVertical
         ? contentGrid.implicitHeight + (compactContent ? 10 : 14)
         : (compactContent ? 36 : Theme.barHeight))
-    radius: compactContent ? 8 : 10
-    color: separate && !(ShellState.barEditMode && barWindow)
-        ? extensionActive ? Theme.void_
-            : surfaceHover.hovered && reactive
-                ? Qt.rgba(Theme.mantle.r, Theme.mantle.g, Theme.mantle.b,
-                    Settings.barSurfaceOpacity)
-                : Qt.rgba(Theme.void_.r, Theme.void_.g, Theme.void_.b,
-                    Settings.barSurfaceOpacity)
-        : "transparent"
+    radius: Math.max(0, Math.min(Math.min(width, height) / 2, Settings.barCornerRadius))
+    color: "transparent"
+    property Item materialSurface: LiquidSurface {
+        parent: root
+        anchors.fill: parent
+        z: -1
+        visible: root.separate && !(ShellState.barEditMode && root.barWindow)
+        material: Settings.barMaterial
+        radius: root.radius
+        fillOpacity: Settings.barSurfaceOpacity
+        edgeStyle: Settings.barEdgeStyle
+        hovered: surfaceHover.hovered && root.reactive
+        backing: hovered ? Theme.mantle : Theme.void_
+        viewportSize: root.barWindow ? Qt.size(root.barWindow.screenWidth, root.barWindow.screenHeight) : Qt.size(root.width, root.height)
+        viewportOrigin: {
+            // Read layout inputs so mapping follows island reorder and bar relocation.
+            const revision = Settings.layoutRevision;
+            const position = Settings.barPosition;
+            const margin = Settings.barMargin;
+            const px = root.x, py = root.y;
+            const sizeAndScale = root.width + root.height + root.scale;
+            const zoneX = root.parent && root.parent.parent ? root.parent.parent.x : 0;
+            const zoneY = root.parent && root.parent.parent ? root.parent.parent.y : 0;
+            const gx = root.parent ? root.parent.x : 0, gy = root.parent ? root.parent.y : 0;
+            if (!root.barWindow || typeof root.barWindow.mapToItem !== "function") return Qt.point(0, 0);
+            const point = root.mapToItem(root.barWindow, 0, 0);
+            return root.barWindow.barPointToScreen(point.x, point.y);
+        }
+    }
     // Studio mode keeps the bar surface transparent so the desktop remains
     // visible; retain a real outline around each live island so it does not
     // disappear into the canvas.
