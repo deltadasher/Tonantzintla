@@ -241,11 +241,8 @@ PanelWindow {
             width: root.width; height: root.height
             Rectangle {
                 anchors.fill: parent
-                // Source-anchored instruments leave the desktop undimmed; all
-                // other scrims remain inside the same safe area as their panel.
-                color: root.anchoredInstrument || root.immersiveWidget ? "transparent"
-                    : Qt.rgba(Theme.void_.r, Theme.void_.g, Theme.void_.b,
-                        ShellState.deepFocus ? 0.45 : 0.18)
+                // The host catches outside clicks without tinting the desktop.
+                color: "transparent"
                 opacity: transition.revealProgress
                 MouseArea { anchors.fill: parent; onClicked: root.close() }
 
