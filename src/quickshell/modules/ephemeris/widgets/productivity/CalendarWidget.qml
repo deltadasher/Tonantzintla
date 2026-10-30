@@ -63,7 +63,7 @@ Item {
     readonly property real lunarPhase: moonPhase(selectedDate)
     readonly property real lunarAge: lunarPhase * 29.53058867
     readonly property int illumination: Math.round((1 - Math.cos(lunarPhase * Math.PI * 2)) * 50)
-    readonly property bool lunarCenterIsDark: Math.abs(Math.cos(lunarPhase * Math.PI * 2)) < 0.5
+    readonly property bool lunarCenterIsDark: Math.cos(lunarPhase * Math.PI * 2) >= 0
     readonly property var selectedForecast: forecastFor(selectedDate)
     readonly property date liveClock: new Date(smoothEpoch)
     readonly property real hours: liveClock.getHours() % 12 + liveClock.getMinutes() / 60
@@ -1215,12 +1215,28 @@ Item {
                     if (width <= 0 || height <= 0) return;
                     const radius = width / 2;
                     if (radius <= 0) return;
-                    ctx.save();
-                    ctx.beginPath(); ctx.arc(radius, radius, radius, 0, Math.PI * 2); ctx.clip();
-                    ctx.fillStyle = Theme.moon; ctx.beginPath(); ctx.arc(radius, radius, radius, 0, Math.PI * 2); ctx.fill();
-                    const offset = Math.cos(root.lunarPhase * Math.PI * 2) * width;
-                    ctx.fillStyle = Theme.void_; ctx.beginPath(); ctx.arc(radius + offset, radius, radius, 0, Math.PI * 2); ctx.fill();
-                    ctx.restore();
+                    // Northern-hemisphere, north-up schematic: the lit limb is
+                    // right while waxing, left while waning. The terminator is
+                    // the projected edge of the sunlit half of a sphere.
+                    ctx.fillStyle = Theme.void_;
+                    ctx.beginPath(); ctx.arc(radius, radius, radius, 0, Math.PI * 2); ctx.fill();
+                    const waxing = root.lunarPhase < 0.5;
+                    const terminator = Math.cos(root.lunarPhase * Math.PI * 2);
+                    const side = waxing ? 1 : -1;
+                    ctx.beginPath();
+                    for (let i = 0; i <= 64; i++) {
+                        const y = -radius + 2 * radius * i / 64;
+                        const edge = Math.sqrt(Math.max(0, radius * radius - y * y));
+                        const x = radius + side * edge;
+                        if (i === 0) ctx.moveTo(x, radius + y);
+                        else ctx.lineTo(x, radius + y);
+                    }
+                    for (let i = 64; i >= 0; i--) {
+                        const y = -radius + 2 * radius * i / 64;
+                        const edge = Math.sqrt(Math.max(0, radius * radius - y * y));
+                        ctx.lineTo(radius + side * terminator * edge, radius + y);
+                    }
+                    ctx.closePath(); ctx.fillStyle = Theme.moon; ctx.fill();
                 }
                 Connections { target: root; function onSelectedDateChanged() { moonFace.requestPaint(); } }
                 Component.onCompleted: requestPaint()
@@ -1230,11 +1246,13 @@ Item {
                 Text {
                     width: parent.width; text: root.selectedDate.getDate()
                     color: root.lunarCenterIsDark ? Theme.moon : Theme.void_
+                    style: Text.Outline; styleColor: root.lunarCenterIsDark ? Theme.void_ : Theme.moon
                     font.family: Theme.fontDisplay; font.pixelSize: 28; font.weight: Font.Black; horizontalAlignment: Text.AlignHCenter
                 }
                 Text {
                     width: parent.width; text: root.phaseName(root.lunarPhase)
                     color: root.lunarCenterIsDark ? Theme.moon : Theme.void_
+                    style: Text.Outline; styleColor: root.lunarCenterIsDark ? Theme.void_ : Theme.moon
                     font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.Black; horizontalAlignment: Text.AlignHCenter
                 }
             }
