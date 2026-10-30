@@ -7,9 +7,8 @@ import "../../.."
 BarIsland {
     id: root
     islandId: "tray"
-    // Placement in Bar Studio is the visibility switch for the tray.
-    // A global toggle could leave a valid tray slot at zero width.
-    islandVisible: true
+    // Keep watching the tray even while its empty island occupies no space.
+    islandVisible: tray.displayCount > 0
 
-    TrayStrip { visible: true }
+    TrayStrip { id: tray }
 }

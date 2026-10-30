@@ -243,7 +243,7 @@ PanelWindow {
                 anchors.fill: parent
                 // Source-anchored instruments leave the desktop undimmed; all
                 // other scrims remain inside the same safe area as their panel.
-                color: root.anchoredInstrument ? "transparent"
+                color: root.anchoredInstrument || root.immersiveWidget ? "transparent"
                     : Qt.rgba(Theme.void_.r, Theme.void_.g, Theme.void_.b,
                         ShellState.deepFocus ? 0.45 : 0.18)
                 opacity: transition.revealProgress
