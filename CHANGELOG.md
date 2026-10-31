@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased — observatory instruments
+## 1.2 - 2026-10-31
+
+- Add fourteen fixed-color logos and matching illustrated lock and login themes,
+  with themed clocks, password indicators, buttons and soft animation.
+- Keep Light and Dark independent of logo and style selection; Auto follows the
+  chosen theme color.
+- Expand color, glass and material customization, and simplify settings labels.
 
 - Add opt-in native still wallpapers in the existing shell, retaining External as
   the portable default. Prepared2560px images use finite fade/grow/wipe/orbit
