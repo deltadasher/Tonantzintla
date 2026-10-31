@@ -49,14 +49,18 @@ def match(color, marks=None):
 
 
 def resolve(settings, source_color=''):
+    settings = settings if isinstance(settings, dict) else {}
     marks = identities()
     lookup = {mark['id']: mark for mark in marks}
     selection = settings.get('themeIdentity', 'wabi-sabi')
-    if selection != 'auto' and selection not in lookup: selection = 'wabi-sabi'
+    if not isinstance(selection, str) or (selection != 'auto' and selection not in lookup):
+        selection = 'wabi-sabi'
     spectral = settings.get('spectralColors', {})
     exact = spectral.get('accent', '') if isinstance(spectral, dict) else ''
     seed = settings.get('paletteSeedColor', '')
-    fallback = source_color if valid_color(source_color) else PRESETS.get(settings.get('accentName', 'violet'), '#e9b872')
+    accent_name = settings.get('accentName', 'violet')
+    preset = PRESETS.get(accent_name, '#e9b872') if isinstance(accent_name, str) else PRESETS['violet']
+    fallback = source_color if settings.get('adaptivePalette') is True and valid_color(source_color) else preset
     color = next((c for c in (exact,seed,fallback) if valid_color(c)), '#e9b872')
     mark = match(color,marks) if selection == 'auto' else lookup.get(selection,lookup['wabi-sabi'])
     mode = settings.get('themeMode', 'auto')
