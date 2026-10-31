@@ -2,7 +2,7 @@
 
 ![Tonantzintla black hole](src/assets/illustrations/wabi-sabi-black-hole.svg)
 
-## Tonantzintla 1.1
+## Tonantzintla 1.2
 
 A desktop with a little gravitational pull.
 
