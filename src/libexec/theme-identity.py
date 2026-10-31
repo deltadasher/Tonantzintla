@@ -65,11 +65,6 @@ def resolve(settings, source_color=''):
     mark = match(color,marks) if selection == 'auto' else lookup.get(selection,lookup['wabi-sabi'])
     mode = settings.get('themeMode', 'auto')
     if mode not in ('light','dark'):
-        if selection != 'auto' and selection != 'wabi-sabi':
-            mode = 'light' if mark['light'] else 'dark'
-        elif valid_color(exact) or valid_color(seed):
-            rgb = channels(exact if valid_color(exact) else seed)
-            mode = 'dark' if sum(a*b for a,b in zip(rgb,(.299,.587,.114))) >= .5 else 'light'
-        else:
-            mode = 'light' if mark['light'] else 'dark'
+        rgb = channels(color)
+        mode = 'dark' if sum(a*b for a,b in zip(rgb,(.299,.587,.114))) >= .5 else 'light'
     return mark, mode

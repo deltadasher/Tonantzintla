@@ -49,6 +49,10 @@ def cases():
         add('explicit mode wins ' + str(adaptive), dict(adaptivePalette=adaptive, themeIdentity='leaf', themeMode='dark'))
     for mode in ('auto', 'light', 'dark'):
         add('Leaf lock mode independent of desktop ' + mode, dict(themeIdentity='leaf', themeMode=mode))
+    for mark in exporter().identity.identities():
+        for choice in ('auto', 'light', 'dark'):
+            add('mode independent from ' + mark['id'] + ' ' + choice,
+                dict(themeIdentity=mark['id'], themeMode=choice, paletteSeedColor='#101010'))
     add('selected cyan preset controls accent', dict(accentName='cyan'))
     return rows
 

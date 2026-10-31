@@ -56,7 +56,7 @@ PanelWindow {
     // Keep the canvas calm by default. Advanced spacing controls are opt-in
     // through the small handle instead of competing with the bar.
     property bool sideDrawerOpen: false
-    property string toastText: "Drag islands on the bar to move them · Esc to finish"
+    property string toastText: "Drag widgets along the bar · Esc to finish"
     property var editHistory: EditHistory.create()
     property bool applyingLayoutEdit: false
     readonly property bool hasUndo: editHistory.past.length > 0
@@ -69,13 +69,13 @@ PanelWindow {
 
     readonly property var catalog: [
         { id: "launcher",     name: "Launcher",     glyph: "⌕", desc: "Search and run apps" },
-        { id: "workspaces",   name: "Workspaces",   glyph: "⊞", desc: "Niri workspace indicators" },
+        { id: "workspaces",   name: "Workspaces",   glyph: "⊞", desc: "Workspace indicators" },
         { id: "media",        name: "Media Player", glyph: "♫", desc: "Now playing and controls" },
-        { id: "window_title", name: "Window Title", glyph: "▭", desc: "Active focused application" },
+        { id: "window_title", name: "Window Title", glyph: "▭", desc: "Current app" },
         { id: "clock",        name: "Clock & Date", glyph: "◷", desc: "Clock and calendar" },
         { id: "system_stats", name: "System Stats", glyph: "▤", desc: "Processor, memory, and temperature" },
-        { id: "status",       name: "Status Array", glyph: "◉", desc: "Battery, network, Bluetooth, brightness" },
-        { id: "tray",         name: "System Tray",  glyph: "⋯", desc: "StatusNotifier tray icons" },
+        { id: "status",       name: "System status", glyph: "◉", desc: "Battery, network, Bluetooth, brightness" },
+        { id: "tray",         name: "System Tray",  glyph: "⋯", desc: "App status icons" },
         { id: "controls",     name: "Controls",     glyph: "⚙", desc: "Quick actions and lock" },
         { id: "dock",         name: "Dock",         glyph: "⊞", desc: "Pinned and running applications" }
     ]
@@ -213,7 +213,7 @@ PanelWindow {
         editLayout(function() {
             Settings.clearIslandPlacement(outputName, "");
             Settings.resetBarLayout(isVertical);
-            showToast("Reset to default profile");
+            showToast("Reset to default layout");
         });
     }
 
@@ -423,7 +423,7 @@ PanelWindow {
                         Text { font.family: Theme.fontText; anchors.centerIn: parent; text: "✦"; color: Theme.accent; font.pixelSize: Theme.textLabel; font.bold: true }
                     }
                     Text {
-                        text: "BAR STUDIO"
+                        text: "BAR EDITOR"
                         color: Theme.accent
                         font.family: Theme.fontMono
                         font.pixelSize: Theme.textBody
@@ -443,7 +443,7 @@ PanelWindow {
                             { id: "colors",   label: "Appearance" },
                             { id: "position", label: "Position" },
                             { id: "presets",  label: "Layouts" },
-                            { id: "shelf",    label: "Islands" }
+                            { id: "shelf",    label: "Widgets" }
                         ]
 
                         StudioControl {
@@ -547,7 +547,7 @@ PanelWindow {
                             onLoaded: if (item) item.width = Qt.binding(function() { return barAppearanceLoader.width; })
                         }
                         ActionButton {
-                            text: "Global colors and instrument themes"
+                            text: "Colors and panel appearance"
                             onClicked: {
                                 root.exitStudio();
                                 ShellState.settingsSection = "appearance";
@@ -619,7 +619,7 @@ PanelWindow {
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: 8
-                            Text { text: "PRESENTATION & DENSITY"; color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.bold: true }
+                            Text { text: "STYLE & SIZE"; color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.bold: true }
 
                             RowLayout {
                                 Layout.fillWidth: true
@@ -632,8 +632,8 @@ PanelWindow {
                                     border.color: Settings.barMode === "capsules" ? Theme.accent : Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.12)
                                     ColumnLayout {
                                         anchors.centerIn: parent; spacing: 1
-                                        Text { font.family: Theme.fontText; Layout.alignment: Qt.AlignHCenter; text: "Capsules (Islands)"; color: Theme.moon; font.pixelSize: Theme.textLabel; font.bold: true }
-                                        Text { font.family: Theme.fontText; Layout.alignment: Qt.AlignHCenter; text: "Individual floating modules"; color: Theme.muted; font.pixelSize: Theme.textMicro }
+                                        Text { font.family: Theme.fontText; Layout.alignment: Qt.AlignHCenter; text: "Separate widgets"; color: Theme.moon; font.pixelSize: Theme.textLabel; font.bold: true }
+                                        Text { font.family: Theme.fontText; Layout.alignment: Qt.AlignHCenter; text: "Widgets with separate backgrounds"; color: Theme.muted; font.pixelSize: Theme.textMicro }
                                     }
                                     MouseArea { anchors.fill: parent; onClicked: Settings.barMode = "capsules" }
                                 }
@@ -645,7 +645,7 @@ PanelWindow {
                                     border.color: Settings.barMode === "docked" ? Theme.accent : Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.12)
                                     ColumnLayout {
                                         anchors.centerIn: parent; spacing: 1
-                                        Text { font.family: Theme.fontText; Layout.alignment: Qt.AlignHCenter; text: "Docked Rail"; color: Theme.moon; font.pixelSize: Theme.textLabel; font.bold: true }
+                                        Text { font.family: Theme.fontText; Layout.alignment: Qt.AlignHCenter; text: "Full bar"; color: Theme.moon; font.pixelSize: Theme.textLabel; font.bold: true }
                                         Text { font.family: Theme.fontText; Layout.alignment: Qt.AlignHCenter; text: "Continuous edge bar"; color: Theme.muted; font.pixelSize: Theme.textMicro }
                                     }
                                     MouseArea { anchors.fill: parent; onClicked: Settings.barMode = "docked" }
@@ -664,7 +664,7 @@ PanelWindow {
                                     color: selected ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.24) : Theme.controlRest
                                     border.width: 0
                                     border.color: selected ? Theme.accent : Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.12)
-                                    Text { font.family: Theme.fontText; anchors.centerIn: parent; text: "Nominal (44px)"; color: parent.selected ? Theme.accent : Theme.moon; font.pixelSize: Theme.textLabel; font.bold: true }
+                                    Text { font.family: Theme.fontText; anchors.centerIn: parent; text: "Standard (44px)"; color: parent.selected ? Theme.accent : Theme.moon; font.pixelSize: Theme.textLabel; font.bold: true }
                                     MouseArea { anchors.fill: parent; onClicked: { Settings.compact = false; Settings.barHeightProfile = "nominal"; } }
                                 }
 
@@ -673,7 +673,7 @@ PanelWindow {
                                     color: Settings.compact ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.24) : Theme.controlRest
                                     border.width: 0
                                     border.color: Settings.compact ? Theme.accent : Qt.rgba(Theme.moon.r, Theme.moon.g, Theme.moon.b, 0.12)
-                                    Text { font.family: Theme.fontText; anchors.centerIn: parent; text: "Compact Height (36px)"; color: Settings.compact ? Theme.accent : Theme.moon; font.pixelSize: Theme.textLabel; font.bold: true }
+                                    Text { font.family: Theme.fontText; anchors.centerIn: parent; text: "Compact (36px)"; color: Settings.compact ? Theme.accent : Theme.moon; font.pixelSize: Theme.textLabel; font.bold: true }
                                     MouseArea { anchors.fill: parent; onClicked: { Settings.compact = true; Settings.barHeightProfile = "compact"; } }
                                 }
 
@@ -713,7 +713,7 @@ PanelWindow {
                                     end: ["system_stats", "status", "controls"]
                                 },
                                 {
-                                    name: "Minimalist Zen",
+                                    name: "Minimal",
                                     desc: "Clean, zero-distraction layout with clock, workspaces, and status.",
                                     start: ["launcher"],
                                     center: ["workspaces"],
@@ -721,7 +721,7 @@ PanelWindow {
                                 },
                                 {
                                     name: "Media Focus",
-                                    desc: "Audiophile setup keeping resonance playback front and center.",
+                                    desc: "Music controls in the center of the bar.",
                                     start: ["launcher", "workspaces"],
                                     center: ["media"],
                                     end: ["status", "clock"]
@@ -866,7 +866,7 @@ PanelWindow {
                                         visible: !present
                                         implicitWidth: 64; implicitHeight: 22; radius: 5
                                         color: Theme.accent
-                                        Text { font.family: Theme.fontText; anchors.centerIn: parent; text: "Spawn"; color: Theme.void_; font.pixelSize: Theme.textMicro; font.bold: true }
+                                        Text { font.family: Theme.fontText; anchors.centerIn: parent; text: "Add"; color: Theme.void_; font.pixelSize: Theme.textMicro; font.bold: true }
                                         MouseArea {
                                             anchors.fill: parent; cursorShape: Qt.PointingHandCursor
                                             onClicked: root.addIsland("start", modelData.id)
@@ -1046,7 +1046,7 @@ PanelWindow {
                 spacing: 4
                 RowLayout {
                     Layout.fillWidth: true
-                    Text { font.family: Theme.fontText; text: "Edge Margin"; color: Theme.moon; font.pixelSize: Theme.textLabel }
+                    Text { font.family: Theme.fontText; text: "Edge spacing"; color: Theme.moon; font.pixelSize: Theme.textLabel }
                     Item { Layout.fillWidth: true }
                     Text { text: Settings.barMargin + "px"; color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption }
                 }
@@ -1070,7 +1070,7 @@ PanelWindow {
                 spacing: 4
                 RowLayout {
                     Layout.fillWidth: true
-                    Text { font.family: Theme.fontText; text: "Island Spacing"; color: Theme.moon; font.pixelSize: Theme.textLabel }
+                    Text { font.family: Theme.fontText; text: "Widget spacing"; color: Theme.moon; font.pixelSize: Theme.textLabel }
                     Item { Layout.fillWidth: true }
                     Text { text: Settings.barIslandSpacing + "px"; color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption }
                 }
@@ -1094,7 +1094,7 @@ PanelWindow {
                 spacing: 4
                 RowLayout {
                     Layout.fillWidth: true
-                    Text { font.family: Theme.fontText; text: "Bar Opacity"; color: Theme.moon; font.pixelSize: Theme.textLabel }
+                    Text { font.family: Theme.fontText; text: "Bar opacity"; color: Theme.moon; font.pixelSize: Theme.textLabel }
                     Item { Layout.fillWidth: true }
                     Text { text: Math.round(Settings.barOpacity * 100) + "%"; color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption }
                 }
@@ -1119,7 +1119,7 @@ PanelWindow {
                 spacing: 4
                 RowLayout {
                     Layout.fillWidth: true
-                    Text { font.family: Theme.fontText; text: "Bar Thickness"; color: Theme.moon; font.pixelSize: Theme.textLabel }
+                    Text { font.family: Theme.fontText; text: "Bar size"; color: Theme.moon; font.pixelSize: Theme.textLabel }
                     Item { Layout.fillWidth: true }
                     Text {
                         text: Settings.compact ? "36px" : (Settings.barHeightProfile === "tall" || Settings.barHeightProfile === "spacious" ? "52px" : "44px")
@@ -1131,7 +1131,7 @@ PanelWindow {
                     Repeater {
                         model: [
                             { label: "Compact", value: "compact", pixels: "36px" },
-                            { label: "Nominal", value: "nominal", pixels: "44px" },
+                            { label: "Standard", value: "nominal", pixels: "44px" },
                             { label: "Tall", value: "tall", pixels: "52px" }
                         ]
                         Rectangle {

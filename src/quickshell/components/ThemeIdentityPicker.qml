@@ -75,7 +75,7 @@ ColumnLayout {
     }
     Text {
         Layout.fillWidth: true; wrapMode: Text.Wrap
-        text: "The logo also chooses your lock illustration. Automatic appearance follows the chosen logo; dark logos use light backgrounds. Light and Dark remain available in Colors. Leaf uses a dark garden for its lock and login screens."
+        text: "Your logo also selects the lock screen artwork. Change Light or Dark above without changing the logo."
         color: Theme.muted; font.family: Theme.fontText; font.pixelSize: 11
     }
     Flow {
@@ -103,7 +103,7 @@ ColumnLayout {
     }
     Text {
         Layout.fillWidth: true; visible: AdaptivePalette.busy || AdaptivePalette.error.length > 0
-        text: AdaptivePalette.busy ? "Generating your palette…" : AdaptivePalette.error
+        text: AdaptivePalette.busy ? "Updating colors…" : AdaptivePalette.error
         wrapMode: Text.Wrap; color: AdaptivePalette.error ? Theme.warning : Theme.muted
         font.family: Theme.fontText; font.pixelSize: 11
     }

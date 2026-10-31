@@ -448,7 +448,7 @@ Rectangle {
             width: Math.max(44, Math.round(52 * root.sf))
             height: width
             symbol: "◐"
-            label: "Suspend"
+            label: "Sleep"
             accent: root.secondary
             foreground: root.foreground
             surface: root.surface
@@ -459,7 +459,7 @@ Rectangle {
             width: Math.max(44, Math.round(52 * root.sf))
             height: width
             symbol: "↻"
-            label: "Reboot"
+            label: "Restart"
             accent: root.accent
             foreground: root.foreground
             surface: root.surface
@@ -470,7 +470,7 @@ Rectangle {
             width: Math.max(44, Math.round(52 * root.sf))
             height: width
             symbol: "⏻"
-            label: "Power"
+            label: "Shut down"
             accent: root.danger
             foreground: root.foreground
             surface: root.surface

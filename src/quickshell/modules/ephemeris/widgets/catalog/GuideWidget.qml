@@ -17,10 +17,10 @@ Item {
         { "keys": "META + ENTER", "name": "Open terminal" },
         { "keys": "META + UP / DOWN", "name": "Change workspace" },
         { "keys": "META + K / J", "name": "Move focus" },
-        { "keys": "META + D", "name": "Catalog" },
+        { "keys": "META + D", "name": "App launcher" },
         { "keys": "META + SHIFT + N", "name": "Settings" },
-        { "keys": "META + SHIFT + Q", "name": "Quick telemetry" },
-        { "keys": "META + SHIFT + S", "name": "Clipboard snip" },
+        { "keys": "META + SHIFT + Q", "name": "System status" },
+        { "keys": "META + SHIFT + S", "name": "Screenshot to clipboard" },
         { "keys": "META + SHIFT + ESC", "name": "System monitor" },
         { "keys": "SUPER + ALT + L", "name": "Lock with Umbra" },
         { "keys": "ALT + F4", "name": "Close window" }
@@ -119,7 +119,7 @@ Item {
         spacing: 16
         RowLayout {
             Layout.fillWidth: true
-            Text { text: "FLIGHT MANUAL"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 22; font.bold: true }
+            Text { text: "USER GUIDE"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 22; font.bold: true }
             Item { Layout.fillWidth: true }
             Text { text: Environment.version; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 11 }
         }
@@ -181,13 +181,13 @@ Item {
                 GridLayout {
                     Layout.fillWidth: true; columns: overview.width < 420 ? 1 : 2
                     columnSpacing: 12; rowSpacing: 12
-                    ManualAction { Layout.fillWidth: true; title: "Find something"; detail: "Applications and shell actions"; onActivated: ShellState.openEphemeris("apps") }
+                    ManualAction { Layout.fillWidth: true; title: "Find something"; detail: "Apps and desktop controls"; onActivated: ShellState.openEphemeris("apps") }
                     ManualAction { Layout.fillWidth: true; title: "Make it yours"; detail: "Appearance, bar and Niri settings"; onActivated: ShellState.openEphemeris("settings") }
                     ManualAction { Layout.fillWidth: true; title: "Resonance"; detail: "Playback, lyrics and audio controls"; onActivated: ShellState.openEphemeris("media") }
                 }
                 Text {
                     Layout.fillWidth: true; wrapMode: Text.Wrap
-                    text: "Use Keys for the supplied shortcuts. Your own Niri bindings may differ."
+                    text: "Use Keys for the default shortcuts. Your Niri shortcuts may differ."
                     color: Theme.muted; font.family: Theme.fontText; font.pixelSize: 12
                 }
             }
@@ -211,7 +211,7 @@ Item {
             Text {
                 Layout.fillWidth: true
                 wrapMode: Text.Wrap
-                text: "Supplied shortcuts · your Niri bindings may differ. Hover a key or chord to explore."
+                text: "Default shortcuts · your Niri shortcuts may differ. Hover a key or shortcut to learn more."
                 color: Theme.muted
                 font.family: Theme.fontText
                 font.pixelSize: 12

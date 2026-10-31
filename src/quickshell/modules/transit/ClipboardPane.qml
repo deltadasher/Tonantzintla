@@ -124,11 +124,11 @@ Item {
         Flow {
             Layout.fillWidth: true
             spacing: 8
-            ActionButton { text: Clipboard.paused ? "Resume capture" : "Pause capture"; selected: Clipboard.paused; onClicked: Clipboard.togglePaused() }
+            ActionButton { text: Clipboard.paused ? "Resume history" : "Pause history"; selected: Clipboard.paused; onClicked: Clipboard.togglePaused() }
             ActionButton { text: root.currentEntry && root.currentEntry.pinned ? "Unpin" : "Pin selected"; enabled: root.currentEntry!==null && !Clipboard.busy; onClicked: Clipboard.togglePin(root.currentEntry) }
             ActionButton { text: "Delete selected"; destructive:true; enabled: root.currentEntry!==null && !Clipboard.busy; onClicked: Clipboard.remove(root.currentEntry) }
         }
-        Text { Layout.fillWidth:true; text:Clipboard.status || "Pins survive clearing history. Pause affects only this shell's watchers."; color:Theme.muted; wrapMode:Text.Wrap; font.family:Theme.fontText; font.pixelSize:11 }
+        Text { Layout.fillWidth:true; text:Clipboard.status || "Pinned items stay when you clear history. Pause stops Tonantzintla from saving new items."; color:Theme.muted; wrapMode:Text.Wrap; font.family:Theme.fontText; font.pixelSize:11 }
 
         Item {
             id: topSearchSlot
@@ -290,7 +290,7 @@ Item {
                     Text {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        text: root.currentEntry ? root.currentEntry.content : "Hover a layer to inspect it. Click to restore it."
+                        text: root.currentEntry ? root.currentEntry.content : "Hover an item to preview it. Click to copy it again."
                         color: root.currentEntry ? Theme.moon : Theme.muted
                         font.family: root.currentEntry && root.clipKind(root.currentEntry) === "code"
                             ? Theme.fontMono : Theme.fontText
@@ -310,7 +310,7 @@ Item {
                     height: 38
                     radius: 12
                     color: copyPointer.containsMouse ? Theme.cyan : Theme.accent
-                    Text { anchors.centerIn: parent; text: "RESTORE CLIP"; color: Theme.void_; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Black }
+                    Text { anchors.centerIn: parent; text: "COPY AGAIN"; color: Theme.void_; font.family: Theme.fontMono; font.pixelSize: 10; font.weight: Font.Black }
                     MouseArea {
                         id: copyPointer
                         anchors.fill: parent
@@ -368,7 +368,7 @@ Item {
                 anchors.leftMargin: 14
                 anchors.verticalCenter: parent.verticalCenter
                 visible: searchInput.text.length === 0
-                text: "Search; non-matching layers collapse…"
+                text: "Search clipboard history…"
                 color: Theme.lineBright
                 font.family: Theme.fontMono
                 font.pixelSize: 10

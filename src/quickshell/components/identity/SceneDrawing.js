@@ -32,7 +32,7 @@ function markPlacement(id) {
         ruby: [355,355,310], seashell: [332,361,310], fire: [345,326,310],
         "wabi-sabi": [190,180,620], sun: [395,225,210], leaf: [438,226,300],
         "ice-cube": [355,320,290], "water-droplet": [389,275,220],
-        "ringed-planet": [265,245,470], "night-sky": [538,215,220],
+        "ringed-planet": [190,190,620], "night-sky": [538,215,220],
         snowflake: [530,225,215], moon: [418,213,245], cloud: [290,222,420],
         ink: [392,445,215]
     };
@@ -69,56 +69,46 @@ function paint(c, id, accent, bg, fg, light) {
               ["C",x+k*rx,y-ry,x+rx,y-k*ry,x+rx,y],["Z"]],fill,stroke,width);
     }
     function stroke(commands,col,width) {path(commands,null,col,width||2);}
-    function star(x,y,r,col) {
-        path([["M",x-r,y],["Q",x,y,x,y-r],["Q",x,y,x+r,y],
-              ["Q",x,y,x,y+r],["Q",x,y,x-r,y],["Z"]],col);
-    }
-    // A solid sky aperture supports immutable pale/dark marks in the opposite
-    // mode. It sits behind the entire vignette, never conceals a cut edge.
-    if (["sun", "snowflake", "moon", "night-sky", "cloud"].indexOf(id) !== -1 && contrast(a,paper) < 2.7) {
-        const target = luminance(a) > .40 ? color("#30414A") : color("#CCD2C8");
-        let sky = paper;
-        for (let n=1;n<=20;n++) {
-            sky=mix(paper,target,n/20);
-            if(contrast(a,sky)>=3.1) break;
-        }
-        // Moon's lake is shallower than the other landscape bases: keep the
-        // lower sky edge behind it instead of leaving a stray crescent below.
-        ellipse(500,480,323,id === "moon" ? 283 : 303,sky);
-    }
-
     if (id === "ruby") {
-        // One cut specimen rests on a continuous, three-faced mineral plinth.
-        ellipse(500,748,285,34,pale);
-        poly([[242,647],[397,576],[649,585],[775,652],[603,716],[385,707]],pale);
-        poly([[242,647],[385,707],[603,716],[603,765],[385,752],[255,697]],mid);
-        poly([[603,716],[775,652],[763,701],[603,765]],deep);
-        stroke([["M",258,649],["L",390,698],["L",598,706],["L",758,652]],line,2);
-        ellipse(506,601,100,13,mid);
-        // Two small crystals share the same face directions and sit on the slab.
-        poly([[656,559],[680,526],[714,551],[709,610],[680,623],[652,602]],mid);
-        poly([[680,526],[680,623],[709,610],[714,551]],deep);
-        stroke([["M",656,559],["L",680,573],["L",714,551]],pale,2);
-        poly([[307,631],[326,599],[352,616],[348,653],[327,662],[305,649]],mid);
-        stroke([["M",326,601],["L",327,660]],deep,2);
+        // A single cut gemstone. Every facet shares its edges with its neighbour.
+        // No pedestal or pasted silhouette: the crown and pavilion define the ruby.
+        const bright=mix(a,fg,.26), shade=mix(a,paper,.34);
+        poly([[350,320],[650,320],[765,450],[500,775],[235,450]],a);
+        poly([[350,320],[650,320],[602,392],[398,392]],bright);
+        poly([[350,320],[398,392],[235,450]],mid);
+        poly([[650,320],[765,450],[602,392]],shade);
+        poly([[235,450],[398,392],[390,450]],bright);
+        poly([[398,392],[602,392],[610,450],[390,450]],mix(a,fg,.10));
+        poly([[602,392],[765,450],[610,450]],a);
+        poly([[235,450],[390,450],[500,775]],shade);
+        poly([[390,450],[610,450],[500,775]],a);
+        poly([[610,450],[765,450],[500,775]],mix(a,paper,.55));
     } else if (id === "seashell") {
-        // A complete tidal sandbank; the shell meets the upper bank at its foot.
-        path([["M",208,635],["C",241,578,347,563,454,587],
-              ["C",581,611,652,545,741,592],["C",821,634,805,716,727,747],
-              ["C",627,790,450,776,343,753],["C",246,731,178,691,208,635],["Z"]],pale);
-        path([["M",236,693],["C",355,666,433,711,543,669],
-              ["C",650,627,710,620,777,644],["C",809,691,771,729,727,747],
-              ["C",627,790,450,776,343,753],["Q",275,736,236,693],["Z"]],mid);
-        stroke([["M",263,673],["C",366,655,425,692,538,650],
-                ["C",642,610,699,610,750,623]],deep,2);
-        stroke([["M",317,718],["C",400,741,492,744,560,719]],pale,2);
-        stroke([["M",593,706],["Q",675,667,739,678]],pale,2);
-        ellipse(325,630,13,5,deep); ellipse(691,614,9,4,mid);
-        ellipse(627,742,5,3,deep);
+        // A complete scallop fan. All ribs converge at the hinge; the scalloped
+        // rim and the ribs describe the same surface rather than an added badge.
+        path([["M",440,659],["C",399,628,348,585,309,529],
+              ["C",282,491,270,454,284,430],["C",292,410,316,409,328,422],
+              ["C",311,386,330,356,355,363],["C",366,367,375,380,378,390],
+              ["C",368,338,397,312,421,328],["C",436,338,442,358,445,374],
+              ["C",438,315,463,292,485,311],["C",495,322,498,342,500,360],
+              ["C",502,342,505,322,515,311],["C",537,290,562,315,555,374],
+              ["C",558,358,564,338,579,328],["C",603,312,632,338,622,390],
+              ["C",625,380,634,367,645,363],["C",670,356,689,386,672,422],
+              ["C",684,409,708,410,716,430],["C",730,454,718,491,691,529],
+              ["C",652,585,601,628,560,659],["L",570,684],
+              ["Q",500,715,430,684],["Z"]],a);
+        const ribs=[[304,450,354,557,461,645],[349,392,385,541,476,650],
+                    [408,351,435,505,489,652],[474,335,480,494,497,653],
+                    [526,335,520,494,503,653],[592,351,565,505,511,652],
+                    [651,392,615,541,524,650],[696,450,646,557,539,645]];
+        for(let i=0;i<ribs.length;i++) {
+            const r=ribs[i];stroke([["M",r[0],r[1]],["Q",r[2],r[3],r[4],r[5]]],mix(a,paper,.47),4);
+        }
+        path([["M",440,659],["Q",500,678,560,659],["L",570,684],
+              ["Q",500,715,430,684],["Z"]],deep);
     } else if (id === "fire") {
         // The approved flame is the only flame. Its base touches real firewood.
         ellipse(500,715,275,66,pale);
-        ellipse(500,690,211,42,mid);
         poly([[343,595],[367,568],[660,645],[647,671]],deep);
         poly([[344,649],[357,674],[661,600],[650,573]],line);
         stroke([["M",377,594],["L",606,650]],mid,2);
@@ -127,24 +117,24 @@ function paint(c, id, accent, bg, fg, light) {
         const stones=[[288,685,34,19],[340,719,42,20],[422,742,43,21],
                       [518,750,44,21],[613,739,42,20],[695,711,37,20],[722,671,28,18]];
         for(let i=0;i<stones.length;i++) {
-            const s=stones[i];ellipse(s[0],s[1],s[2],s[3],i%2?pale:mid);
-            stroke([["M",s[0]-s[2]*.55,s[1]-4],["Q",s[0],s[1]-12,s[0]+s[2]*.55,s[1]-5]],deep,1.5);
+            const s=stones[i];ellipse(s[0],s[1],s[2],s[3],mid);
         }
-        stroke([["M",478,233],["Q",461,210,478,185]],mid,2);
-        stroke([["M",542,242],["Q",556,219,543,201]],mid,2);
     } else if (id === "sun") {
-        // Low rolling fields end in a single rounded landform, with no canvas edge.
-        path([["M",200,669],["C",277,612,304,453,433,484],
-              ["C",521,506,535,598,616,558],["C",705,509,753,581,801,654],
-              ["C",849,734,695,790,517,794],["C",346,800,167,743,200,669],["Z"]],pale);
-        path([["M",206,685],["C",334,604,396,575,515,635],
-              ["C",634,696,729,605,798,650],["C",850,729,699,789,517,794],
-              ["C",345,800,191,745,206,685],["Z"]],mid);
-        path([["M",293,744],["C",418,657,554,743,706,708],
-              ["Q",756,697,792,687],["C",765,750,648,789,517,794],
-              ["Q",383,798,293,744],["Z"]],deep);
-        stroke([["M",269,690],["C",354,640,419,626,486,650]],pale,2);
-        stroke([["M",397,751],["C",485,716,570,761,680,730]],pale,2);
+        const sunlight=light?mix(a,fg,.28):a;
+        ellipse(500,330,62,62,sunlight);
+        for(let i=0;i<8;i++) {
+            const angle=i*Math.PI/4;
+            stroke([["M",500+80*Math.cos(angle),330+80*Math.sin(angle)],
+                    ["L",500+105*Math.cos(angle),330+105*Math.sin(angle)]],sunlight,9);
+        }
+        // Two overlapping hills share one closed ground silhouette. Broad slopes
+        // establish a landscape without decorative contour or speed lines.
+        path([["M",188,690],["C",254,659,299,493,405,476],
+              ["C",508,459,571,597,663,620],["Q",765,642,812,690],
+              ["C",729,762,634,785,500,785],["C",366,785,271,762,188,690],["Z"]],pale);
+        path([["M",188,690],["C",300,706,354,670,426,617],
+              ["C",567,511,683,534,812,690],["C",729,762,634,785,500,785],
+              ["C",366,785,271,762,188,690],["Z"]],mid);
     } else if (id === "leaf") {
         // A complete botanical sprig, intentionally without the standalone leaf emblem.
         ellipse(500,800,207,24,pale);
@@ -168,130 +158,157 @@ function paint(c, id, accent, bg, fg, light) {
         ellipse(500,683,108,20,mid);
         stroke([["M",402,686],["Q",500,719,598,686]],line,2);
     } else if (id === "ice-cube") {
-        // A single cube sits on a low floating ice shelf, with explicit top/side faces.
-        ellipse(500,741,300,48,pale);
-        stroke([["M",238,749],["Q",500,823,771,747]],mid,2);
-        poly([[244,635],[364,570],[609,557],[758,622],[659,691],[402,712]],pale);
-        poly([[244,635],[402,712],[659,691],[659,734],[405,754],[264,687]],mid);
-        poly([[659,691],[758,622],[743,675],[659,734]],deep);
-        stroke([["M",266,636],["L",408,698],["L",647,680],["L",736,624]],line,2);
-        stroke([["M",644,580],["L",587,613],["L",617,641]],mid,2);
-        ellipse(500,585,93,14,mid);
-        // A smaller grounded shard repeats the shelf's perspective, not the cube.
-        poly([[655,626],[685,600],[716,616],[691,640]],mid);
-        poly([[655,626],[691,640],[691,659],[659,646]],deep);
-        poly([[691,640],[716,616],[714,638],[691,659]],pale);
+        // One rounded isometric ice cube: three faces meet at (500,500), with
+        // one shared vertical edge and aligned bevels. No shelf, chips or platform.
+        const iceTop=mix(a,fg,.23), iceLeft=mix(a,paper,.23), iceRight=mix(a,paper,.48);
+        path([["M",486,252],["Q",500,244,514,252],["L",727,375],
+              ["Q",741,383,741,399],["L",741,644],["Q",741,660,727,668],
+              ["L",514,791],["Q",500,799,486,791],["L",273,668],
+              ["Q",259,660,259,644],["L",259,399],["Q",259,383,273,375],["Z"]],iceLeft);
+        path([["M",486,252],["Q",500,244,514,252],["L",727,375],
+              ["Q",741,383,727,391],["L",500,522],["L",273,391],
+              ["Q",259,383,273,375],["Z"]],iceTop);
+        path([["M",500,522],["L",741,383],["L",741,644],["Q",741,660,727,668],
+              ["L",514,791],["Q",500,799,500,783],["Z"]],iceRight);
+        // Narrow internal bevels show thickness and stay attached to their faces.
+        path([["M",283,410],["L",480,524],["L",480,760],["L",460,748],
+              ["L",460,537],["L",283,435],["Z"]],mix(iceLeft,fg,.16));
+        path([["M",521,534],["L",718,420],["L",718,638],["L",700,649],
+              ["L",700,453],["L",521,556],["Z"]],mix(iceRight,a,.28));
     } else if (id === "water-droplet") {
         // A falling drop above one quiet pool; three ripples communicate the landing.
         ellipse(500,679,300,102,pale);
         ellipse(500,669,226,65,null,mid,2);
         ellipse(500,658,142,35,null,deep,2);
         ellipse(500,653,61,13,null,mid,2);
-        stroke([["M",500,523],["L",500,554]],mid,2);
         // Reeds are rooted at the rear right edge, well clear of the drop.
         stroke([["M",737,653],["Q",727,538,751,463]],deep,3);
         stroke([["M",757,657],["Q",783,570,781,529]],mid,3);
         path([["M",736,578],["Q",679,553,688,495],["Q",734,509,736,578],["Z"]],mid);
         path([["M",764,602],["Q",807,578,813,537],["Q",772,548,764,602],["Z"]],deep);
-        stroke([["M",334,747],["Q",460,783,584,760]],mid,2);
     } else if (id === "ringed-planet") {
-        // The mark supplies the planet and its only rings. One open satellite track
-        // establishes scale without surrounding it in more ring-shaped decoration.
-        stroke([["M",215,529],["C",205,683,424,783,653,702],
-                ["Q",760,664,801,578]],mid,2);
-        ellipse(733,660,30,30,deep);
-        path([["M",733,630],["C",754,638,758,668,740,689],
-              ["C",766,683,771,647,746,633],["Z"]],mid);
-        ellipse(258,300,17,17,mid);
-        star(708,268,6,mid);
+        // The original planet already contains its orbital band. No extra orbit,
+        // satellites or marks compete with that single complete subject.
     } else if (id === "night-sky") {
-        // A complete alpine silhouette beneath the original moon-and-star mark.
-        ellipse(500,754,315,43,pale);
-        poly([[219,730],[399,450],[582,738]],mid);
-        poly([[399,450],[399,740],[582,738]],deep);
-        poly([[353,522],[399,450],[448,526],[410,510],[388,531]],pale);
-        poly([[455,748],[641,528],[798,735]],mid);
-        poly([[641,528],[641,754],[798,735]],deep);
-        poly([[603,573],[641,528],[674,572],[648,562],[633,583]],pale);
-        path([["M",206,742],["Q",338,725,458,759],["Q",622,722,805,740],
-              ["C",759,798,304,820,206,742],["Z"]],pale);
-        star(300,347,7,deep);star(405,265,4,mid);star(467,379,4,mid);
+        const nightMoon=light?a:mix(a,fg,.57);
+        path([["M",695,239],["C",629,210,548,253,548,323],
+              ["C",548,397,626,438,695,405],["C",640,403,603,370,603,323],
+              ["C",603,280,641,245,695,239],["Z"]],nightMoon);
+        const ridgeFace=light?mid:mix(a,fg,.28);
+        const ridgeShade=light?deep:mix(a,fg,.10);
+        const snowcap=light?pale:mix(a,fg,.52);
+        // Asymmetric alpine ridges, with broken shadow faces rather than the
+        // perfect vertical centre seams that made the earlier mountains pyramids.
+        path([["M",205,750],["L",302,603],["L",345,570],["L",399,450],
+              ["L",450,534],["L",474,548],["L",582,738],
+              ["Q",397,799,205,750],["Z"]],ridgeFace);
+        poly([[399,450],[442,565],[426,625],[502,763],[582,738],
+              [474,548],[450,534]],ridgeShade);
+        poly([[359,540],[399,450],[450,534],[423,516],[409,543],[387,520]],snowcap);
+        path([["M",455,757],["L",560,648],["L",594,600],["L",641,528],
+              ["L",692,597],["L",713,606],["L",801,741],
+              ["Q",654,796,455,757],["Z"]],ridgeFace);
+        poly([[641,528],[658,610],[626,655],[701,768],[801,741],[713,606],[692,597]],ridgeShade);
+        poly([[603,586],[641,528],[686,590],[659,575],[638,596],[624,576]],snowcap);
     } else if (id === "snowflake") {
+        // One six-branched crystal uses the scene palette in both display modes.
+        const frost=light?mix(fg,paper,.20):color("#FFFFFF");
+        for(let i=0;i<6;i++) {
+            const angle=-Math.PI/2+i*Math.PI/3;
+            const dx=Math.cos(angle),dy=Math.sin(angle),px=-dy,py=dx;
+            stroke([["M",640,330],["L",640+dx*93,330+dy*93]],frost,5);
+            stroke([["M",640+dx*67+px*18,330+dy*67+py*18],
+                    ["L",640+dx*50,330+dy*50],
+                    ["L",640+dx*67-px*18,330+dy*67-py*18]],frost,5);
+        }
         // One falling snow crystal, two separated firs, and a closed snowbank.
-        ellipse(500,754,306,63,pale);
+        const snowGround=light?mix(fg,paper,.90):pale;
+        const snowFace=light?mix(fg,paper,.68):mid;
+        const snowShade=light?mix(fg,paper,.48):deep;
+        ellipse(500,754,306,63,snowGround);
         function fir(x,y,s) {
             poly([[x,y],[x-74*s,y+115*s],[x-45*s,y+109*s],
                   [x-101*s,y+195*s],[x-62*s,y+188*s],[x-124*s,y+271*s],
                   [x+124*s,y+271*s],[x+62*s,y+188*s],[x+101*s,y+195*s],
-                  [x+45*s,y+109*s],[x+74*s,y+115*s]],mid);
+                  [x+45*s,y+109*s],[x+74*s,y+115*s]],snowFace);
             poly([[x,y],[x,y+271*s],[x+124*s,y+271*s],
                   [x+62*s,y+188*s],[x+101*s,y+195*s],[x+45*s,y+109*s],
-                  [x+74*s,y+115*s]],deep);
-            stroke([["M",x,y+272*s],["L",x,y+307*s]],deep,5*s);
-            stroke([["M",x-67*s,y+117*s],["Q",x,y+139*s,x+67*s,y+117*s]],pale,3);
-            stroke([["M",x-91*s,y+196*s],["Q",x,y+221*s,x+91*s,y+196*s]],pale,3);
+                  [x+74*s,y+115*s]],snowShade);
+            stroke([["M",x,y+272*s],["L",x,y+307*s]],snowShade,5*s);
         }
         fir(388,402,1);fir(667,536,.65);
         path([["M",247,768],["Q",345,724,458,758],["Q",617,718,754,761],
-              ["C",669,814,359,823,247,768],["Z"]],mid);
-        stroke([["M",290,767],["Q",381,741,453,770]],pale,2);
-        ellipse(283,376,3,3,mid);ellipse(490,530,3,3,mid);ellipse(740,479,3,3,mid);
+              ["C",669,814,359,823,247,768],["Z"]],snowFace);
     } else if (id === "moon") {
-        // Moonlight on a small lake: bounded shore, horizontal reflections, no
-        // invented second moon or unrelated foreground crater landscape.
-        ellipse(500,676,306,103,pale);
-        path([["M",216,651],["C",280,624,307,575,339,578],
-              ["Q",387,589,409,643],["Q",303,670,216,651],["Z"]],mid);
-        path([["M",659,649],["Q",684,590,711,606],["Q",738,615,774,655],
-              ["Q",718,666,659,649],["Z"]],mid);
-        stroke([["M",475,616],["L",543,616]],deep,3);
-        stroke([["M",455,640],["L",570,640]],mid,3);
-        stroke([["M",471,666],["L",557,666]],deep,3);
-        stroke([["M",423,698],["L",590,698]],mid,3);
-        stroke([["M",443,731],["L",569,731]],deep,3);
-        stroke([["M",310,748],["Q",500,807,699,746]],mid,2);
-        star(307,340,5,mid);star(738,419,4,mid);
+        const moonlight=light?mix(a,fg,.45):a;
+        path([["M",602,240],["C",527,205,450,258,450,330],
+              ["C",450,407,527,455,602,420],["C",548,416,513,379,513,330],
+              ["C",513,281,548,244,602,240],["Z"]],moonlight);
+        const lakeFill=light?mix(fg,paper,.88):pale;
+        const reflection=light?mix(fg,paper,.66):mid;
+        const reflectionBright=light?mix(fg,paper,.48):deep;
+        // A quiet irregular shoreline. Moonlight is a handful of broken water
+        // bands with uneven ends, not a ladder or an outline around a plate.
+        path([["M",200,665],["C",245,619,360,645,419,613],
+              ["C",485,575,580,611,665,624],["C",732,637,789,613,813,658],
+              ["C",841,705,734,751,629,755],["C",516,803,388,774,294,744],
+              ["C",231,728,174,705,200,665],["Z"]],lakeFill);
+        path([["M",489,634],["Q",532,625,575,634],["L",562,641],["L",501,640],["Z"]],reflection);
+        path([["M",464,665],["Q",503,658,528,664],["L",518,671],["Q",487,675,464,665],["Z"]],reflectionBright);
+        path([["M",548,666],["Q",578,663,598,670],["L",580,677],["L",548,674],["Z"]],reflection);
+        path([["M",440,705],["Q",483,693,532,702],["L",519,710],["Q",477,706,440,705],["Z"]],reflection);
+        path([["M",552,713],["L",606,706],["L",627,713],["L",609,719],["Z"]],reflectionBright);
     } else if (id === "cloud") {
-        // The approved cloud carries a short rain shower into a complete puddle.
-        ellipse(500,734,255,57,pale);
-        ellipse(500,727,170,29,null,mid,2);
-        const rain=[[352,535],[442,554],[538,534],[630,545],[386,621],[486,640],[585,617]];
-        for(let i=0;i<rain.length;i++) {
-            stroke([["M",rain[i][0],rain[i][1]],["L",rain[i][0]-14,rain[i][1]+35]],i%2?mid:deep,3);
-        }
-        stroke([["M",212,466],["C",254,466,262,443,297,444]],mid,2);
-        stroke([["M",716,418],["C",745,420,766,406,790,406]],mid,2);
-        ellipse(379,713,33,7,null,mid,2);ellipse(606,739,27,6,null,mid,2);
+        // One connected cumulus mass, built from overlapping rounded volumes.
+        // Its shaded underside follows its own silhouette: no pasted weather
+        // glyph, detached speed lines, rain marks or unrelated puddle.
+        const cloudBody=light?mix(a,paper,.27):mix(fg,paper,.20);
+        const cloudShade=light?mix(a,paper,.10):mix(fg,paper,.42);
+        const cloudLight=light?mix(a,paper,.44):mix(fg,paper,.08);
+        path([["M",260,640],["C",198,640,179,602,195,558],
+              ["C",207,524,231,508,266,508],["C",258,459,294,418,340,422],
+              ["C",348,337,417,285,486,303],["C",545,316,575,357,580,396],
+              ["C",632,359,708,378,731,427],["C",748,447,756,472,754,496],
+              ["C",810,491,853,529,849,573],["C",846,624,797,651,738,653],
+              ["C",603,664,412,666,260,640],["Z"]],cloudBody);
+        path([["M",207,599],["C",273,639,340,592,399,610],
+              ["C",460,631,501,592,554,601],["C",611,618,626,558,681,575],
+              ["C",744,596,785,548,849,573],["C",846,624,797,651,738,653],
+              ["C",603,664,412,666,260,640],["Q",221,633,207,599],["Z"]],cloudShade);
+        path([["M",352,420],["C",365,349,420,309,477,323],
+              ["C",516,333,543,361,552,392],["C",513,366,469,372,439,402],
+              ["C",418,424,379,432,352,420],["Z"]],cloudLight);
     } else if (id === "ink") {
-        // An ink bottle makes the original drop-and-nib the label's sole subject.
-        // The natural pale paper label keeps the approved black visible in both modes.
-        const glass=light?mid:mix(fg,paper,.74);
-        const edge=light?deep:mix(fg,paper,.46);
-        const label=light?paper:color("#D8D8D0");
-        ellipse(500,790,231,29,pale);
-        path([["M",433,387],["L",433,425],["C",433,444,361,452,361,495],
-              ["L",361,735],["Q",361,778,404,778],["L",596,778],
-              ["Q",639,778,639,735],["L",639,495],["C",639,452,567,444,567,425],
-              ["L",567,387],["Z"]],glass,edge,2);
-        path([["M",388,512],["L",612,512],["L",612,700],["Q",500,724,388,700],["Z"]],label);
-        // The mark extends above the label; raise its backing to encompass the tip.
-        path([["M",388,465],["Q",500,447,612,465],["L",612,535],["L",388,535],["Z"]],label);
-        path([["M",424,341],["Q",500,327,576,341],["L",576,390],
-              ["Q",500,408,424,390],["Z"]],edge);
-        ellipse(500,341,76,15,glass,edge,2);
-        stroke([["M",385,494],["L",385,715]],pale,3);
-        stroke([["M",449,357],["L",449,382]],glass,2);
-        stroke([["M",471,360],["L",471,386]],glass,2);
-        stroke([["M",493,361],["L",493,388]],glass,2);
-        stroke([["M",515,361],["L",515,388]],glass,2);
-        stroke([["M",537,360],["L",537,386]],glass,2);
-        stroke([["M",559,357],["L",559,382]],glass,2);
+        // A single impact splatter: connected irregular lobes and directional
+        // tendrils. The few satellite drops continue those same impact directions.
+        const ink=light?color("#171717"):mix(fg,paper,.12);
+        path([["M",360,380],["C",350,350,365,326,394,338],
+              ["C",426,353,419,315,432,286],["Q",443,260,452,303],
+              ["L",447,350],["Q",449,379,478,361],["C",489,341,496,295,512,273],
+              ["Q",528,246,527,278],["L",519,343],["Q",519,369,541,354],
+              ["L",583,325],["Q",604,310,592,335],["L",569,373],
+              ["C",550,400,592,404,617,387],["L",680,355],["Q",716,338,698,370],
+              ["L",653,406],["C",628,428,649,448,675,436],["L",740,418],
+              ["Q",765,412,747,429],["L",692,461],["C",671,477,684,499,706,500],
+              ["L",755,501],["Q",790,509,751,521],["L",700,537],
+              ["C",670,549,702,584,721,599],["Q",743,619,719,615],["L",675,600],
+              ["C",643,583,644,615,651,640],["L",666,700],["Q",667,724,653,708],
+              ["L",615,656],["C",591,622,571,645,575,679],["L",582,742],
+              ["Q",580,771,566,748],["L",540,698],["C",526,670,509,683,500,711],
+              ["L",476,759],["Q",462,779,465,756],["L",478,699],
+              ["C",487,669,453,662,435,679],["L",398,717],["Q",375,736,390,711],
+              ["L",419,664],["C",437,633,407,618,386,638],["L",343,662],
+              ["Q",319,677,333,657],["L",377,607],["C",397,588,366,568,344,581],
+              ["L",290,605],["Q",269,615,281,596],["L",321,561],
+              ["C",346,540,317,518,293,524],["L",235,539],["Q",210,543,232,529],
+              ["L",291,499],["C",313,484,291,462,266,465],["L",223,470],
+              ["Q",198,470,222,460],["L",282,441],["C",309,431,303,409,281,398],
+              ["L",236,374],["Q",221,364,239,367],["L",311,385],
+              ["C",343,396,354,406,360,380],["Z"]],ink);
+        ellipse(522,220,8,13,ink);ellipse(738,327,12,8,ink);
+        ellipse(806,512,11,7,ink);ellipse(680,749,7,12,ink);
+        ellipse(455,814,6,10,ink);ellipse(204,554,10,6,ink);
     } else {
-        // The existing Wabi-sabi mark is the whole black-hole silhouette.
-        // Two separated inward streamlines suggest accretion without adding rings.
-        stroke([["M",182,605],["C",243,610,292,584,333,557]],mid,3);
-        stroke([["M",204,629],["C",250,630,287,616,313,602]],pale,2);
-        stroke([["M",678,349],["C",730,322,779,316,818,329]],mid,3);
-        stroke([["M",702,323],["C",743,304,777,300,800,303]],pale,2);
+        // The original Wabi-sabi mark is the complete subject; add no ornament.
     }
 }

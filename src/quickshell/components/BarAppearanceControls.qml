@@ -5,18 +5,18 @@ import ".."
 ColumnLayout {
     spacing: 8
         SettingChoice {
-            Layout.fillWidth: true; label: "Aperture finish"; value: Settings.barMaterial
+            Layout.fillWidth: true; label: "Bar appearance"; value: Settings.barMaterial
             choices: [{label: "Classic", value: "classic"}, {label: "Frosted", value: "frosted"}, {label: "Liquid glass", value: "liquid"}]
             onSelected: value => Settings.barMaterial = value
         }
         SettingChoice {
             Layout.fillWidth: true; label: "Corners"; value: Settings.barCornerRadius
-            choices: [{label: "Square", value: 0}, {label: "Soft", value: 6}, {label: "Round", value: 10}, {label: "Capsule", value: 26}]
+            choices: [{label: "Square", value: 0}, {label: "Slightly rounded", value: 6}, {label: "Round", value: 10}, {label: "Fully rounded", value: 26}]
             onSelected: value => Settings.barCornerRadius = value
         }
         SettingChoice {
             Layout.fillWidth: true; label: "Edges"; value: Settings.barEdgeStyle
-            choices: [{label: "Quiet", value: "none"}, {label: "Hairline", value: "hairline"}, {label: "Accent", value: "accent"}]
+            choices: [{label: "None", value: "none"}, {label: "Thin line", value: "hairline"}, {label: "Accent color", value: "accent"}]
             onSelected: value => Settings.barEdgeStyle = value
         }
         SettingChoice {

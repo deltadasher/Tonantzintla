@@ -93,10 +93,10 @@ Item {
     ColumnLayout {
         id: content
         width: parent.width; spacing: Theme.spaceMd
-        Text { text: "Umbra composition"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 20 }
+        Text { text: "Umbra layout"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 20 }
         Text {
             Layout.fillWidth: true
-            text: "Arrange the lock's instruments. Password entry and the black hole keep their secure, fixed positions. This miniature never locks or authenticates."
+            text: "Arrange the lock screen widgets. Password entry and the black hole stay in fixed positions. This preview does not lock your screen or check your password."
             wrapMode: Text.Wrap; color: Theme.muted; font.family: Theme.fontText; font.pixelSize: 12
         }
         SettingChoice {
@@ -111,7 +111,7 @@ Item {
             ActionButton { text: "Choose video…"; onClicked: { root.pickingMode = "video"; filePicker.open(); } }
             ActionButton {
                 visible: Settings.umbraBackgroundMode === "video"
-                text: root.playVideo ? "Stop loop preview" : "Prepare / play loop"
+                text: root.playVideo ? "Stop video preview" : "Play video preview"
                 enabled: Settings.umbraBackgroundPath.length > 0
                 onClicked: {
                     if (!root.playVideo) Umbra.inspectBackground(true);
@@ -133,7 +133,7 @@ Item {
         }
         Text {
             Layout.fillWidth: true; visible: Settings.umbraBackgroundMode === "video"
-            text: "Video becomes a silent loop of its first 8 seconds, up to 640 × 360 at 12 fps. Only the focused lock output animates; other monitors keep a still image to limit memory use."
+            text: "Video repeats its first 8 seconds without sound, up to 640 × 360 at 12 fps. Only the active screen plays video; other screens show a still image to limit memory use."
             wrapMode: Text.Wrap; color: Theme.muted; font.family: Theme.fontText; font.pixelSize: 11
         }
         SettingChoice {
@@ -292,7 +292,7 @@ Item {
         SettingToggle { Layout.fillWidth: true; label: "20 px grid and snapping"; checked: root.gridEnabled; onToggled: root.gridEnabled = !root.gridEnabled }
         Text { Layout.fillWidth: true; text: "Drag to move; use any edge or corner to resize. Arrows move, Shift+arrows resize, Ctrl takes smaller steps. R rotates; Delete hides. Ctrl+Z / Ctrl+Shift+Z undo / redo."; wrapMode: Text.Wrap; color: Theme.muted; font.family: Theme.fontText; font.pixelSize: 11 }
         SettingChoice {
-            Layout.fillWidth: true; label: "Selected instrument"; value: root.selected
+            Layout.fillWidth: true; label: "Selected widget"; value: root.selected
             choices: LayoutModel.keys.map(function(key) { return {label:key,value:key}; })
             onSelected: function(value) { root.selected=value; }
         }
@@ -302,7 +302,7 @@ Item {
             onToggled: root.edit({visible: !root.draft[root.selected].visible})
         }
         DockSettingSlider {
-            Layout.fillWidth: true; label: "Instrument opacity"; suffix: "%"
+            Layout.fillWidth: true; label: "Widget opacity"; suffix: "%"
             from: 0; to: 100; stepSize: 1; value: Math.round(root.draft[root.selected].opacity*100)
             onEdited: function(value) { root.edit({opacity:value/100}); }
         }
@@ -316,7 +316,7 @@ Item {
         }
         RowLayout {
             ActionButton { text: "Rotate 90°"; onClicked: root.rotateSelected() }
-            ActionButton { text: "Hide instrument"; enabled: root.draft[root.selected].visible; onClicked: root.edit({visible:false}) }
+            ActionButton { text: "Hide widget"; enabled: root.draft[root.selected].visible; onClicked: root.edit({visible:false}) }
         }
         RowLayout {
             ActionButton { text: "Undo layout"; enabled: root.undoStack.length > 0; onClicked: root.undo() }

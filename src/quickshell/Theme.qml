@@ -16,14 +16,14 @@ QtObject {
     readonly property var identity: Identity.resolve(identitySelection, identityColor)
     readonly property url identitySource: Qt.resolvedUrl("assets/theme-marks/" + identity.id + ".svg")
     function modeForSeed(seed) {
-        if (identitySelection !== "auto" && identitySelection !== "wabi-sabi")
-            return ThemeMode.resolve(Settings.themeMode, "", "", Identity.recommendedMode(identitySelection, ""));
+        // A logo selects artwork only. Auto uses colors; explicit mode always wins.
         return ThemeMode.resolve(Settings.themeMode, seed, Settings.spectralColors.accent,
-            Identity.recommendedMode(identitySelection, Identity.sourceColor(Settings.spectralColors.accent, seed, identityColor)));
+            ThemeMode.resolve("auto", identityColor, "", "dark"));
     }
     readonly property string mode: modeForSeed(Settings.paletteSeedColor)
     readonly property bool isLight: mode === "light"
-    readonly property bool lockIsLight: identity.lockLight !== undefined ? identity.lockLight : isLight
+    readonly property bool lockIsLight: Settings.themeMode === "light" || Settings.themeMode === "dark"
+        ? isLight : identity.lockLight !== undefined ? identity.lockLight : isLight
     readonly property bool adaptive: Settings.adaptivePalette && AdaptivePalette.ready
         && AdaptivePalette.appliedMode === mode
         && AdaptivePalette.appliedSeed === Settings.paletteSeedColor

@@ -1,7 +1,7 @@
 .pragma library
 
 // Dark exact accents need light surfaces; pale accents need dark surfaces.
-// Without an explicit color, use the selected identity's recommended mode.
+// Without an explicit color, the caller supplies the current color-based mode.
 function resolve(preference, seed, exactAccent, fallback) {
     if (preference === "light" || preference === "dark") return preference;
     if (/^#[0-9a-fA-F]{6}$/.test(String(exactAccent || ""))) seed = exactAccent;

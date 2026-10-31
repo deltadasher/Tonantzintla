@@ -12,14 +12,14 @@ ColumnLayout {
     spacing: 10
     Component.onCompleted: if(Settings.notificationSoundPath.length) Notifications.checkSound()
     FeedbackPositionEditor {
-        Layout.fillWidth:true;label:"Custom notification placement"
+        Layout.fillWidth:true;label:"Custom notification position"
         output:Quickshell.screens[0] || null
         custom:Settings.notificationCustomPosition;normalizedX:Settings.notificationX;normalizedY:Settings.notificationY
         legacyPosition:Settings.notificationPosition
         popupWidth:Placement.notificationWidth(Settings.notificationWidth);popupHeight:100
         edgeMargin:14
         occupiedExtraGap:0
-        previewComponent: NotificationCard { appName:"Tonantzintla";summary:"Notification preview";body:"A silent placement miniature.";popup:false;enabled:false }
+        previewComponent: NotificationCard { appName:"Tonantzintla";summary:"Notification preview";body:"Preview notification position without sound.";popup:false;enabled:false }
         onCustomToggled: function(enabled) { Settings.notificationCustomPosition=enabled; }
         onEdited: function(x,y) { Settings.notificationX=x;Settings.notificationY=y;Settings.notificationCustomPosition=true; }
     }
@@ -28,7 +28,7 @@ ColumnLayout {
         value:Settings.notificationWidth;onEdited:value => Settings.notificationWidth=value
     }
     SettingToggle { Layout.fillWidth:true;label:"Right-click to dismiss";checked:Settings.notificationRightClickClose;onToggled:Settings.notificationRightClickClose=!checked }
-    SettingToggle { Layout.fillWidth:true;label:"Show empty-history artwork";checked:Settings.notificationEmptyGraphic;onToggled:Settings.notificationEmptyGraphic=!checked }
+    SettingToggle { Layout.fillWidth:true;label:"Show artwork when history is empty";checked:Settings.notificationEmptyGraphic;onToggled:Settings.notificationEmptyGraphic=!checked }
     SettingToggle {
         Layout.fillWidth:true;label:"Notification sounds"
         detail:"Optional local PCM WAV, up to 5 seconds / 8 MiB. Local previews stay silent."

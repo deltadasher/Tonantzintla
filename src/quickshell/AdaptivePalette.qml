@@ -172,7 +172,6 @@ QtObject {
         target: Settings
         function onSpectralColorsChanged() { root.refresh(); }
         function onThemeModeChanged() { root.refresh(); }
-        function onThemeIdentityChanged() { root.refresh(); }
         function onAdaptivePaletteChanged() { root.refresh(); }
         function onPaletteSeedColorChanged() { root.refresh(); }
         function onWallpaperPathChanged() { root.refresh(); }

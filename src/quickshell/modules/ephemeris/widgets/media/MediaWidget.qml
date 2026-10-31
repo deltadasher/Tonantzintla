@@ -572,7 +572,7 @@ ClippingRectangle {
                     }
                     ModeButton {
                         glyph: "󰹑"
-                        label: "RAISE"
+                        label: "OPEN PLAYER"
                         enabledControl: Media.available && Media.player.canRaise
                         onActivated: Media.raise()
                     }
@@ -659,7 +659,7 @@ ClippingRectangle {
                             id: lyricSource
                             anchors.centerIn: parent
                             text: Lyrics.busy ? "SEARCHING…"
-                                : Lyrics.source.length > 0 ? Lyrics.source : "NO LYRIC LINK"
+                                : Lyrics.source.length > 0 ? Lyrics.source : "NO LYRICS"
                             color: Lyrics.busy ? Theme.warning : Lyrics.available ? Theme.success : Theme.muted
                             font.family: Theme.fontMono
                             font.pixelSize: Theme.textMicro
@@ -815,7 +815,7 @@ ClippingRectangle {
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: Lyrics.busy ? "SEARCHING FOR LYRICS"
                                 : Lyrics.instrumental ? "INSTRUMENTAL"
-                                : Lyrics.status === "offline" ? "LYRIC ARCHIVE OFFLINE"
+                                : Lyrics.status === "offline" ? "LYRICS UNAVAILABLE"
                                 : Media.available ? "NO LYRICS FOUND FOR THIS TRACK" : "NOTHING PLAYING"
                             color: Theme.moon
                             font.family: Theme.fontMono
@@ -825,7 +825,7 @@ ClippingRectangle {
                         }
                         Text {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            text: Lyrics.error.length > 0 ? Lyrics.error : "EMBEDDED MPRIS → CACHE → LRCLIB"
+                            text: Lyrics.error.length > 0 ? Lyrics.error : "Lyrics from your player, saved results or LRCLIB"
                             color: Theme.muted
                             font.family: Theme.fontMono
                             font.pixelSize: Theme.textMicro
@@ -1105,7 +1105,7 @@ ClippingRectangle {
                         }
                         ModeButton {
                             glyph: Equalizer.pitchEnabled ? "󰓃" : "󰓄"
-                            label: Equalizer.pitchEnabled ? "LIVE" : "BYPASS"
+                            label: Equalizer.pitchEnabled ? "ON" : "OFF"
                             active: Equalizer.pitchEnabled
                             enabledControl: Equalizer.available && !Equalizer.busy
                             onActivated: Equalizer.setPitchEnabled(!Equalizer.pitchEnabled)
@@ -1140,7 +1140,7 @@ ClippingRectangle {
                     }
 
                     Text {
-                        text: "INTERVALS"
+                        text: "PITCH PRESETS"
                         color: Theme.muted
                         font.family: Theme.fontMono
                         font.pixelSize: Theme.textMicro
@@ -1259,7 +1259,7 @@ ClippingRectangle {
                     border.width: 0; border.color: Equalizer.available ? Theme.accentLine : Theme.warning
                     Row { anchors.centerIn: parent; spacing: 7
                         Rectangle { width: 7; height: 7; radius: 4; color: Equalizer.available ? Theme.success : Theme.warning; anchors.verticalCenter: parent.verticalCenter }
-                        Text { text: Equalizer.available ? "EASY EFFECTS READY" : "BACKEND MISSING"; color: Equalizer.available ? Theme.moon : Theme.warning; font.family: Theme.fontMono; font.pixelSize: Theme.textMicro; font.weight: Font.Bold }
+                        Text { text: Equalizer.available ? "EASY EFFECTS READY" : "EASY EFFECTS MISSING"; color: Equalizer.available ? Theme.moon : Theme.warning; font.family: Theme.fontMono; font.pixelSize: Theme.textMicro; font.weight: Font.Bold }
                     }
                 }
             }
@@ -1349,7 +1349,7 @@ ClippingRectangle {
             RowLayout { Layout.fillWidth: true
                 Text { text: Equalizer.preset.toUpperCase(); color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: Theme.textMicro; font.weight: Font.Bold }
                 Item { Layout.fillWidth: true }
-                Text { text: Equalizer.busy ? "SYNCHRONIZING…" : Audio.defaultOutputName; color: Equalizer.busy ? Theme.warning : Theme.success; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.Bold; elide: Text.ElideRight }
+                Text { text: Equalizer.busy ? "UPDATING…" : Audio.defaultOutputName; color: Equalizer.busy ? Theme.warning : Theme.success; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.Bold; elide: Text.ElideRight }
             }
         }
     }

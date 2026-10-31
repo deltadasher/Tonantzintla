@@ -33,8 +33,8 @@ console.log(JSON.stringify(JSON.parse(process.argv[1]).map(color=>model.match(co
             content = exporter.render({},dict(themeIdentity=mark['id'],themeMode='auto',motion=False))
             self.assertIn('themeIdentity='+mark['id'],content)
             self.assertIn('identityColor='+mark['color'],content)
-            self.assertIn('themeMode='+('light' if mark['light'] else 'dark'),content)
-            self.assertIn('lockMode='+('light' if mark.get('lockLight', mark['light']) else 'dark'),content)
+            self.assertIn('themeMode=dark',content)
+            self.assertIn('lockMode=dark',content)
             self.assertIn('motion=false',content)
         content=exporter.render({},dict(themeIdentity='../../bad\nextra=yes',themeMode='dark'))
         self.assertIn('themeIdentity=wabi-sabi',content)
@@ -46,12 +46,27 @@ console.log(JSON.stringify(JSON.parse(process.argv[1]).map(color=>model.match(co
         settings=dict(themeIdentity='ink',paletteSeedColor='#ffffff',themeMode='auto')
         before=dict(settings)
         mark,mode=model.resolve(settings)
-        self.assertEqual((mark['id'],mode),('ink','light'))
+        self.assertEqual((mark['id'],mode),('ink','dark'))
         self.assertEqual(settings,before)
         settings['themeMode']='dark'
         self.assertEqual(model.resolve(settings)[1],'dark')
         settings.update(themeIdentity='auto',themeMode='auto',spectralColors={'accent':'#d11e40'})
         self.assertEqual(model.resolve(settings)[0]['id'],'ruby')
+
+    def test_modes_stay_independent_for_every_logo_and_exact_color(self):
+        exporter = module('umbra-greeter-palette')
+        for mark in exporter.identity.identities():
+            for seed, automatic in (('#101010', 'light'), ('#eeeeee', 'dark')):
+                for choice in ('auto', 'light', 'dark'):
+                    with self.subTest(mark=mark['id'], seed=seed, choice=choice):
+                        values = dict(line.split('=', 1) for line in exporter.render({},
+                            dict(themeIdentity=mark['id'], paletteSeedColor=seed,
+                                 themeMode=choice)).splitlines() if '=' in line)
+                        expected = automatic if choice == 'auto' else choice
+                        self.assertEqual(values['themeMode'], expected)
+                        self.assertEqual(values['lockMode'],
+                            'dark' if mark['id']=='leaf' and choice=='auto' else expected)
+                        self.assertEqual(values['themeIdentity'], mark['id'])
 
     def test_settings_gate_cached_identity_and_material_colors(self):
         exporter = module('umbra-greeter-palette')

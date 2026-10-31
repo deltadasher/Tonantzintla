@@ -29,8 +29,8 @@ ColumnLayout {
     }
     SettingChoice {
         visible: root.supportsDensity; Layout.fillWidth: true
-        label: "Density"; value: Settings.islandDensity[root.islandId] || "inherit"
-        choices: [{label:"Inherit",value:"inherit"},{label:"Compact",value:"compact"},{label:"Comfortable",value:"comfortable"}]
+        label: "Spacing"; value: Settings.islandDensity[root.islandId] || "inherit"
+        choices: [{label:"Use default",value:"inherit"},{label:"Compact",value:"compact"},{label:"Comfortable",value:"comfortable"}]
         onSelected: value => root.setDensity(value)
     }
     Loader {
@@ -40,7 +40,7 @@ ColumnLayout {
     ActionButton {
         Layout.fillWidth: true
         visible: ["clock", "system_stats", "status", "media", "workspaces", "launcher"].indexOf(root.islandId)>=0
-        text: "Open " + ({clock:"calendar",system_stats:"full telemetry",status:"system",media:"Resonance",workspaces:"workspaces",launcher:"launcher"}[root.islandId] || "instrument")
+        text: "Open " + ({clock:"calendar",system_stats:"system stats",status:"system",media:"Resonance",workspaces:"workspaces",launcher:"launcher"}[root.islandId] || "panel")
         onClicked: root.openRequested(({clock:"calendar",system_stats:"system",status:"system",media:"media",workspaces:"workspaces",launcher:"apps"})[root.islandId])
     }
     SettingChoice {
@@ -74,8 +74,8 @@ ColumnLayout {
         ColumnLayout {
             spacing:8
             SettingChoice {
-                Layout.fillWidth:true;label:"Telemetry face";value:Settings.barTelemetryFace
-                choices:[{label:"Numeric",value:"numeric"},{label:"Arc",value:"arc"},{label:"Trace",value:"trace"}]
+                Layout.fillWidth:true;label:"Stats style";value:Settings.barTelemetryFace
+                choices:[{label:"Numbers",value:"numeric"},{label:"Arc",value:"arc"},{label:"Graph",value:"trace"}]
                 onSelected:value=>Settings.barTelemetryFace=value
             }
             Repeater {
@@ -88,9 +88,9 @@ ColumnLayout {
                     onToggled:root.toggleMetric(modelData.id)
                 }
             }
-            SettingToggle {Layout.fillWidth:true;label:"Show telemetry";checked:Settings.showSystemStats;onToggled:Settings.showSystemStats=!checked}
+            SettingToggle {Layout.fillWidth:true;label:"Show system stats";checked:Settings.showSystemStats;onToggled:Settings.showSystemStats=!checked}
             SettingToggle {Layout.fillWidth:true;label:"Show volume";checked:Settings.showAudio;onToggled:Settings.showAudio=!checked}
-            Text {Layout.fillWidth:true;text:"Existing system samples. Trace retains up to 16 changes while shown.";wrapMode:Text.Wrap;color:Theme.muted;font.family:Theme.fontText;font.pixelSize:Theme.textCaption}
+            Text {Layout.fillWidth:true;text:"Uses current system stats. Graph shows up to 16 recent changes while visible.";wrapMode:Text.Wrap;color:Theme.muted;font.family:Theme.fontText;font.pixelSize:Theme.textCaption}
         }
     }
     Component {
@@ -134,9 +134,9 @@ ColumnLayout {
         id: launcherControls
         ColumnLayout {
             spacing:8
-            SettingToggle {Layout.fillWidth:true;label:"Adaptive launcher width";checked:Settings.launcherWidth===0;onToggled:Settings.launcherWidth=checked?720:0}
+            SettingToggle {Layout.fillWidth:true;label:"Automatic launcher width";checked:Settings.launcherWidth===0;onToggled:Settings.launcherWidth=checked?720:0}
             DockSettingSlider {Layout.fillWidth:true;enabled:Settings.launcherWidth>0;label:"Launcher width";suffix:" px";from:480;to:1000;stepSize:20;value:Settings.launcherWidth||720;onEdited:value=>Settings.launcherWidth=Math.round(value)}
-            SettingToggle {Layout.fillWidth:true;label:"Adaptive result rows";checked:Settings.launcherVisibleRows===0;onToggled:Settings.launcherVisibleRows=checked?6:0}
+            SettingToggle {Layout.fillWidth:true;label:"Automatic result count";checked:Settings.launcherVisibleRows===0;onToggled:Settings.launcherVisibleRows=checked?6:0}
             DockSettingSlider {Layout.fillWidth:true;enabled:Settings.launcherVisibleRows>0;label:"Visible result rows";from:3;to:10;stepSize:1;value:Settings.launcherVisibleRows||6;onEdited:value=>Settings.launcherVisibleRows=Math.round(value)}
         }
     }

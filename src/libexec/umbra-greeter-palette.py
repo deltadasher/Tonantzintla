@@ -70,7 +70,7 @@ def render(payload: dict, settings: dict | None = None) -> str:
             or not identity.valid_color(material_color(payload, "primary", "", cache_mode))):
         payload = {}
     source = material_color(payload, "source_color", "", cache_mode if cache_mode in ("light", "dark") else "dark")
-    mark, mode = identity.resolve(dict(settings, adaptivePalette=True) if palette_only else settings, source)
+    mark, mode = identity.resolve(dict(settings, adaptivePalette=True, themeMode="dark") if palette_only else settings, source)
     # Theme.identityColor can use the ready source across a mode change, while
     # Theme.adaptive requires the material palette to match the resolved mode.
     material = payload if palette_only or cache_mode == mode else {}
@@ -94,7 +94,7 @@ def render(payload: dict, settings: dict | None = None) -> str:
         if name == "accent" and identity.valid_color(exact_accent):
             value = exact_accent
         lines.append(f"{name}={value}")
-    lock_mode = ("light" if mark["lockLight"] else "dark") if "lockLight" in mark else mode
+    lock_mode = mode if settings.get("themeMode") in ("light", "dark") else ("light" if mark["lockLight"] else "dark") if "lockLight" in mark else mode
     lines += [f"lockMode={lock_mode}", f"themeIdentity={mark['id']}", f"identityColor={mark['color']}", f"themeMode={mode}",
               "motion=" + ("false" if settings.get("motion") is False or settings.get("umbraMotion") is False else "true")]
     return "\n".join(lines) + "\n"

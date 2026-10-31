@@ -192,7 +192,7 @@ function terminalCommand(query) {
                 id: "cmd:" + cmd,
                 kind: "terminal_cmd",
                 name: "Run in terminal: " + cmd,
-                detail: "Execute in configured terminal emulator",
+                detail: "Run in your selected terminal",
                 cmd: cmd,
                 enabled: true
             };
