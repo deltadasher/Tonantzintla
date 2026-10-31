@@ -1,5 +1,6 @@
 import QtQuick 2.15
 import "../../../components/identity"
+import "../../../components/identity/LockStyles.js" as LockStyles
 
 Rectangle {
     id: root
@@ -19,7 +20,6 @@ Rectangle {
     property color foreground: identityScene.item ? identityScene.item.foregroundColor : config.foreground
     property color muted: identityScene.item ? identityScene.item.mutedColor : config.muted
     property color accent: identityScene.item ? identityScene.item.accentColor : config.accent
-    property color secondary: identityScene.item ? identityScene.item.accentColor : config.secondary
     property color danger: identityScene.item ? identityScene.item.dangerColor : config.danger
     property int currentUserIndex: 0
     property int currentSessionIndex: sessionModel.lastIndex >= 0
@@ -56,6 +56,10 @@ Rectangle {
     readonly property string currentSessionName: sessionProbe.currentItem
         ? sessionProbe.currentItem.sessionName : "Wayland"
     readonly property int passwordCount: passwordField.text.length
+    // The identity's typefaces, password line, buttons and choosers (LockStyles.js).
+    readonly property var lockStyle: LockStyles.style(themeIdentity)
+    readonly property real buttonSize: Math.max(46, Math.round(50 * sf))
+    readonly property real actionSize: Math.max(42, Math.round(48 * sf))
 
     function cycleUser(direction) {
         if (userModel.count <= 1 || authenticating)
@@ -207,9 +211,9 @@ Rectangle {
 
     SequentialAnimation {
         id: identityPulse
-        NumberAnimation { target: identityBody; property: "scale"; to: 0.97; duration: 100 }
+        NumberAnimation { target: chooser; property: "scale"; to: 0.97; duration: 100 }
         NumberAnimation {
-            target: identityBody
+            target: chooser
             property: "scale"
             to: 1
             duration: 330
@@ -219,9 +223,9 @@ Rectangle {
 
     SequentialAnimation {
         id: sessionPulse
-        NumberAnimation { target: sessionBody; property: "scale"; to: 0.97; duration: 90 }
+        NumberAnimation { target: chooser; property: "scale"; to: 0.97; duration: 90 }
         NumberAnimation {
-            target: sessionBody
+            target: chooser
             property: "scale"
             to: 1
             duration: 310
@@ -270,11 +274,12 @@ Rectangle {
 
 
 
-    Text {
+    SceneLabel {
         x: root.pad; y: root.pad
         text: "Umbra"
+        type: root.lockStyle.label
         color: root.foreground
-        font.family: "sans-serif"; font.pixelSize: 14
+        size: 14
         opacity: root.intro * (1 - root.capture)
     }
 
@@ -282,17 +287,18 @@ Rectangle {
         x: root.pad; y: root.clockTop
         width: root.formWidth; height: root.timeSize * 1.15 + 34
         opacity: root.intro * (1 - root.capture)
-        Text {
-            text: Qt.formatDate(root.clockDate, "dddd, MMMM d")
+        SceneLabel {
+            text: LockStyles.date(root.lockStyle.date, root.clockDate)
+            type: root.lockStyle.date
             color: root.accent
-            font.family: "sans-serif"; font.pixelSize: 13
+            size: 14
         }
-        Text {
+        SceneLabel {
             y: 24; width: parent.width
             text: Qt.formatTime(root.clockDate, "HH:mm")
+            type: root.lockStyle.clock
             color: root.foreground
-            font.family: "sans-serif"; font.pixelSize: root.timeSize
-            font.weight: Font.Light; font.letterSpacing: -2
+            size: root.timeSize
             fontSizeMode: Text.Fit; minimumPixelSize: 32
         }
     }
@@ -301,45 +307,68 @@ Rectangle {
         onTriggered: root.clockDate = new Date()
     }
 
-    UmbraTrajectory {
+    // The password is never drawn: each character adds one glyph to the
+    // identity's line, and its shaped button sits where the identity puts it.
+    Item {
+        id: form
+        readonly property string place: root.lockStyle.button.place
+        readonly property real gap: 12 * root.sf
+        readonly property bool buttonBelow: place === "under" || place === "underEnd"
+        readonly property real entryHeight: 90 * root.sf
         x: root.pad
-        y: root.inputTop + 24
-        width: root.formWidth - 20
-        height: 90 * root.sf
-        count: root.passwordCount
-        motionActive: root.sceneMotion
-        foreground: root.foreground
-        accent: root.accent
-        secondary: root.secondary
-        danger: root.danger
-        authenticating: root.authenticating
-        failed: root.failed
-        deployment: root.intro
+        y: root.inputTop
+        width: root.formWidth
+        height: entry.y + entry.height + (buttonBelow ? root.buttonSize + gap : 0)
         opacity: root.intro * (1 - root.capture)
-    }
 
-    Rectangle {
-        x: root.pad + root.formWidth - width
-        y: root.inputTop + 24 + 90 * root.sf * .24 - height / 2
-        width: 44; height: 44; radius: 22
-        color: root.passwordCount > 0 ? root.accent : root.surface
-        border.width: 1
-        border.color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, .24)
-        opacity: root.intro * (1 - root.capture)
-        Accessible.role: Accessible.Button
-        Accessible.name: "Sign in"
-        Accessible.onPressAction: root.submit()
-        Text {
-            anchors.centerIn: parent
-            text: root.authenticating ? "·" : "→"
-            color: root.passwordCount > 0 ? root.voidColor : root.foreground
-            font.family: "sans-serif"; font.pixelSize: 22
+        SceneLabel {
+            id: prompt
+            width: parent.width - (form.place === "over" ? root.buttonSize + form.gap : 0)
+            wrapMode: Text.Wrap
+            text: root.failed ? "Wrong password"
+                : root.authenticating ? "Signing in…"
+                : root.passwordCount > 0 ? "Press Enter"
+                : "Type your password"
+            type: root.lockStyle.label
+            color: root.failed ? root.danger : root.muted
+            size: 13
+            font.weight: root.failed ? Font.Bold : Font.Medium
         }
-        MouseArea {
-            anchors.fill: parent
+
+        SceneEntry {
+            id: entry
+            readonly property bool side: form.place === "end" || form.place === "start"
+            x: form.place === "start" ? root.buttonSize + form.gap : 0
+            y: Math.max(prompt.height + 10, form.place === "over" ? root.buttonSize + 4 : 0)
+            width: parent.width - (side ? root.buttonSize + form.gap : 0)
+            height: form.entryHeight
+            kind: root.lockStyle.entry.kind
+            cap: root.lockStyle.entry.cap
+            count: root.passwordCount
+            failed: root.failed
+            authenticating: root.authenticating
+            motion: root.sceneMotion
+            accent: root.accent
+            foreground: root.foreground
+            danger: root.danger
+        }
+
+        SceneButton {
+            width: root.buttonSize
+            height: width
+            x: form.place === "end" || form.place === "underEnd" || form.place === "over" ? parent.width - width : 0
+            y: form.place === "over" ? 0
+                : form.buttonBelow ? entry.y + entry.height + form.gap
+                : entry.y + (entry.height - height) / 2
+            shape: root.lockStyle.button.shape
+            icon: root.authenticating ? "busy" : "enter"
+            label: "Sign in"
+            filled: root.failed || root.passwordCount > 0
+            accent: root.failed ? root.danger : root.accent
+            foreground: root.foreground
+            background: root.voidColor
             enabled: root.passwordCount > 0 && !root.authenticating && !root.succeeded
-            cursorShape: Qt.PointingHandCursor
-            onClicked: root.submit()
+            onTriggered: root.submit()
         }
     }
 
@@ -360,121 +389,195 @@ Rectangle {
         }
     }
 
-    // User and session are stationary controls in the form, not drifting artwork.
+    // User and session are stationary controls in the form, not drifting
+    // artwork. Each identity offers them in its own way (lockStyle.chooser).
     Item {
-        id: identityBody
+        id: chooser
         x: root.pad; y: root.selectorY
-        width: root.formWidth * .46; height: 44
+        width: root.formWidth; height: 44
         opacity: root.intro * (1 - root.capture)
-        Text {
-            text: "User"; color: root.muted
-            font.family: "sans-serif"; font.pixelSize: 12
+        readonly property string mode: root.lockStyle.chooser
+        readonly property bool manyUsers: userModel.count > 1
+        readonly property bool manySessions: sessionModel.count > 1
+
+        // captions: a caption over each choice.
+        Item {
+            id: identityBody
+            visible: chooser.mode === "captions"
+            width: parent.width * .46; height: 44
+            SceneLabel { text: "User"; type: root.lockStyle.label; color: root.muted; size: 12 }
+            SceneLabel {
+                y: 19; width: parent.width
+                text: root.currentUserName + (chooser.manyUsers ? "  ›" : "")
+                type: root.lockStyle.label
+                color: identityPointer.containsMouse ? root.accent : root.foreground
+                size: 15; elide: Text.ElideRight
+            }
+            MouseArea {
+                id: identityPointer; anchors.fill: parent; hoverEnabled: true
+                cursorShape: chooser.manyUsers ? Qt.PointingHandCursor : Qt.ArrowCursor
+                onClicked: root.cycleUser(1)
+            }
         }
-        Text {
-            y: 19; width: parent.width
-            text: root.currentUserName + (userModel.count > 1 ? "  ›" : "")
-            color: identityPointer.containsMouse ? root.accent : root.foreground
-            font.family: "sans-serif"; font.pixelSize: 15
-            elide: Text.ElideRight
+        Item {
+            id: sessionBody
+            visible: chooser.mode === "captions"
+            x: parent.width * .52
+            width: parent.width * .48; height: 44
+            SceneLabel { text: "Session"; type: root.lockStyle.label; color: root.muted; size: 12 }
+            SceneLabel {
+                y: 19; width: parent.width
+                text: root.currentSessionName + (chooser.manySessions ? "  ›" : "")
+                type: root.lockStyle.label
+                color: sessionPointer.containsMouse ? root.accent : root.foreground
+                size: 15; elide: Text.ElideRight
+            }
+            MouseArea {
+                id: sessionPointer; anchors.fill: parent; hoverEnabled: true
+                cursorShape: chooser.manySessions ? Qt.PointingHandCursor : Qt.ArrowCursor
+                onClicked: root.cycleSession(1)
+            }
         }
-        MouseArea {
-            id: identityPointer; anchors.fill: parent; hoverEnabled: true
-            cursorShape: userModel.count > 1 ? Qt.PointingHandCursor : Qt.ArrowCursor
-            onClicked: root.cycleUser(1)
+
+        // chips: two soft pills, each naming what it changes.
+        Row {
+            visible: chooser.mode === "chips"
+            spacing: 10
+            Repeater {
+                model: [["user", root.currentUserName, chooser.manyUsers, 0], ["session", root.currentSessionName, chooser.manySessions, 1]]
+                delegate: Rectangle {
+                    id: chip
+                    required property var modelData
+                    width: Math.min(chooser.width * .48, chipText.implicitWidth + 30); height: 40
+                    radius: height / 2
+                    color: chipPointer.containsMouse ? Qt.rgba(root.accent.r, root.accent.g, root.accent.b, .22) : root.surface
+                    SceneLabel {
+                        id: chipText
+                        anchors.centerIn: parent
+                        width: Math.min(implicitWidth, chip.width - 24)
+                        text: chip.modelData[0] + "  " + chip.modelData[1]
+                        type: root.lockStyle.label
+                        color: root.foreground; size: 14; elide: Text.ElideRight
+                    }
+                    MouseArea {
+                        id: chipPointer; anchors.fill: parent; hoverEnabled: true
+                        cursorShape: chip.modelData[2] ? Qt.PointingHandCursor : Qt.ArrowCursor
+                        onClicked: chip.modelData[3] === 0 ? root.cycleUser(1) : root.cycleSession(1)
+                    }
+                }
+            }
         }
-    }
-    Item {
-        id: sessionBody
-        x: root.pad + root.formWidth * .52; y: root.selectorY
-        width: root.formWidth * .48; height: 44
-        opacity: root.intro * (1 - root.capture)
-        Text {
-            text: "Session"; color: root.muted
-            font.family: "sans-serif"; font.pixelSize: 12
+
+        // sentence: "Sign in as delta on Niri", with the names to click.
+        Row {
+            visible: chooser.mode === "sentence"
+            y: 10; spacing: 7
+            SceneLabel { text: "Sign in as"; type: root.lockStyle.date; color: root.muted; size: 16 }
+            SceneLabel {
+                text: root.currentUserName; type: root.lockStyle.date; size: 16
+                color: userWord.containsMouse ? root.accent : root.foreground
+                font.underline: chooser.manyUsers
+                MouseArea { id: userWord; anchors.fill: parent; hoverEnabled: true; onClicked: root.cycleUser(1)
+                            cursorShape: chooser.manyUsers ? Qt.PointingHandCursor : Qt.ArrowCursor }
+            }
+            SceneLabel { text: "on"; type: root.lockStyle.date; color: root.muted; size: 16 }
+            SceneLabel {
+                text: root.currentSessionName; type: root.lockStyle.date; size: 16
+                color: sessionWord.containsMouse ? root.accent : root.foreground
+                font.underline: chooser.manySessions
+                MouseArea { id: sessionWord; anchors.fill: parent; hoverEnabled: true; onClicked: root.cycleSession(1)
+                            cursorShape: chooser.manySessions ? Qt.PointingHandCursor : Qt.ArrowCursor }
+            }
         }
-        Text {
-            y: 19; width: parent.width
-            text: root.currentSessionName + (sessionModel.count > 1 ? "  ›" : "")
-            color: sessionPointer.containsMouse ? root.accent : root.foreground
-            font.family: "sans-serif"; font.pixelSize: 15
-            elide: Text.ElideRight
+
+        // stacked: one line per choice, each led by the identity's shape.
+        Column {
+            visible: chooser.mode === "stacked"
+            y: -6; spacing: 6
+            Repeater {
+                model: [["user", root.currentUserName, chooser.manyUsers, 0], ["session", root.currentSessionName, chooser.manySessions, 1]]
+                delegate: Row {
+                    id: line
+                    required property var modelData
+                    spacing: 10
+                    SceneButton {
+                        width: 20; height: 20; anchors.verticalCenter: parent.verticalCenter
+                        shape: root.lockStyle.button.shape; icon: ""; enabled: false; opacity: 1
+                        filled: true; accent: root.accent; foreground: root.foreground; background: root.voidColor
+                    }
+                    SceneLabel {
+                        text: line.modelData[1]; type: root.lockStyle.label; size: 15
+                        color: stackPointer.containsMouse ? root.accent : root.foreground
+                        MouseArea { id: stackPointer; anchors.fill: parent; hoverEnabled: true
+                                    cursorShape: line.modelData[2] ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                    onClicked: line.modelData[3] === 0 ? root.cycleUser(1) : root.cycleSession(1) }
+                    }
+                    SceneLabel { text: line.modelData[0]; type: root.lockStyle.label; color: root.muted; size: 12
+                                 anchors.verticalCenter: parent.verticalCenter }
+                }
+            }
         }
-        MouseArea {
-            id: sessionPointer; anchors.fill: parent; hoverEnabled: true
-            cursorShape: sessionModel.count > 1 ? Qt.PointingHandCursor : Qt.ArrowCursor
-            onClicked: root.cycleSession(1)
+
+        // brackets: monospace fields, like a terminal prompt.
+        Row {
+            visible: chooser.mode === "brackets"
+            y: 10; spacing: 18
+            Repeater {
+                model: [["user", root.currentUserName, chooser.manyUsers, 0], ["session", root.currentSessionName, chooser.manySessions, 1]]
+                delegate: SceneLabel {
+                    id: field
+                    required property var modelData
+                    text: modelData[0] + " [ " + modelData[1] + " ]"
+                    type: root.lockStyle.label; size: 15
+                    color: fieldPointer.containsMouse ? root.accent : root.foreground
+                    MouseArea { id: fieldPointer; anchors.fill: parent; hoverEnabled: true
+                                cursorShape: field.modelData[2] ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                onClicked: field.modelData[3] === 0 ? root.cycleUser(1) : root.cycleSession(1) }
+                }
+            }
         }
     }
 
-    Text {
-        x: root.pad
-        y: root.inputTop
-        width: root.formWidth
-        wrapMode: Text.Wrap
-        text: root.failed ? "Wrong password"
-            : root.authenticating ? "Signing in…"
-            : root.passwordCount > 0 ? "Press Enter"
-            : "Type your password"
-        visible: text.length > 0
-        color: root.failed ? root.danger : root.muted
-        opacity: root.intro * (1 - root.capture)
-        font.family: "JetBrains Mono"
-        font.pixelSize: 13
-        font.weight: root.failed ? Font.Bold : Font.Medium
-        font.letterSpacing: 0
-    }
-
-    Text {
+    SceneLabel {
         id: statusMessage
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: Math.round(26 * root.sf)
+        type: root.lockStyle.label
         color: root.muted
         opacity: 0
-        font.family: "JetBrains Mono"
-        font.pixelSize: Math.round(11 * root.sf)
-        font.letterSpacing: 1.0
+        size: Math.round(12 * root.sf)
     }
 
+    // Power actions in the identity's shape, where the identity places them.
     Row {
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        anchors.rightMargin: root.pad
-        anchors.bottomMargin: root.pad + 16
+        id: actions
+        readonly property string place: root.lockStyle.actions
+        x: place === "bottomLeft" || place === "formRow" ? root.pad
+            : place === "bottomCenter" ? (root.width - width) / 2
+            : root.width - root.pad - width
+        y: place === "topRight" ? root.pad + 22
+            : place === "formRow" ? Math.min(form.y + form.height + 34 * root.sf, root.height - root.pad - height - 16)
+            : root.height - root.pad - 16 - height
         spacing: Math.round(17 * root.sf)
         opacity: root.intro * (1 - root.capture)
 
-        OrbitalAction {
-            width: Math.max(44, Math.round(52 * root.sf))
-            height: width
-            symbol: "◐"
-            label: "Sleep"
-            accent: root.secondary
-            foreground: root.foreground
-            surface: root.surface
-            onTriggered: sddm.suspend()
-        }
-
-        OrbitalAction {
-            width: Math.max(44, Math.round(52 * root.sf))
-            height: width
-            symbol: "↻"
-            label: "Restart"
-            accent: root.accent
-            foreground: root.foreground
-            surface: root.surface
-            onTriggered: sddm.reboot()
-        }
-
-        OrbitalAction {
-            width: Math.max(44, Math.round(52 * root.sf))
-            height: width
-            symbol: "⏻"
-            label: "Shut down"
-            accent: root.danger
-            foreground: root.foreground
-            surface: root.surface
-            onTriggered: sddm.powerOff()
+        Repeater {
+            model: [["sleep", "Sleep", 0], ["restart", "Restart", 1], ["power", "Shut down", 2]]
+            delegate: SceneButton {
+                required property var modelData
+                width: root.actionSize
+                height: width
+                shape: root.lockStyle.button.shape
+                icon: modelData[0]
+                label: modelData[1]
+                showLabel: true
+                labelType: root.lockStyle.label
+                accent: modelData[2] === 2 ? root.danger : root.accent
+                foreground: root.foreground
+                background: root.voidColor
+                onTriggered: modelData[2] === 0 ? sddm.suspend() : modelData[2] === 1 ? sddm.reboot() : sddm.powerOff()
+            }
         }
     }
 

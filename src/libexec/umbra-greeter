@@ -37,7 +37,7 @@ stage_theme() {
     install -d -- "$destination/identity" "$destination/marks"
     install -m 0644 "$project_root/src/quickshell/components/identity/"*.qml "$project_root/src/quickshell/components/identity/"*.js "$destination/identity/"
     install -m 0644 "$project_root/src/quickshell/assets/theme-marks/"*.svg "$destination/marks/"
-    sed -i 's#import "../../../components/identity"#import "identity"#' "$destination/Main.qml"
+    sed -i 's#"../../../components/identity#"identity#g' "$destination/Main.qml"
     python3 "$script_dir/umbra-greeter-palette.py" \
         --output "$destination/theme.conf"
 }

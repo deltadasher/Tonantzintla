@@ -18,6 +18,9 @@ the current machine without installing or changing anything.
 
 The default typography uses JetBrains Mono and Iosevka Nerd Font. Other faces
 can be selected in Observatory Settings, which reports Fontconfig fallbacks.
+Each identity's lock and login screen uses its own faces from `gsfonts`,
+`noto-fonts`, `ttf-rubik-vf`, `adwaita-fonts` and `ttf-hack`; any that are
+missing fall back to the system font.
 
 ## Feature backends
 

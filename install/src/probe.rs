@@ -48,7 +48,15 @@ pub const PROBED_COMMANDS: &[&str] = &[
     "ninja",
 ];
 
-pub const PROBED_FONTS: &[&str] = &["JetBrains Mono", "Iosevka Nerd Font"];
+pub const PROBED_FONTS: &[&str] = &[
+    "JetBrains Mono",
+    "Iosevka Nerd Font",
+    "P052",
+    "Noto Serif",
+    "Rubik",
+    "Adwaita Sans",
+    "Hack",
+];
 
 #[derive(Clone, Debug)]
 pub struct ProbeContext {

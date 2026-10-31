@@ -83,6 +83,43 @@ font_family = "Iosevka Nerd Font"
 official_packages = ["ttf-iosevka-nerd"]
 
 [[groups]]
+id = "identity-typography"
+label = "Identity lock typography"
+description = "The faces that give each logo's lock and login screen its own voice. Missing faces fall back to the system font."
+profiles = ["recommended", "full"]
+required = false
+
+[[groups.capabilities]]
+id = "urw-base35"
+label = "URW classics (Palatino, Bookman, Avant Garde, Century, Chancery, Helvetica)"
+font_family = "P052"
+official_packages = ["gsfonts"]
+
+[[groups.capabilities]]
+id = "noto-sans-serif"
+label = "Noto Sans and Noto Serif"
+font_family = "Noto Serif"
+official_packages = ["noto-fonts"]
+
+[[groups.capabilities]]
+id = "rubik"
+label = "Rubik"
+font_family = "Rubik"
+official_packages = ["ttf-rubik-vf"]
+
+[[groups.capabilities]]
+id = "adwaita-sans"
+label = "Adwaita Sans"
+font_family = "Adwaita Sans"
+official_packages = ["adwaita-fonts"]
+
+[[groups.capabilities]]
+id = "hack"
+label = "Hack"
+font_family = "Hack"
+official_packages = ["ttf-hack"]
+
+[[groups]]
 id = "network"
 label = "Link Array"
 description = "Wi-Fi, Ethernet, and Bluetooth discovery and controls."
