@@ -42,9 +42,11 @@ dedicated lock profile.
 - Umbra's Eclipse Cartography surface is intentionally asymmetric: time is a
   vertical fracture, the session state lives at the edge, and a displaced event
   horizon owns the right side of the output.
-- The password is represented as a constellation trajectory rather than a text
-  box. Each entered character energizes one node; authentication sends a probe
-  down the curve, and rejection collapses the field into the danger spectrum.
+- The password is never drawn as text. Each character adds one glyph to the
+  selected identity's own line (gems, pearls, flames, rising rays, a vine, ice
+  cubes, drops, moons, a constellation, snow, moon phases, rain, a brush stroke,
+  or Wabi Sabi's original orbit). Authentication breathes the line, and
+  rejection turns it to the danger color.
 - Network, battery, and media are rendered as orbiting bodies rather than pills
   or dashboard cards. Strong color is reserved for live state and interaction.
 - Cached weather, battery, network, and safe MPRIS controls remain available

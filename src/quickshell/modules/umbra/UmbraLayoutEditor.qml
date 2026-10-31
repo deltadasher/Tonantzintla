@@ -7,6 +7,7 @@ import "../.."
 import "../../components"
 import "../../services"
 import "UmbraLayout.js" as LayoutModel
+import "../../components/identity/LockStyles.js" as LockStyles
 
 Item {
     id: root
@@ -219,6 +220,9 @@ Item {
                             anchors.fill: parent
                             visible: tile.modelData === "clock" && Settings.umbraClockVariant === "classic"
                             dateTime: clock.date
+                            // The miniature uses the selected identity's lock typography.
+                            timeType: LockStyles.style(Theme.identity.id).clock
+                            dateType: LockStyles.style(Theme.identity.id).date
                         }
                         Loader {
                             anchors.fill: parent

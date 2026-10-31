@@ -7,6 +7,7 @@ import "../../services"
 import "../../components"
 import "../../components/identity"
 import "UmbraLayout.js" as Layout
+import "../../components/identity/LockStyles.js" as LockStyles
 
 FocusScope {
     id: root
@@ -18,10 +19,11 @@ FocusScope {
     readonly property color sceneMuted: themedScene && identityScene.item ? identityScene.item.mutedColor : Theme.muted
     readonly property color sceneBackground: identityScene.item ? identityScene.item.backgroundColor : Theme.void_
     readonly property color sceneDanger: identityScene.item ? identityScene.item.dangerColor : Theme.danger
-    readonly property color sceneControl: Qt.rgba(sceneForeground.r, sceneForeground.g, sceneForeground.b, .10)
     readonly property bool portraitScene: height > width * 1.12
     readonly property real sceneClockY: identityScene.item ? identityScene.item.suggestedClockY : height * (portraitScene ? .43 : .29)
     readonly property real sceneInputY: identityScene.item ? identityScene.item.suggestedInputY : height * (portraitScene ? .65 : .58)
+    // The identity's typefaces, password line and button (LockStyles.js).
+    readonly property var lockStyle: LockStyles.style(Theme.identity.id)
 
     property var opticalBackdrop: opticalField
     OpticalBackdrop {
@@ -42,7 +44,6 @@ FocusScope {
     property var screenInfo: null
     property real intro: 0
     property real authEnergy: 0
-    property real typingEnergy: 0
     property real failureOffset: 0
     property real failureShock: 0
     property real consume: 0
@@ -140,8 +141,6 @@ FocusScope {
         function onPasswordChanged() {
             if (passwordInput.text !== Umbra.password)
                 passwordInput.text = Umbra.password;
-            root.typingEnergy = Umbra.password.length > 0 ? 1 : 0;
-            typingDecay.restart();
         }
         function onUnlockingChanged() {
             if (Umbra.unlocking) {
@@ -198,14 +197,6 @@ FocusScope {
         // Finish before the existing 1460ms authenticated release deadline.
         duration: root.motionEnabled ? 1380 : 0
         easing.type: Easing.Linear
-    }
-    NumberAnimation {
-        id: typingDecay
-        target: root
-        property: "typingEnergy"
-        to: Umbra.password.length > 0 ? 0.34 : 0
-        duration: Settings.motion && Settings.umbraMotion ? 760 : 0
-        easing.type: Easing.OutCubic
     }
 
     UmbraBackground {
@@ -312,24 +303,22 @@ FocusScope {
             anchors.verticalCenter: parent.verticalCenter
             color: root.sceneAccent
         }
-        Text {
+        SceneLabel {
             text: "Umbra"
+            type: root.lockStyle.label
             color: root.sceneForeground
-            font.family: Theme.fontMono
-            font.pixelSize: Math.max(13, 13 * root.sf)
-            font.letterSpacing: 1.5 * root.sf
+            size: Math.max(13, 13 * root.sf)
         }
     }
 
-    Text {
+    SceneLabel {
         anchors.right: parent.right
         anchors.top: parent.top
         anchors.margins: root.pad
         text: root.previewMode ? "Preview · Esc to close" : Umbra.stateCode
+        type: root.lockStyle.label
         color: root.sceneMuted
-        font.family: Theme.fontMono
-        font.pixelSize: Math.max(12, 10 * root.sf)
-        font.letterSpacing: 1.5 * root.sf
+        size: Math.max(12, 10 * root.sf)
         opacity: root.contentOpacity
     }
 
@@ -347,6 +336,8 @@ FocusScope {
         UmbraClassicClock {
             accentColor: root.sceneAccent
             foregroundColor: root.sceneForeground
+            timeType: root.lockStyle.clock
+            dateType: root.lockStyle.date
             anchors.fill: parent
             visible: Settings.umbraClockVariant === "classic"
             dateTime: clock.date
@@ -355,6 +346,9 @@ FocusScope {
             accentColor: root.sceneAccent
             foregroundColor: root.sceneForeground
             mutedColor: root.sceneMuted
+            displayFamily: LockStyles.family(root.lockStyle.clock.families) || Theme.fontDisplay
+            monoFamily: LockStyles.family(root.lockStyle.clock.families) || Theme.fontMono
+            textFamily: LockStyles.family(root.lockStyle.label.families) || Theme.fontText
             anchors.fill: parent
             visible: Settings.umbraClockVariant !== "classic"
             active: visible && root.surfaceActive && clockBox.visible
@@ -370,12 +364,12 @@ FocusScope {
         width: root.layout.weather.w * root.width; height: root.layout.weather.h * root.height
         visible: root.layout.weather.visible && Settings.umbraShowWeather && Weather.available
         opacity: root.contentOpacity
-        Text {
+        SceneLabel {
             anchors.fill: parent
-        text: Math.round(Number(Weather.current.temp || 0)) + Weather.unitSymbol + "  /  " + String(Weather.current.condition || "").toUpperCase()
-        color: root.sceneMuted; font.family: Theme.fontMono; font.pixelSize: Math.max(12, 10 * root.sf)
-        fontSizeMode: Text.Fit; minimumPixelSize: 8; elide: Text.ElideRight
-
+            text: Math.round(Number(Weather.current.temp || 0)) + Weather.unitSymbol + "  /  " + String(Weather.current.condition || "")
+            type: root.lockStyle.label
+            color: root.sceneMuted; size: Math.max(12, 10 * root.sf)
+            fontSizeMode: Text.Fit; minimumPixelSize: 8; elide: Text.ElideRight
         }
     }
     UmbraPlacement {
@@ -386,100 +380,82 @@ FocusScope {
         width: root.layout.keyboard.w * root.width; height: root.layout.keyboard.h * root.height
         visible: root.layout.keyboard.visible
         opacity: root.contentOpacity
-        Text {
+        SceneLabel {
             anchors.fill: parent
-        text: (Compositor.keyboardLayoutName.length > 0 ? Compositor.keyboardLayoutName : "Keyboard layout unavailable")
-            + "  ·  Enter to unlock"
-        color: root.sceneMuted; font.family: Theme.fontMono; font.pixelSize: Math.max(12, 10 * root.sf)
-        fontSizeMode: Text.Fit; minimumPixelSize: 8; elide: Text.ElideRight
-
+            text: (Compositor.keyboardLayoutName.length > 0 ? Compositor.keyboardLayoutName : "Keyboard layout unavailable")
+                + "  ·  Enter to unlock"
+            type: root.lockStyle.label
+            color: root.sceneMuted; size: Math.max(12, 10 * root.sf)
+            fontSizeMode: Text.Fit; minimumPixelSize: 8; elide: Text.ElideRight
         }
     }
 
-    // Password entry is a path through space. The actual TextInput is invisible;
-    // each character energizes a node on this trajectory.
+    // The password is never drawn: each character adds one glyph to the
+    // identity's line, and its shaped button sits where the identity puts it.
     Item {
+        id: passwordBlock
         objectName: "umbraFixedPassword"
         z: 10 // Editable instruments cannot cover the authentication controls.
+        readonly property string place: root.lockStyle.button.place
+        readonly property real buttonSize: Math.max(46, 50 * root.sf)
+        readonly property real gap: 12 * root.sf
+        readonly property bool buttonBelow: place === "under" || place === "underEnd"
         x: root.pad + root.failureOffset
         y: root.sceneInputY
         width: root.portraitScene ? root.width - root.pad * 2 : Math.min(root.width * 0.37, 600 * root.sf)
-        height: Math.max(100, 120 * root.sf)
+        height: Math.max(100, 120 * root.sf) + (buttonBelow ? buttonSize + gap : 0)
         opacity: root.inputArrival * (1 - root.departure)
 
-        Text {
+        SceneLabel {
             id: passwordPrompt
             x: 0; y: 0
-            width: parent.width
+            width: parent.width - (passwordBlock.place === "over" ? passwordBlock.buttonSize + passwordBlock.gap : 0)
             wrapMode: Text.Wrap
             text: Umbra.failed || Umbra.authenticating || Umbra.unlocking ? Umbra.statusText
                 : passwordInput.text.length > 0 ? "Enter to unlock" : "Type your password"
+            type: root.lockStyle.label
             color: Umbra.failed ? root.sceneDanger
                 : Umbra.authenticating ? root.sceneAccent : root.sceneMuted
-            font.family: Theme.fontMono
-            font.pixelSize: Math.max(13, 12 * root.sf)
+            size: Math.max(13, 12 * root.sf)
             font.weight: Font.Bold
         }
 
-        UmbraTrajectory {
+        SceneEntry {
             id: trajectory
-            x: 0
-            y: passwordPrompt.height + 10
-            width: parent.width
-            height: parent.height - y
+            readonly property bool side: passwordBlock.place === "end" || passwordBlock.place === "start"
+            x: passwordBlock.place === "start" ? passwordBlock.buttonSize + passwordBlock.gap : 0
+            y: Math.max(passwordPrompt.height + 10, passwordBlock.place === "over" ? passwordBlock.buttonSize + 4 : 0)
+            width: parent.width - (side ? passwordBlock.buttonSize + passwordBlock.gap : 0)
+            height: Math.max(100, 120 * root.sf) - y
+            kind: root.lockStyle.entry.kind
+            cap: root.lockStyle.entry.cap
             count: passwordInput.text.length
-            maxNodes: 32
-            deployment: root.inputArrival
-            energy: root.typingEnergy
             failed: Umbra.failed
             authenticating: Umbra.authenticating
-            motionActive: root.surfaceActive
-            primary: root.sceneAccent
-            secondary: root.sceneAccent
+            motion: root.motionEnabled
+            accent: root.sceneAccent
             foreground: root.sceneForeground
             danger: root.sceneDanger
         }
 
-        Rectangle {
-            x: parent.width * 0.94 - width * 0.5
-            y: trajectory.y + trajectory.height * 0.27 - height * 0.5
-            width: Math.max(44, 44 * root.sf)
+        SceneButton {
+            objectName: "umbraSubmit"
+            width: passwordBlock.buttonSize
             height: width
-            radius: width / 2
-            color: Umbra.failed ? root.sceneDanger
-                : passwordInput.text.length > 0 ? root.sceneAccent : root.sceneControl
-            border.width: 1
-            border.color: Qt.rgba(root.sceneForeground.r, root.sceneForeground.g, root.sceneForeground.b, .24)
-            scale: 1 + root.visualEnergy * 0.08
-
-            Behavior on width { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
-            Behavior on color { ColorAnimation { duration: 180 } }
-            Behavior on scale { NumberAnimation { duration: 220; easing.type: Easing.OutBack } }
-
-            Rectangle {
-                visible: Umbra.authenticating
-                anchors.centerIn: parent
-                width: Umbra.authenticating ? parent.width * 0.42 : parent.width * 0.12
-                height: width
-                radius: width / 2
-                color: passwordInput.text.length > 0 || Umbra.failed ? root.sceneBackground : root.sceneMuted
-                opacity: Umbra.authenticating ? 0.72 : 0.82
-                Behavior on width { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
-            }
-            Text {
-                anchors.centerIn: parent
-                visible: !Umbra.authenticating
-                text: "→"
-                color: passwordInput.text.length > 0 ? root.sceneBackground : root.sceneForeground
-                font.family: Theme.fontText
-                font.pixelSize: 22
-            }
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                enabled: passwordInput.text.length > 0 && !Umbra.authenticating
-                onClicked: root.submitInput()
-            }
+            x: passwordBlock.place === "end" || passwordBlock.place === "underEnd" || passwordBlock.place === "over"
+                ? parent.width - width : 0
+            y: passwordBlock.place === "over" ? 0
+                : passwordBlock.buttonBelow ? trajectory.y + trajectory.height + passwordBlock.gap
+                : trajectory.y + (trajectory.height - height) / 2
+            shape: root.lockStyle.button.shape
+            icon: Umbra.authenticating ? "busy" : "enter"
+            label: "Unlock"
+            filled: Umbra.failed || passwordInput.text.length > 0
+            accent: Umbra.failed ? root.sceneDanger : root.sceneAccent
+            foreground: root.sceneForeground
+            background: root.sceneBackground
+            enabled: passwordInput.text.length > 0 && !Umbra.authenticating
+            onTriggered: root.submitInput()
         }
 
         TextInput {
@@ -502,8 +478,6 @@ FocusScope {
             onTextEdited: {
                 Umbra.password = text;
                 Umbra.failed = false;
-                root.typingEnergy = 1;
-                typingDecay.restart();
             }
             onAccepted: root.submitInput()
             Keys.onEscapePressed: function(event) {
@@ -524,7 +498,7 @@ FocusScope {
 
     Row {
         z: 10
-        x: root.pad; y: root.sceneInputY + 135 * root.sf; spacing: 8
+        x: root.pad; y: passwordBlock.y + passwordBlock.height + 15 * root.sf; spacing: 8
         visible: Umbra.fingerprintAvailable && !root.previewMode
         UmbraFingerprintVisual {
             visible: Settings.umbraFingerprintLook !== "original" || !Settings.umbraFingerprintShowText
@@ -589,18 +563,17 @@ FocusScope {
         y: root.height - root.pad - height
         spacing: 8 * root.sf
         opacity: root.contentOpacity * 0.8
-        Text {
+        SceneLabel {
             text: Umbra.userName
+            type: root.lockStyle.date
             color: root.sceneForeground
-            font.family: Theme.fontDisplay
-            font.pixelSize: Math.max(14, 16 * root.sf)
+            size: Math.max(14, 16 * root.sf)
         }
-        Text {
+        SceneLabel {
             text: root.previewMode ? "Lock preview" : "Session locked"
+            type: root.lockStyle.label
             color: root.sceneMuted
-            font.family: Theme.fontMono
-            font.pixelSize: Math.max(11, 9 * root.sf)
-            font.letterSpacing: 2 * root.sf
+            size: Math.max(11, 9 * root.sf)
         }
     }
 

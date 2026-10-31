@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import "SceneDrawing.js" as Drawing
 
@@ -16,8 +17,8 @@ Item {
     readonly property color accentColor: Drawing.readableAccent(accent, backgroundColor, foregroundColor)
     readonly property color dangerColor: Drawing.readableAccent(lightMode ? "#a93649" : "#ed7d8f", backgroundColor, foregroundColor)
     readonly property bool portrait: height > width * 1.12
-    // The entire square fits in a reserved region. Drawing uses an additional
-    // 80-unit inset, so its silhouettes and small transforms never meet an edge.
+    // The entire square fits in a reserved region. Every scene keeps its painted
+    // geometry and motion inside 80..920, so nothing meets an edge.
     readonly property real artboardSize: Math.max(0, portrait
         ? Math.min(width * 0.90, height * 0.36)
         : Math.min(width * 0.52, height * 0.84))
@@ -30,8 +31,15 @@ Item {
     readonly property real suggestedClockY: height * (portrait ? 0.43 : 0.29)
     readonly property real suggestedInputY: height * (portrait ? 0.65 : 0.58)
     readonly property var mark: Drawing.markPlacement(identity)
-    readonly property real motionUnit: artboardSize / 1000
-    property real motionPhase: 0
+    readonly property var layers: Drawing.layers(identity)
+    readonly property int markIndex: {
+        for (let i = 0; i < layers.length; i++) if (layers[i].logo) return i;
+        return layers.length;
+    }
+    readonly property real unit: artboardSize / 1000
+    // Seconds on one shared clock. Every layer derives its pose from it, so
+    // nothing repaints while it moves. It rests at zero when motion stops.
+    property real time: 0
 
     Rectangle { anchors.fill: parent; color: root.backgroundColor }
 
@@ -43,62 +51,87 @@ Item {
         x: root.artRect.x
         y: root.artRect.y
 
-        transform: [
-            Translate {
-                x: root.identity === "cloud" ? root.motionPhase * 4 * root.motionUnit : 0
-                y: ["water-droplet", "ink"].indexOf(root.identity) !== -1 ? root.motionPhase * -2.5 * root.motionUnit : 0
-            },
-            Rotation {
-                origin.x: illustration.width * 0.6
-                origin.y: ["leaf", "snowflake"].indexOf(root.identity) !== -1 ? illustration.height * 0.88 : illustration.height * 0.47
-                angle: ["leaf", "snowflake", "ringed-planet", "wabi-sabi"].indexOf(root.identity) !== -1 ? root.motionPhase * 0.35 : 0
-            }
-        ]
+        Repeater {
+            model: root.layers
+            delegate: Item {
+                id: sceneLayer
+                required property var modelData
+                required property int index
+                readonly property var box: modelData.box
+                readonly property var origin: modelData.origin || [box[0] + box[2] / 2, box[1] + box[3] / 2]
+                readonly property var pose: modelData.motion ? Drawing.pose(modelData.motion, root.time) : Drawing.REST
+                objectName: "themeSceneLayer_" + modelData.name
+                x: (box[0] + pose.x) * root.unit
+                y: (box[1] + pose.y) * root.unit
+                width: box[2] * root.unit
+                height: box[3] * root.unit
+                opacity: pose.o
+                // An orbiting body passes behind the mark on the far half of its path.
+                z: modelData.orbit && pose.front < 0 ? root.markIndex - 0.5 : index
+                transform: [
+                    Scale {
+                        origin.x: (sceneLayer.origin[0] - sceneLayer.box[0]) * root.unit
+                        origin.y: (sceneLayer.origin[1] - sceneLayer.box[1]) * root.unit
+                        xScale: sceneLayer.pose.sx
+                        yScale: sceneLayer.pose.sy
+                    },
+                    Rotation {
+                        origin.x: (sceneLayer.origin[0] - sceneLayer.box[0]) * root.unit
+                        origin.y: (sceneLayer.origin[1] - sceneLayer.box[1]) * root.unit
+                        angle: (sceneLayer.modelData.rotate || 0) + sceneLayer.pose.r
+                    }
+                ]
 
-        Canvas {
-            id: artwork
-            anchors.fill: parent
-            antialiasing: true
-            renderTarget: Canvas.Image
-            onPaint: {
-                const ctx = getContext("2d");
-                ctx.reset();
-                ctx.scale(width / 1000, height / 1000);
-                Drawing.paint(ctx, root.identity, root.accent, root.backgroundColor, root.foregroundColor, root.lightMode);
-            }
-            onWidthChanged: requestPaint()
-            onHeightChanged: requestPaint()
-        }
-
-        Image {
-            id: approvedMark
-            // These scenes draw their subject directly, without a pasted logo.
-            visible: ["leaf", "ink", "cloud", "ruby", "ice-cube", "seashell", "sun", "moon", "night-sky", "snowflake"].indexOf(root.identity) === -1
-            x: root.mark.x / 1000 * illustration.width
-            y: root.mark.y / 1000 * illustration.height
-            width: root.mark.size / 1000 * illustration.width
-            height: width
-            source: root.iconSource
-            sourceSize.width: Math.ceil(width * 2)
-            sourceSize.height: Math.ceil(height * 2)
-            fillMode: Image.PreserveAspectFit
-            smooth: true
-            // Flame and celestial marks move independently of their grounded scenery.
-            transform: Translate {
-                y: ["fire", "sun", "moon", "night-sky"].indexOf(root.identity) !== -1 ? root.motionPhase * -2 * root.motionUnit : 0
+                Loader {
+                    anchors.fill: parent
+                    sourceComponent: sceneLayer.modelData.logo === true ? markImage : sceneryCanvas
+                }
+                // The approved SVG itself, never recoloured or redrawn.
+                Component {
+                    id: markImage
+                    Image {
+                        source: root.iconSource
+                        sourceSize.width: Math.ceil(width * 2)
+                        sourceSize.height: Math.ceil(height * 2)
+                        fillMode: Image.PreserveAspectFit
+                        smooth: true
+                    }
+                }
+                // Scenery is painted once into a cache sized to its own box.
+                Component {
+                    id: sceneryCanvas
+                    Canvas {
+                        id: artwork
+                        antialiasing: true
+                        renderTarget: Canvas.Image
+                        onPaint: {
+                            const ctx = getContext("2d");
+                            ctx.reset();
+                            if (width <= 0) return;
+                            ctx.scale(width / sceneLayer.box[2], height / sceneLayer.box[3]);
+                            ctx.translate(-sceneLayer.box[0], -sceneLayer.box[1]);
+                            Drawing.paintLayer(ctx, root.identity, sceneLayer.modelData.name, root.accent,
+                                               root.backgroundColor, root.foregroundColor, root.lightMode);
+                        }
+                        onWidthChanged: requestPaint()
+                        onHeightChanged: requestPaint()
+                        Connections {
+                            target: root
+                            function onAccentChanged() { artwork.requestPaint(); }
+                            function onLightModeChanged() { artwork.requestPaint(); }
+                        }
+                    }
+                }
             }
         }
     }
-    SequentialAnimation on motionPhase {
-        running: root.active && root.visible && root.motion
-                 && ["ruby", "seashell", "ice-cube"].indexOf(root.identity) === -1
+
+    NumberAnimation on time {
+        id: clock
+        from: 0; to: Drawing.LOOP
+        duration: Drawing.LOOP * 1000
         loops: Animation.Infinite
-        NumberAnimation { from: 0; to: 1; duration: 5000; easing.type: Easing.InOutSine }
-        NumberAnimation { from: 1; to: -1; duration: 10000; easing.type: Easing.InOutSine }
-        NumberAnimation { from: -1; to: 0; duration: 5000; easing.type: Easing.InOutSine }
-        onStopped: root.motionPhase = 0
+        running: root.active && root.visible && root.motion && root.artboardSize > 0
+        onRunningChanged: if (!running) root.time = 0
     }
-    onIdentityChanged: artwork.requestPaint()
-    onAccentChanged: artwork.requestPaint()
-    onLightModeChanged: artwork.requestPaint()
 }
