@@ -1,7 +1,6 @@
 # Contributing to Tonantzintla
 
-Tonantzintla is currently a private personal project, but changes should still be
-treated like changes to a desktop environment rather than loose dotfile edits.
+Tonantzintla is now open to contribution!
 
 ## Workflow
 
@@ -16,18 +15,12 @@ treated like changes to a desktop environment rather than loose dotfile edits.
 
 Do not combine a layer-shell geometry rewrite with unrelated styling or service
 polling changes. Prototype geometry and animation experiments outside the live
-`EphemerisSurface.qml` first.
+`EphemerisSurface.qml` first. This has been a known struggle with others who have attempted to commit.
 
 ## Commit style
 
-Use short imperative subjects with an optional subsystem:
-
-```text
-feat(ephemeris): add launcher origin transition
-fix(audio): preserve the optimistic slider value
-docs: explain laptop installation
-chore: checkpoint working shell
-```
+I don't really care about how you write the commits. Just a small summary of what you're adding so I don't have
+to read through your changes for context.
 
 ## Publication and provenance
 
