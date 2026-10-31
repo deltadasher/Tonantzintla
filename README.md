@@ -4,17 +4,15 @@
 
 ## Tonantzintla 1.2
 
-A desktop with a little gravitational pull.
-
-Built with Quickshell for Niri & Hyprland. Tested on Arch Linux, similar derivatives and Obarun.
-Orbiting calendars, fluid surfaces, music you can bend, and a black hole
-to come home to. Eccentricity belongs on the desktop.
+Built with Quickshell for Niri & Hyprland (to be extended to other wayland compositors in the near future).
+Extended distro compatibility: Arch, similar derivatives, Fedora, Debian.
+Highly customizable!
 
 ## ARTIX NOT SUPPORTED INTENTIONALLY
 
-### Explore the suite
+### It's modular!
 
-Use the five public entry points to see what each part does and find its source:
+Use the five public entry points to see what each part does and find its direct source:
 
 [Aperture](https://deltadasher.github.io/Tonantzintla/suite/aperture.html) ·
 [Ephemeris](https://deltadasher.github.io/Tonantzintla/suite/ephemeris.html) ·
@@ -25,7 +23,7 @@ Use the five public entry points to see what each part does and find its source:
 ### Install
 
 ```bash
-sudo pacman -S --needed git rust
+sudo [insert package manager installation command] --needed git rust
 git clone https://github.com/deltadasher/Tonantzintla.git Tonantzintla
 cd Tonantzintla
 bin/blackhole install --profile recommended --niri keep --umbra lock --yes
@@ -34,9 +32,9 @@ bin/blackhole install --profile recommended --niri keep --umbra lock --yes
 
 The repository URL above remains valid during the rename.
 On Obarun, enable its `obcommunity` repository before installing.
-Use `--niri replace` only if you want the bundled Niri configuration.
+Use `--niri replace` only if you want the bundled Niri configuration (highly recommended).
 
-### Use it
+### Productivity commands
 
 ```bash
 blackhole help
@@ -46,20 +44,14 @@ blackhole restart
 blackhole doctor
 ```
 
-Add `~/.local/bin` to your PATH if your shell cannot find the command.
+Add `~/.local/bin` to your PATH if your shell cannot find the commands.
 The shell is supervised within your Wayland session on both Arch and Obarun.
 `blackhole daemon logs` shows its recent log.
-
-Existing *Astralith* preferences are copied on install when the new preference
-directory does not exist. The old runtime stays available for recovery.
-Existing keybindings can continue through a migration alias; new bindings
-should use `blackhole` automatically. If it doesnt, just remove your
-current version of Astralith/Tonantzintla, and reinstall.
 
 ### Make it yours
 
 Choose your applications, weather location, fonts, and motion in Settings.
-Put wallpapers in `~/Pictures/Wallpapers`. Captures stay separate.
+Put wallpapers in `~/Pictures/Wallpapers`. Screenshots stay entirely separate.
 
 [Architecture](docs/architecture.md) · [Dependencies](docs/dependencies.md) ·
 [Machines](docs/machines.md) · [Umbra](docs/umbra.md) · [Contributing](CONTRIBUTING.md)
