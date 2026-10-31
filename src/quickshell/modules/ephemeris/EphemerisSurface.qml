@@ -364,7 +364,6 @@ PanelWindow {
                             width: Math.min(150, parent.width * 0.3); height: width * 0.7
                             visible: Theme.motionEnabled && transition.phase !== "open" && transition.phase !== "closing"
                             opacity: 0.35 * (1 - transition.contentProgress)
-                            diskColor: root.moduleTone
                         }
                         Item {
                             id: keyCatcher

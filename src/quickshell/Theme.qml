@@ -12,7 +12,7 @@ QtObject {
     // Stable preset values prevent identity/mode/palette binding cycles.
     readonly property var identityPresets: ({violet: "#9874cd", cyan: "#83dad9", rose: "#ee927f", amber: "#e9b872", emerald: "#467b50", solar: "#c44f28", silver: "#c8cdd3"})
     readonly property string identitySelection: Settings.themeIdentity === "auto" ? "auto" : Identity.get(Settings.themeIdentity).id
-    readonly property string identityColor: Identity.sourceColor(Settings.spectralColors.accent, Settings.paletteSeedColor, (Settings.adaptivePalette && AdaptivePalette.ready && AdaptivePalette.appliedSource === Settings.wallpaperPath && AdaptivePalette.appliedSeed === Settings.paletteSeedColor ? AdaptivePalette.sourceColor : identityPresets[Settings.accentName]))
+    readonly property string identityColor: Identity.sourceColor(Settings.spectralColors.accent, Settings.paletteSeedColor, (Settings.adaptivePalette && AdaptivePalette.ready && Identity.validColor(AdaptivePalette.sourceColor) && AdaptivePalette.appliedSource === Settings.wallpaperPath && AdaptivePalette.appliedSeed === Settings.paletteSeedColor ? AdaptivePalette.sourceColor : identityPresets[Settings.accentName]))
     readonly property var identity: Identity.resolve(identitySelection, identityColor)
     readonly property url identitySource: Qt.resolvedUrl("assets/theme-marks/" + identity.id + ".svg")
     function modeForSeed(seed) {

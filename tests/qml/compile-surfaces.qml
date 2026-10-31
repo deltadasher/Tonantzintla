@@ -17,10 +17,11 @@ QtObject {
                     console.error("SURFACE FAIL", source, component.errorString());
                     failures++;
                 }
+                if (component.status === Component.Ready) console.log("SURFACE PASS", source);
                 component.destroy();
             }
             console.log("SURFACE COMPILE COMPLETE", failures, "failures");
-            Qt.quit();
+            Qt.exit(failures ? 1 : 0);
         }
     }
 }
