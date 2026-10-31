@@ -561,7 +561,7 @@ Item {
                         spacing: 5
                         Text {
                             width: parent.width
-                            text: root.selectedEntry ? root.selectedEntry.name : "NO WORLD FOUND"
+                            text: root.selectedEntry ? root.selectedEntry.name : "NO WALLPAPER FOUND"
                             color: Theme.moon; font.family: Theme.fontMono; font.pixelSize: Theme.textBody; font.weight: Font.DemiBold
                             horizontalAlignment: Text.AlignHCenter; elide: Text.ElideMiddle
                         }
@@ -570,7 +570,7 @@ Item {
                             text: Environment.wallpaperBusy ? "APPLYING…"
                                 : !root.selectedEntry ? "CHOOSE A WALLPAPER"
                                 : root.selectedIsCurrent ? "IN USE"
-                                : !Environment.canSetWallpaper ? "NO WALLPAPER BACKEND" : "APPLY WALLPAPER"
+                                : !Environment.canSetWallpaper ? "WALLPAPER UNAVAILABLE" : "APPLY WALLPAPER"
                             color: Environment.wallpaperBusy || !Environment.canSetWallpaper ? Theme.warning : Theme.accent
                             font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.Bold
                             horizontalAlignment: Text.AlignHCenter
@@ -778,21 +778,21 @@ Item {
                 SettingChoice {
                     objectName: "wallpaperRendererChoice"
                     Layout.fillWidth: true
-                    label: "Renderer"; value: Settings.wallpaperRenderer
-                    choices: [{label:"External",value:"external"},{label:"Native stills",value:"native"}]
+                    label: "Wallpaper method"; value: Settings.wallpaperRenderer
+                    choices: [{label:"External app",value:"external"},{label:"Built-in images",value:"native"}]
                     onSelected: function(value) {
-                        if(value === "native" && Settings.wallpaperKind === "video") Environment.wallpaperFeedback("Apply a still with the external renderer before enabling Native.",true);
+                        if(value === "native" && Settings.wallpaperKind === "video") Environment.wallpaperFeedback("Apply an image using External app before switching to Built-in images.",true);
                         else Settings.wallpaperRenderer=value;
                     }
                 }
                 Text {
                     Layout.fillWidth: true; wrapMode: Text.Wrap
                     text: Settings.wallpaperRenderer === "native"
-                        ? "Native stills: up to 2560 px on the longest edge. Larger images are reduced. Choosing a video restores all displays to the external renderer."
-                        : "External wallpaper renderer and its existing transitions."
+                        ? "Built-in images: up to 2560 px on the longest edge. Larger images are reduced. Choosing a video switches all displays to External app."
+                        : "Use your wallpaper app and its transitions."
                     color: Theme.muted; font.family: Theme.fontText; font.pixelSize: Theme.textCaption
                 }
-                Text { text: "OUTPUT"; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
+                Text { text: "DISPLAY"; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
                 Flow {
                     Layout.fillWidth: true
                     Layout.preferredHeight: childrenRect.height
@@ -846,7 +846,7 @@ Item {
                 Text {
                     visible: Settings.wallpaperRenderer === "native"
                     Layout.fillWidth: true; wrapMode: Text.Wrap
-                    text: "Native reveal: " + Environment.nativeTransitionName(Settings.wallpaperTransition)
+                    text: "Built-in transition: " + Environment.nativeTransitionName(Settings.wallpaperTransition)
                         + (Settings.wallpaperTransition === "any" ? " (Any uses the orbital reveal)" : Environment.nativeTransitionName(Settings.wallpaperTransition) !== Settings.wallpaperTransition ? " (mapped from " + Settings.wallpaperTransition + ")" : "")
                     color: Theme.muted; font.family: Theme.fontText; font.pixelSize: Theme.textCaption
                 }

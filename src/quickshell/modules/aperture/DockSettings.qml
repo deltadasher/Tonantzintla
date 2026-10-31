@@ -66,7 +66,7 @@ ColumnLayout {
         ColumnLayout {
             Layout.fillWidth: true
             Text { text: "DOCK"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 22; font.bold: true }
-            Text { Layout.fillWidth: true; wrapMode: Text.Wrap; text: "Your applications, at the edge of Aperture."; color: Theme.muted; font.family: Theme.fontText; font.pixelSize: 12 }
+            Text { Layout.fillWidth: true; wrapMode: Text.Wrap; text: "Choose apps and customize your dock."; color: Theme.muted; font.family: Theme.fontText; font.pixelSize: 12 }
         }
         DockChip { text: "Done"; onClicked: root.closeRequested() }
     }
@@ -85,7 +85,7 @@ ColumnLayout {
     Text {
         Layout.fillWidth: true
         visible: root.height >= 420
-        text: "Move the dock by dragging its island in Bar Studio. Click without dragging to return here."
+        text: "Drag the dock in the bar editor to move it. Click it to return to these settings."
         color: Theme.muted; font.pixelSize: 11; font.family: Theme.fontText; wrapMode: Text.Wrap
     }
 
@@ -204,11 +204,11 @@ ColumnLayout {
     ColumnLayout {
         spacing: 14
         DockSettingSlider { Layout.fillWidth: true; label: "Icon size"; suffix: " px"; from: 28; to: 72; stepSize: 4; value: Settings.dockIconSize; onEdited: value => Settings.dockIconSize = value }
-        SettingToggle { Layout.fillWidth: true; label: "Hover lift"; detail: "Enlarge icons without moving their click targets."; checked: Settings.dockHoverLift; onToggled: Settings.dockHoverLift = !Settings.dockHoverLift }
+        SettingToggle { Layout.fillWidth: true; label: "Enlarge on hover"; detail: "Make icons larger when you point at them."; checked: Settings.dockHoverLift; onToggled: Settings.dockHoverLift = !Settings.dockHoverLift }
         DockSettingSlider { Layout.fillWidth: true; enabled: Settings.dockHoverLift; label: "Hover size"; suffix: "%"; from: 100; to: 160; stepSize: 4; value: Settings.dockHoverScale * 100; onEdited: value => Settings.dockHoverScale = value / 100 }
-        SettingToggle { Layout.fillWidth: true; label: "Neighbor lift"; detail: "Adjacent icons follow at half strength. Click targets stay fixed."; checked: Settings.dockHoverNeighbors; onToggled: Settings.dockHoverNeighbors = !Settings.dockHoverNeighbors }
-        SettingToggle { Layout.fillWidth: true; label: "Dock backing"; checked: Settings.dockBackground; onToggled: Settings.dockBackground = !Settings.dockBackground }
-        SettingToggle { Layout.fillWidth: true; label: "Running indicators"; checked: Settings.dockShowIndicators; onToggled: Settings.dockShowIndicators = !Settings.dockShowIndicators }
+        SettingToggle { Layout.fillWidth: true; label: "Enlarge nearby icons"; detail: "Nearby icons grow by half as much."; checked: Settings.dockHoverNeighbors; onToggled: Settings.dockHoverNeighbors = !Settings.dockHoverNeighbors }
+        SettingToggle { Layout.fillWidth: true; label: "Dock background"; checked: Settings.dockBackground; onToggled: Settings.dockBackground = !Settings.dockBackground }
+        SettingToggle { Layout.fillWidth: true; label: "Show running app markers"; checked: Settings.dockShowIndicators; onToggled: Settings.dockShowIndicators = !Settings.dockShowIndicators }
         Text { text: "DISPLAY"; color: Theme.muted; font.family: Theme.fontText; font.pixelSize: 11 }
         Flow {
             Layout.fillWidth: true; spacing: 6
@@ -225,16 +225,16 @@ ColumnLayout {
         SettingToggle { Layout.fillWidth: true; label: "Show running applications"; detail: "Include unpinned apps while they have open windows."; checked: Settings.dockShowRunning; onToggled: Settings.dockShowRunning = !Settings.dockShowRunning }
         SettingToggle { Layout.fillWidth: true; label: "Applications shortcut"; detail: "Keep the launcher button. It also appears when the dock is empty."; checked: Settings.dockShowLauncher; onToggled: Settings.dockShowLauncher = !Settings.dockShowLauncher }
         SettingChoice {
-            Layout.fillWidth: true; label: "Window scope"; value: Settings.dockWindowScope
+            Layout.fillWidth: true; label: "Show windows from"; value: Settings.dockWindowScope
             choices: [{label: "ALL", value: "all"}, {label: "THIS DISPLAY", value: "output"}, {label: "ACTIVE WORKSPACE", value: "workspace"}]
             onSelected: value => Settings.dockWindowScope = value
         }
         SettingToggle { Layout.fillWidth: true; label: "Auto-hide"; detail: "Turn off to keep the dock visible."; checked: Settings.dockAutoHide; onToggled: Settings.dockAutoHide = !Settings.dockAutoHide }
         SettingToggle { Layout.fillWidth: true; label: "Above application windows"; checked: Settings.dockAboveWindows; onToggled: Settings.dockAboveWindows = !Settings.dockAboveWindows }
-        SettingToggle { Layout.fillWidth: true; enabled: !Settings.dockAutoHide; label: "Reserve screen space"; detail: "Keep application windows clear of the persistent dock."; checked: Settings.dockExclusive; onToggled: Settings.dockExclusive = !Settings.dockExclusive }
-        DockSettingSlider { Layout.fillWidth: true; enabled: Settings.dockAutoHide; label: "Reveal delay"; suffix: " ms"; from: 0; to: 600; stepSize: 20; value: Settings.dockShowDelay; onEdited: value => Settings.dockShowDelay = value }
+        SettingToggle { Layout.fillWidth: true; enabled: !Settings.dockAutoHide; label: "Reserve screen space"; detail: "Keep app windows from covering the dock."; checked: Settings.dockExclusive; onToggled: Settings.dockExclusive = !Settings.dockExclusive }
+        DockSettingSlider { Layout.fillWidth: true; enabled: Settings.dockAutoHide; label: "Show delay"; suffix: " ms"; from: 0; to: 600; stepSize: 20; value: Settings.dockShowDelay; onEdited: value => Settings.dockShowDelay = value }
         DockSettingSlider { Layout.fillWidth: true; enabled: Settings.dockAutoHide; label: "Hide delay"; suffix: " ms"; from: 150; to: 1500; stepSize: 50; value: Settings.dockHideDelay; onEdited: value => Settings.dockHideDelay = value }
-        Text { Layout.fillWidth: true; text: "Click to focus or cycle windows. Middle-click / Shift-click to launch another instance."; wrapMode: Text.Wrap; color: Theme.muted; font.family: Theme.fontText; font.pixelSize: 11 }
+        Text { Layout.fillWidth: true; text: "Click to open or switch between windows. Middle-click or Shift-click to open a new app window."; wrapMode: Text.Wrap; color: Theme.muted; font.family: Theme.fontText; font.pixelSize: 11 }
     }
     }
 }

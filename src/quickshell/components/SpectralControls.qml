@@ -10,9 +10,9 @@ ColumnLayout {
     property bool statusOk: true
     property string hoveredPreset: ""
     readonly property var channels: [
-        {label: "Selection / action", value: "accent"},
-        {label: "Cool telemetry", value: "cyan"},
-        {label: "Media / signals", value: "rose"},
+        {label: "Buttons and selections", value: "accent"},
+        {label: "System stats", value: "cyan"},
+        {label: "Media", value: "rose"},
         {label: "Success", value: "success"},
         {label: "Warning", value: "warning"},
         {label: "Error", value: "danger"}
@@ -44,20 +44,20 @@ ColumnLayout {
         for (const channel of channels)
             Settings.setSpectralColor(channel.value, "", String(Theme.void_));
         statusOk = true;
-        statusMessage = "All channels follow the theme again.";
+        statusMessage = "All colors now use the theme defaults.";
         syncEditor();
     }
 
     Text {
         Layout.fillWidth: true
-        text: "Spectral colors"
+        text: "Custom colors"
         color: Theme.moon
         font.family: Theme.fontDisplay
         font.pixelSize: Theme.textBody
     }
     Text {
         Layout.fillWidth: true
-        text: "Tune the colors used by actions and measurements. The open interface is the preview. Automatic appearance follows your action color."
+        text: "Choose colors for buttons, system stats, and alerts. Changes appear as you edit. Automatic appearance follows your button color."
         wrapMode: Text.Wrap
         color: Theme.muted
         font.family: Theme.fontText
@@ -65,14 +65,14 @@ ColumnLayout {
     }
     SettingChoice {
         Layout.fillWidth: true
-        label: "Channel"
+        label: "Color for"
         value: root.selectedRole
         choices: root.channels
         onSelected: function(value) { root.selectedRole = value; }
     }
     Text {
         Layout.fillWidth: true
-        text: root.hoveredPreset.length ? "Preset · " + root.hoveredPreset : "Theme swatches"
+        text: root.hoveredPreset.length ? "Preset · " + root.hoveredPreset : "Suggested colors"
         color: Theme.muted
         font.family: Theme.fontText
         font.pixelSize: Theme.textCaption
@@ -116,14 +116,14 @@ ColumnLayout {
     SettingTextField {
         id: hexField
         Layout.fillWidth: true
-        label: "Hex color"
-        detail: "Opaque six-digit color, for example #a99cff. Press Enter to apply."
+        label: "Color code"
+        detail: "Use a six-digit color code, such as #a99cff. Press Enter to apply."
         value: root.currentColor
         onCommitted: function(value) { root.applyColor(value); }
     }
     Text {
         Layout.fillWidth: true
-        text: root.statusMessage.length ? root.statusMessage : "Enter any #RRGGBB color, then press Enter. Your exact choice is preserved."
+        text: root.statusMessage.length ? root.statusMessage : "Enter a color code, then press Enter to apply."
         wrapMode: Text.Wrap
         color: root.statusOk ? Theme.muted : Theme.warning
         font.family: Theme.fontText
@@ -134,7 +134,7 @@ ColumnLayout {
     Flow {
         Layout.fillWidth: true
         spacing: Theme.spaceXs
-        ActionButton { text: "Reset this channel"; onClicked: root.applyColor("") }
-        ActionButton { text: "Reset all channels"; onClicked: root.resetAll() }
+        ActionButton { text: "Reset this color"; onClicked: root.applyColor("") }
+        ActionButton { text: "Reset all colors"; onClicked: root.resetAll() }
     }
 }

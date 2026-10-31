@@ -1,14 +1,16 @@
 # Theme identities
 
-Open **Settings → Appearance → Theme studio → Identity**.
+Open **Settings → Appearance → Logo**.
 
 Choose one of fourteen approved SVGs, or select **Follow theme color**. Automatic selection prioritizes your exact action color, then your chosen Matugen seed, then the wallpaper's source color or the selected accent preset. Generated lighter primary colors are not used to override an explicit choice.
 
 Choosing a logo does not change your palette. **Use [name] color** separately applies its exact color and generates supporting colors through Matugen. Logos always retain their original SVG colors. Wabi Sabi is the default and keeps its original amber stream and black horizon.
 
-With Automatic appearance, manually selected dark marks (ruby, fire, leaf, night sky, cloud and ink) use light surfaces. Other marks use dark surfaces. When following the theme color, dark chosen colors get light surfaces and pale chosen colors get dark surfaces. Explicit Light or Dark controls desktop surfaces. Leaf always uses a dark botanical scene on the lock and login screens. Its lock illustration uses a natural plant without the standalone leaf emblem; its bar and picker logo remain unchanged. Logos retain their exact SVG colors, with transparent backgrounds and sizing fitted to their visible artwork.
+**Color mode** is always visible above Logo, Colors and Style. Light and Dark stay selected when you change logos or styles, and also apply to the lock and login screens. Auto follows your theme color (or your separate button color), not the logo. Leaf keeps its dark lock background in Auto; you can still choose Light explicitly.
 
-**Preview lock** opens Umbra's existing safe preview. Each selected identity has a complete, contained native vector illustration with restrained motion. Wide screens reserve the left side for controls; tall screens place the illustration above the clock and password entry. Wabi Sabi uses a simplified accretion illustration with the original amber SVG and black horizon. The illustrations draw on size/theme changes and animate cached items; they stop moving when hidden or when motion is disabled.
+Choosing a logo changes the bar icon and lock artwork only. “Use [name] color” is a separate action.
+
+**Preview lock** opens Umbra's existing safe preview. Each selected identity has a complete, contained native vector illustration with restrained motion. Wide screens reserve the left side for controls; tall screens place the illustration above the clock and password entry. Ink uses an ink splatter, Cloud uses a shaded cloud, and the other scenes use simple subjects without loose decorative marks. Scene colors adapt to Light or Dark while bar logos retain their approved colors. Wabi Sabi keeps the original amber SVG and black horizon. The illustrations draw on size/theme changes and animate cached items; they stop moving when hidden or when motion is disabled.
 
 **Preview login screen** opens an SDDM test window. The login screen uses a system-wide snapshot, so it is updated separately from personal shell settings:
 

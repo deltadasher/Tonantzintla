@@ -48,7 +48,7 @@ Item {
                         color: Settings.doNotDisturb ? Theme.warning : Theme.success
                     }
                     Text {
-                        text: Settings.doNotDisturb ? "DND ACTIVE" : "NOTIFICATIONS ON"
+                        text: Settings.doNotDisturb ? "DO NOT DISTURB" : "NOTIFICATIONS ON"
                         color: Settings.doNotDisturb ? Theme.warning : Theme.moon
                         font.family: Theme.fontMono
                         font.pixelSize: 10
@@ -88,7 +88,7 @@ Item {
         RowLayout {
             Layout.fillWidth:true
             ActionButton { text:"Test notification";onClicked:Notifications.preview("Notification preview","This is a local, silent preview.") }
-            Text { Layout.fillWidth:true;text:Settings.doNotDisturb?"Preview is recorded; Do Not Disturb suppresses its popup.":Settings.notificationRightClickClose?"Right-click a notification to dismiss it.":"Use Dismiss or Delete to remove a notification.";color:Theme.muted;font.family:Theme.fontText;font.pixelSize:11;wrapMode:Text.Wrap }
+            Text { Layout.fillWidth:true;text:Settings.doNotDisturb?"Preview is saved in history. Do Not Disturb hides its popup.":Settings.notificationRightClickClose?"Right-click a notification to dismiss it.":"Use Dismiss or Delete to remove a notification.";color:Theme.muted;font.family:Theme.fontText;font.pixelSize:11;wrapMode:Text.Wrap }
         }
         ListView {
             id: historyList
@@ -144,8 +144,8 @@ Item {
                 sourceComponent:Column {
                     width:Math.min(historyList.width-24,260);spacing:18
                     Loader { active:Settings.notificationEmptyGraphic;visible:active;anchors.horizontalCenter:parent.horizontalCenter;width:150;height:100;sourceComponent:ThemeMark { opacity:.55 } }
-                    Text { width:parent.width;text:Settings.doNotDisturb?"A quiet observatory":"No notifications";horizontalAlignment:Text.AlignHCenter;color:Theme.moon;font.family:Theme.fontDisplay;font.pixelSize:19 }
-                    Text { width:parent.width;text:"New signals will appear here.";horizontalAlignment:Text.AlignHCenter;color:Theme.muted;font.family:Theme.fontText;font.pixelSize:12 }
+                    Text { width:parent.width;text:Settings.doNotDisturb?"Do Not Disturb is on":"No notifications";horizontalAlignment:Text.AlignHCenter;color:Theme.moon;font.family:Theme.fontDisplay;font.pixelSize:19 }
+                    Text { width:parent.width;text:"New notifications will appear here.";horizontalAlignment:Text.AlignHCenter;color:Theme.muted;font.family:Theme.fontText;font.pixelSize:12 }
                 }
             }
         }

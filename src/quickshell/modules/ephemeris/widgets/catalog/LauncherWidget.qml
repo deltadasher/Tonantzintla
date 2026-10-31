@@ -31,12 +31,12 @@ Item {
         .slice(0, Math.max(1, Settings.launcherMaxResults))
     readonly property var selected: results.find(function(entry) { return entry.id === selection; }) || null
     readonly property var settingsCommands: [
-        { id: "settings:appearance", kind: "settings", target: "appearance", name: "Appearance settings", detail: "Palette, typography and atmosphere", keywords: "theme colors colour font motion density" },
+        { id: "settings:appearance", kind: "settings", target: "appearance", name: "Appearance settings", detail: "Colors, fonts and effects", keywords: "theme colors colour font motion density" },
         { id: "settings:bar", kind: "settings", target: "bar", name: "Bar editor", detail: "Open the Aperture bar editor", keywords: "aperture bar clock position arrange" },
-        { id: "settings:launcher", kind: "settings", target: "launcher", name: "Panel settings", detail: "Launcher and surface behavior", keywords: "apps ephemeris animation transition" },
+        { id: "settings:launcher", kind: "settings", target: "launcher", name: "Panel settings", detail: "Launcher and panel behavior", keywords: "apps ephemeris animation transition" },
         { id: "settings:umbra", kind: "settings", target: "umbra", name: "Lock screen settings", detail: "Umbra appearance and behavior", keywords: "lock umbra" },
-        { id: "settings:system", kind: "settings", target: "system", name: "System settings", detail: "Preferred applications and integrations", keywords: "browser terminal file manager defaults" },
-        { id: "settings:extensions", kind: "settings", target: "extensions", name: "Extension settings", detail: "Module availability", keywords: "modules integrations diagnostic" }
+        { id: "settings:system", kind: "settings", target: "system", name: "System settings", detail: "Default apps and connected services", keywords: "browser terminal file manager defaults" },
+        { id: "settings:extensions", kind: "settings", target: "extensions", name: "Extension settings", detail: "Available features", keywords: "modules integrations diagnostic" }
     ]
     readonly property var sessionCommands: [
         { id: "launch:terminal", kind: "launch", target: "terminal", name: "Open terminal", detail: "Your configured terminal", keywords: "console command prompt" },
@@ -45,7 +45,7 @@ Item {
         { id: "media:toggle", kind: "media", target: "toggle", name: Media.playing ? "Pause media" : "Play media", detail: Media.available ? Media.title : "No media player connected", keywords: "music audio playback play pause toggle", enabled: Media.available && Media.player.canTogglePlaying },
         { id: "media:next", kind: "media", target: "next", name: "Next track", detail: Media.available ? Media.identity : "No media player connected", keywords: "music skip forward", enabled: Media.available && Media.player.canGoNext },
         { id: "media:previous", kind: "media", target: "previous", name: "Previous track", detail: Media.available ? Media.identity : "No media player connected", keywords: "music back previous", enabled: Media.available && Media.player.canGoPrevious },
-        { id: "focus:toggle", kind: "focus", name: ShellState.deepFocus ? "Leave event horizon" : "Enter event horizon", detail: ShellState.deepFocus ? "Restore the bar and notifications" : "Quiet the bar and notifications for deep focus", keywords: "focus concentration distractions zen event horizon" },
+        { id: "focus:toggle", kind: "focus", name: ShellState.deepFocus ? "Turn off focus mode" : "Turn on focus mode", detail: ShellState.deepFocus ? "Restore the bar and notifications" : "Quiet the bar and notifications for deep focus", keywords: "focus concentration distractions zen event horizon" },
         { id: "session:lock", kind: "lock", name: "Lock screen", detail: "Secure this session with Umbra", keywords: "lock session umbra" }
     ]
 

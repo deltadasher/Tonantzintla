@@ -226,7 +226,7 @@ PanelWindow {
                 spacing:10
                 RowLayout {
                     Layout.fillWidth:true
-                    Text {Layout.fillWidth:true;text:root.islandTitles[ShellState.activeIslandSettingsId]||"Island settings";wrapMode:Text.Wrap;color:Theme.moon;font.family:Theme.fontText;font.pixelSize:Theme.textBody;font.bold:true}
+                    Text {Layout.fillWidth:true;text:root.islandTitles[ShellState.activeIslandSettingsId]||"Widget settings";wrapMode:Text.Wrap;color:Theme.moon;font.family:Theme.fontText;font.pixelSize:Theme.textBody;font.bold:true}
                     ActionButton {id:closeButton;focus:true;text:"Close";onClicked:ShellState.closeIslandSettings()}
                 }
                 IslandCustomizationBody {

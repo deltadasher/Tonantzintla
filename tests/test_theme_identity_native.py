@@ -42,9 +42,9 @@ Window {
   else if(w.step===1){
    w.check(Settings.themeIdentity==="leaf" && Theme.identity.id==="leaf","manual choice applies");
    w.check(Settings.paletteSeedColor==="#d11e40","choosing a logo does not change Matugen seed");
-   w.check(Theme.isLight,"dark leaf gets a light background");Settings.themeMode="dark";
+   w.check(Theme.isLight,"Auto follows the dark theme color, not the logo");Settings.themeMode="dark";
   } else if(w.step===2){
-   w.check(!Theme.isLight,"explicit appearance overrides identity default");
+   w.check(!Theme.isLight,"explicit appearance stays selected with a logo");
    Settings.themeMode="auto";w.press("Logo selection: Follow theme color");
   } else if(w.step===3){
    w.check(Settings.themeIdentity==="auto" && Theme.identity.id==="ruby","auto uses exact seed");
@@ -53,7 +53,7 @@ Window {
    w.check(Theme.identity.id==="ice-cube" && !Theme.isLight,"exact action color wins");
    w.press("Ink, #000000");
   } else if(w.step===5){
-   w.check(Theme.identity.id==="ink" && mark.mark.color==="#000000" && Theme.isLight,"manual ink remains black with light mode");
+   w.check(Theme.identity.id==="ink" && mark.mark.color==="#000000" && !Theme.isLight,"manual ink remains black without changing the chosen appearance");
    w.check(Settings.spectralColors.accent==="#83dad9","manual logo preserves separate exact accent");
   } else if(w.step>8 && !Settings.saveTimer.running && !Settings.preferencesLoading){
    console.log("IDENTITY_COMPLETE",w.failures);Qt.exit(w.failures?1:0);stop();

@@ -6,7 +6,7 @@ Item {
     id: root
     property string identity: "wabi-sabi"
     property color accent: Drawing.approvedAccent(identity)
-    property bool lightMode: ["ruby", "fire", "night-sky", "cloud", "ink"].indexOf(identity) !== -1
+    property bool lightMode: false
     property bool active: true
     property bool motion: true
     property url iconSource: Qt.resolvedUrl("../../assets/theme-marks/" + identity + ".svg")
@@ -72,8 +72,8 @@ Item {
 
         Image {
             id: approvedMark
-            // The green scene is a complete botanical drawing on its own.
-            visible: root.identity !== "leaf"
+            // These scenes draw their subject directly, without a pasted logo.
+            visible: ["leaf", "ink", "cloud", "ruby", "ice-cube", "seashell", "sun", "moon", "night-sky", "snowflake"].indexOf(root.identity) === -1
             x: root.mark.x / 1000 * illustration.width
             y: root.mark.y / 1000 * illustration.height
             width: root.mark.size / 1000 * illustration.width

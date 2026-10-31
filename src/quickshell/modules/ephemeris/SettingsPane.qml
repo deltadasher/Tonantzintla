@@ -157,10 +157,10 @@ Item {
                     Repeater {
                         model: [
                             { "key": "appearance", "label": "Appearance" },
-                            { "key": "optics", "label": "Control optics" },
+                            { "key": "optics", "label": "Control effects" },
                             { "key": "launcher", "label": "Panels" },
                             { "key": "umbra", "label": "Lock screen" },
-                            { "key": "umbra-layout", "label": "Lock composition" },
+                            { "key": "umbra-layout", "label": "Lock layout" },
                             { "key": "system", "label": "System" },
                             { "key": "niri", "label": "Niri settings" },
                             { "key": "extensions", "label": "Features" }
@@ -299,8 +299,8 @@ Item {
             spacing: Theme.spaceMd
             SettingToggle {
                 Layout.fillWidth: true
-                label: "Optical controls"
-                detail: "Etched, frosted or refractive finishes. Control finishes are independent of the panel material."
+                label: "Control effects"
+                detail: "Add etched, frosted, or glass effects to controls. These can differ from the panel background."
                 checked: Settings.opticalControls
                 onToggled: Settings.opticalControls = !Settings.opticalControls
             }
@@ -328,7 +328,7 @@ Item {
                 onLoaded: if (item) item.width = Qt.binding(function() { return themeStudioLoader.width; })
             }
 
-            Text { text: "Color and typography"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 16 }
+            Text { text: "Colors and fonts"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 16 }
             SettingToggle {
                 Layout.fillWidth: true
                 label: "Wallpaper colors"
@@ -347,7 +347,7 @@ Item {
                 label: "Font preset"
                 value: Settings.typographyProfile === "serpantinum" ? "observatory" : Settings.typographyProfile
                 choices: [
-                    { "label": "OBSERVATORY", "value": "observatory" },
+                    { "label": "DEFAULT", "value": "observatory" },
                     { "label": "READABLE", "value": "readable" },
                     { "label": "SYSTEM", "value": "system" }
                 ]
@@ -362,7 +362,7 @@ Item {
 
                 SettingTextField {
                     Layout.fillWidth: true
-                    label: "Display font"
+                    label: "Heading font"
                     value: Settings.fontDisplay
                     status: FontState.displayStatus
                     statusOk: FontState.displayOk
@@ -373,7 +373,7 @@ Item {
                 }
                 SettingTextField {
                     Layout.fillWidth: true
-                    label: "Interface font"
+                    label: "Text font"
                     value: Settings.fontText
                     status: FontState.textStatus
                     statusOk: FontState.textOk
@@ -406,17 +406,17 @@ Item {
                 }
             }
 
-            Text { text: "Surface and controls"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 16 }
+            Text { text: "Panels and controls"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 16 }
             ActionButton {
                 Layout.fillWidth: true
-                text: "Configure control optics"
+                text: "Customize control effects"
                 onClicked: ShellState.settingsSection = "optics"
             }
 
             SettingChoice {
                 Layout.fillWidth: true
-                label: "Instrument appearance"
-                detail: "Choose an instrument to give it an independent material. Changes apply on its next visible frame."
+                label: "Panel appearance"
+                detail: "Choose a panel to customize its appearance. Changes appear when the panel is shown."
                 value: root.appearanceModule
                 choices: Registry.widgets().filter(function(entry) { return entry.id !== "walls"; }).map(function(entry) {
                     return {label: entry.title, value: entry.id};
@@ -425,12 +425,12 @@ Item {
             }
             SettingChoice {
                 Layout.fillWidth: true
-                label: "Material for this instrument"
+                label: "Style for this panel"
                 value: Settings.appearanceFor(root.appearanceModule)
-                choices: [{label: "Use global", value: "inherit"}, {label: "Classic", value: "classic"}, {label: "Gravity", value: "gravity"}, {label: "Frosted", value: "frosted"}, {label: "Liquid glass", value: "liquid"}]
+                choices: [{label: "Use default", value: "inherit"}, {label: "Classic", value: "classic"}, {label: "Gravity", value: "gravity"}, {label: "Frosted", value: "frosted"}, {label: "Liquid glass", value: "liquid"}]
                 onSelected: function(value) { Settings.setModuleAppearance(root.appearanceModule, value); }
             }
-            Text { text: "Motion and atmosphere"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 16 }
+            Text { text: "Animations and background"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 16 }
             SettingChoice {
                 Layout.fillWidth: true
                 label: "Panel animation"
@@ -461,7 +461,7 @@ Item {
                 value: Settings.atmosphereStyle
                 choices: [
                     { "label": "QUIET", "value": "quiet" },
-                    { "label": "NOMINAL", "value": "nominal" },
+                    { "label": "STANDARD", "value": "nominal" },
                     { "label": "CINEMATIC", "value": "cinematic" }
                 ]
                 onSelected: function(value) { Settings.atmosphereStyle = value; }
@@ -537,7 +537,7 @@ Item {
                         Text {
                             id: openStudioText
                             anchors.centerIn: parent
-                            text: "Edit Mode ✦"
+                            text: "Edit bar"
                             color: Theme.void_
                             font.family: Theme.fontText
                             font.pixelSize: 12
@@ -577,7 +577,7 @@ Item {
                 value: Settings.barHeightProfile
                 choices: [
                     { "label": "COMPACT", "value": "compact" },
-                    { "label": "NOMINAL", "value": "nominal" },
+                    { "label": "STANDARD", "value": "nominal" },
                     { "label": "TALL", "value": "tall" }
                 ]
                 onSelected: function(value) { Settings.barHeightProfile = value; }
@@ -590,14 +590,14 @@ Item {
                 choices: [
                     { "label": "DOCKED", "value": "docked" },
                     { "label": "FLOATING", "value": "floating" },
-                    { "label": "CAPSULES", "value": "capsules" }
+                    { "label": "WIDGETS", "value": "capsules" }
                 ]
                 onSelected: function(value) { Settings.barMode = value; }
             }
 
             SettingChoice {
                 Layout.fillWidth: true
-                label: "Time notation"
+                label: "Time format"
                 value: Settings.clock12h ? "12h" : "24h"
                 choices: [
                     { "label": "24-HOUR", "value": "24h" },
@@ -613,7 +613,7 @@ Item {
                 value: Settings.barMargin
                 choices: [
                     { "label": "TIGHT", "value": 8 },
-                    { "label": "NOMINAL", "value": 12 },
+                    { "label": "STANDARD", "value": 12 },
                     { "label": "WIDE", "value": 18 }
                 ]
                 onSelected: function(value) { Settings.barMargin = value; }
@@ -621,7 +621,7 @@ Item {
 
             SettingChoice {
                 Layout.fillWidth: true
-                label: "Glass density"
+                label: "Bar opacity"
                 value: Settings.barOpacity
                 choices: [
                     { "label": "LIGHT", "value": 0.82 },
@@ -633,7 +633,7 @@ Item {
 
             SettingChoice {
                 Layout.fillWidth: true
-                label: "Widget preset"
+                label: "Widget layout"
                 value: ""
                 choices: [
                     { "label": "MINIMAL", "value": "minimal" },
@@ -646,9 +646,9 @@ Item {
             ToggleGrid {
                 Layout.fillWidth: true
                 toggleRows: [
-                    { "key": "showLauncherButton", "label": "Launcher control" },
+                    { "key": "showLauncherButton", "label": "Launcher button" },
                     { "key": "barIconMotion", "label": "Icon opening animations", "detail": "A short response when a bar panel opens" },
-                    { "key": "showSettingsButton", "label": "Settings control" },
+                    { "key": "showSettingsButton", "label": "Settings button" },
                     { "key": "showWorkspaces", "label": "Workspaces" },
                     { "key": "showFocusedWindow", "label": "Focused window" },
                     { "key": "showMedia", "label": "Media" },
@@ -688,7 +688,7 @@ Item {
                 value: Settings.defaultLaunchTab
                 choices: [
                     { "label": "APPLICATIONS", "value": "apps" },
-                    { "label": "OBSERVATORY", "value": "system" },
+                    { "label": "SYSTEM", "value": "system" },
                     { "label": "RESONANCE", "value": "media" },
                     { "label": "WALLPAPERS", "value": "walls" },
                     { "label": "CALENDAR", "value": "calendar" }
@@ -698,7 +698,7 @@ Item {
 
             SettingChoice {
                 Layout.fillWidth: true
-                label: "Ephemeris presentation"
+                label: "Ephemeris layout"
                 value: Settings.ephemerisStyle
                 choices: [
                     { "label": "SPOTLIGHT", "value": "spotlight" },
@@ -710,7 +710,7 @@ Item {
 
             SettingChoice {
                 Layout.fillWidth: true
-                label: "Feedback duration"
+                label: "Popup duration"
                 value: Settings.osdDuration
                 choices: [
                     { "label": "1s", "value": 1000 },
@@ -723,9 +723,9 @@ Item {
             ToggleGrid {
                 Layout.fillWidth: true
                 toggleRows: [
-                    { "key": "osdVolume", "label": "Volume feedback" },
-                    { "key": "osdMicrophone", "label": "Microphone feedback" },
-                    { "key": "osdBrightness", "label": "Brightness feedback" }
+                    { "key": "osdVolume", "label": "Volume popup" },
+                    { "key": "osdMicrophone", "label": "Microphone popup" },
+                    { "key": "osdBrightness", "label": "Brightness popup" }
                 ]
             }
             Loader {
@@ -748,14 +748,14 @@ Item {
             ToggleGrid {
                 Layout.fillWidth: true
                 toggleRows: [
-                    { "key": "enableCalculator", "label": "Inline calculator & math" },
+                    { "key": "enableCalculator", "label": "Calculator in search" },
                     { "key": "showAppDescriptions", "label": "App descriptions" },
                     { "key": "showTabApps", "label": "Apps panel" },
-                    { "key": "showTabMedia", "label": "Media console" },
+                    { "key": "showTabMedia", "label": "Media panel" },
                     { "key": "showTabCalendar", "label": "Calendar panel" },
                     { "key": "showTabWalls", "label": "Wallpaper panel" },
                     { "key": "showTabClipboard", "label": "Clipboard panel" },
-                    { "key": "showTabCapture", "label": "Screen optics panel" }
+                    { "key": "showTabCapture", "label": "Screenshot panel" }
                 ]
             }
             Item { Layout.preferredHeight: 8 }
@@ -776,7 +776,7 @@ Item {
             }
             SettingChoice {
                 Layout.fillWidth: true
-                label: "Idle timeout"
+                label: "Lock after"
                 enabled: Settings.idleLockEnabled
                 value: Settings.idleLockMinutes
                 choices: [{label: "1m", value: 1}, {label: "5m", value: 5}, {label: "10m", value: 10}, {label: "15m", value: 15}, {label: "30m", value: 30}]
@@ -863,7 +863,7 @@ Item {
                     anchors.rightMargin: 10
                     Text {
                         Layout.fillWidth: true
-                        text: "Lock session now"
+                        text: "Lock now"
                         color: Theme.moon
                         font.family: Theme.fontText
                         font.pixelSize: 12
@@ -926,7 +926,7 @@ Item {
 
             SettingChoice {
                 Layout.fillWidth: true
-                label: "Notification placement"
+                label: "Notification position"
                 value: Settings.notificationPosition
                 choices: [
                     { "label": "TOP RIGHT", "value": "top-right" },
@@ -964,7 +964,7 @@ Item {
             SettingChoice {
                 Layout.fillWidth: true
                 enabled: Settings.weatherEnabled
-                label: "Temperature scale"
+                label: "Temperature units"
                 value: Settings.temperatureUnit
                 choices: [
                     { "label": "CELSIUS", "value": "celsius" },
@@ -981,13 +981,13 @@ Item {
 
                 Repeater {
                     model: [
-                        { "code": "NIR", "label": "Compositor IPC", "value": Compositor.available ? "ONLINE" : "OFFLINE", "ok": Compositor.available },
-                        { "code": "OPT", "label": "Clipboard snipping", "value": Environment.canCaptureRegion ? "ONLINE" : "MISSING", "ok": Environment.canCaptureRegion },
-                        { "code": "WAL", "label": "Wallpaper backend", "value": Environment.wallpaperStatus, "ok": Environment.canSetWallpaper },
-                        { "code": "MPR", "label": "MPRIS players", "value": Media.available ? "ONLINE" : "IDLE", "ok": Media.available },
-                        { "code": "NET", "label": "Network link", "value": NetState.connected ? NetState.label : "OFFLINE", "ok": NetState.connected },
+                        { "code": "NIR", "label": "Desktop connection", "value": Compositor.available ? "ONLINE" : "OFFLINE", "ok": Compositor.available },
+                        { "code": "OPT", "label": "Copy screenshots", "value": Environment.canCaptureRegion ? "ONLINE" : "MISSING", "ok": Environment.canCaptureRegion },
+                        { "code": "WAL", "label": "Wallpaper service", "value": Environment.wallpaperStatus, "ok": Environment.canSetWallpaper },
+                        { "code": "MPR", "label": "Media players", "value": Media.available ? "ONLINE" : "IDLE", "ok": Media.available },
+                        { "code": "NET", "label": "Network connection", "value": NetState.connected ? NetState.label : "OFFLINE", "ok": NetState.connected },
                         { "code": "SKY", "label": "Weather forecast", "value": Weather.status, "ok": Weather.available },
-                        { "code": "AUD", "label": "PipeWire volume", "value": Audio.percent + "%", "ok": true }
+                        { "code": "AUD", "label": "Volume", "value": Audio.percent + "%", "ok": true }
                     ]
 
                     Rectangle {
