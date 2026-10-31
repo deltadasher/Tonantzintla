@@ -14,18 +14,19 @@ Item {
     readonly property string timeText: Notation.time(dateTime, Settings.clock12h)
     readonly property real metricScale: Math.max(0, Math.min(width / 560, height / 240))
     Text {
+        id: dateLabel
         objectName: "classicDate"
         width: parent.width
-        height: 16 * root.metricScale
+        height: 24 * root.metricScale
         verticalAlignment: Text.AlignVCenter
         text: Qt.formatDateTime(root.dateTime, "dddd, MMMM dd").toUpperCase()
         color: root.accentColor; font.family: Theme.fontMono
-        font.pixelSize: 11 * root.metricScale; font.letterSpacing: 2 * root.metricScale
+        font.pixelSize: 18 * root.metricScale; font.letterSpacing: 2 * root.metricScale
         elide: Text.ElideRight
     }
     Text {
         objectName: "classicTime"
-        y: 23 * root.metricScale; width: parent.width; height: 156 * root.metricScale
+        y: 36 * root.metricScale; width: parent.width; height: 156 * root.metricScale
         text: root.timeText
         color: root.foregroundColor; font.family: Theme.fontDisplay
         font.pixelSize: 126 * root.metricScale; font.weight: Font.Light

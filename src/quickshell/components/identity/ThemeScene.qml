@@ -16,24 +16,37 @@ Item {
     readonly property color accentColor: Drawing.readableAccent(accent, backgroundColor, foregroundColor)
     readonly property color dangerColor: Drawing.readableAccent(lightMode ? "#a93649" : "#ed7d8f", backgroundColor, foregroundColor)
     readonly property bool portrait: height > width * 1.12
+    // The entire square fits in a reserved region. Drawing uses an additional
+    // 80-unit inset, so its silhouettes and small transforms never meet an edge.
+    readonly property real artboardSize: Math.max(0, portrait
+        ? Math.min(width * 0.90, height * 0.36)
+        : Math.min(width * 0.52, height * 0.84))
+    readonly property rect artRect: Qt.rect(
+        portrait ? (width - artboardSize) * 0.5 : width * 0.44 + (width * 0.52 - artboardSize) * 0.5,
+        portrait ? height * 0.04 : (height - artboardSize) * 0.5,
+        artboardSize, artboardSize)
+    // Shared placement contract for lock and greeter hosts. Portrait clocks and
+    // authentication controls belong below the complete illustration.
+    readonly property real suggestedClockY: height * (portrait ? 0.43 : 0.29)
+    readonly property real suggestedInputY: height * (portrait ? 0.65 : 0.58)
     readonly property var mark: Drawing.markPlacement(identity)
+    readonly property real motionUnit: artboardSize / 1000
     property real motionPhase: 0
-    clip: true
 
     Rectangle { anchors.fill: parent; color: root.backgroundColor }
 
     Item {
         id: illustration
-        // The landscape's left 42% remains quiet; portrait art moves above the form.
-        width: root.portrait ? root.width * 1.18 : Math.min(root.width * 0.65, root.height * 1.48)
+        objectName: "themeSceneArtboard"
+        width: root.artRect.width
         height: width
-        x: root.portrait ? root.width * 0.12 : root.width - width * 0.96
-        y: root.portrait ? -width * 0.18 : (root.height - height) * 0.5
+        x: root.artRect.x
+        y: root.artRect.y
 
         transform: [
             Translate {
-                x: root.identity === "cloud" ? root.motionPhase * 4 : 0
-                y: ["water-droplet", "ink"].indexOf(root.identity) !== -1 ? root.motionPhase * -2.5 : 0
+                x: root.identity === "cloud" ? root.motionPhase * 4 * root.motionUnit : 0
+                y: ["water-droplet", "ink"].indexOf(root.identity) !== -1 ? root.motionPhase * -2.5 * root.motionUnit : 0
             },
             Rotation {
                 origin.x: illustration.width * 0.6
@@ -52,17 +65,6 @@ Item {
                 ctx.reset();
                 ctx.scale(width / 1000, height / 1000);
                 Drawing.paint(ctx, root.identity, root.accent, root.backgroundColor, root.foregroundColor, root.lightMode);
-                if (root.portrait) {
-                    // Tall displays leave a calm password area below the art.
-                    // Fade its lower edge instead of exposing the artboard cutoff.
-                    ctx.globalCompositeOperation = "destination-in";
-                    const fade = ctx.createLinearGradient(0, 700, 0, 1000);
-                    fade.addColorStop(0, "#ffffff");
-                    fade.addColorStop(1, "transparent");
-                    ctx.fillStyle = fade;
-                    ctx.fillRect(0, 0, 1000, 1000);
-                    ctx.globalCompositeOperation = "source-over";
-                }
             }
             onWidthChanged: requestPaint()
             onHeightChanged: requestPaint()
@@ -70,6 +72,8 @@ Item {
 
         Image {
             id: approvedMark
+            // The green scene is a complete botanical drawing on its own.
+            visible: root.identity !== "leaf"
             x: root.mark.x / 1000 * illustration.width
             y: root.mark.y / 1000 * illustration.height
             width: root.mark.size / 1000 * illustration.width
@@ -81,7 +85,7 @@ Item {
             smooth: true
             // Flame and celestial marks move independently of their grounded scenery.
             transform: Translate {
-                y: ["fire", "sun", "moon", "night-sky"].indexOf(root.identity) !== -1 ? root.motionPhase * -2 : 0
+                y: ["fire", "sun", "moon", "night-sky"].indexOf(root.identity) !== -1 ? root.motionPhase * -2 * root.motionUnit : 0
             }
         }
     }
@@ -94,7 +98,6 @@ Item {
         NumberAnimation { from: -1; to: 0; duration: 5000; easing.type: Easing.InOutSine }
         onStopped: root.motionPhase = 0
     }
-    onPortraitChanged: artwork.requestPaint()
     onIdentityChanged: artwork.requestPaint()
     onAccentChanged: artwork.requestPaint()
     onLightModeChanged: artwork.requestPaint()
