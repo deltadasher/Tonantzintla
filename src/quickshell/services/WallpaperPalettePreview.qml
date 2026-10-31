@@ -13,7 +13,7 @@ QtObject {
     property var swatches: []
     property var choices: []
     property string seed: ""
-    readonly property string mode: ThemeMode.resolve(Settings.themeMode, seed, Settings.spectralColors.accent)
+    readonly property string mode: Theme.modeForSeed(seed)
     property string jobMode: "dark"
     property string previewSeed: ""
     property string status: "idle"
@@ -45,7 +45,7 @@ QtObject {
                 choices=Array.isArray(data.choices) ? data.choices.filter(function(color) { return /^#[0-9a-fA-F]{6}$/.test(color); }) : [];
                 // The first discovered candidate becomes an explicit selection.
                 // In automatic mode resample it before exposing a mismatched preview.
-                if (!seed && data.seed && ThemeMode.resolve(Settings.themeMode, data.seed, Settings.spectralColors.accent) !== jobMode) {
+                if (!seed && data.seed && Theme.modeForSeed(data.seed) !== jobMode) {
                     seed=data.seed;
                     return;
                 }

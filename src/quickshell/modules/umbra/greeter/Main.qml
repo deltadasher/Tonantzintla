@@ -1,4 +1,5 @@
 import QtQuick 2.15
+import "../../../components/identity"
 
 Rectangle {
     id: root
@@ -8,12 +9,16 @@ Rectangle {
     color: voidColor
     focus: true
 
-    property color voidColor: config.voidColor
+    readonly property string themeIdentity: String(config.themeIdentity || "wabi-sabi")
+    readonly property bool themedScene: themeIdentity !== "wabi-sabi"
+    readonly property bool themeLight: String(config.themeMode || "dark") === "light"
+    readonly property bool sceneMotion: String(config.motion || "true") !== "false"
+    property color voidColor: identityScene.item ? identityScene.item.backgroundColor : config.voidColor
     property color mantle: config.mantle
     property color surface: config.surface
-    property color foreground: config.foreground
-    property color muted: config.muted
-    property color accent: config.accent
+    property color foreground: identityScene.item ? identityScene.item.foregroundColor : config.foreground
+    property color muted: identityScene.item ? identityScene.item.mutedColor : config.muted
+    property color accent: identityScene.item ? identityScene.item.accentColor : config.accent
     property color secondary: config.secondary
     property color danger: config.danger
     property int currentUserIndex: 0
@@ -232,7 +237,25 @@ Rectangle {
         color: root.voidColor
     }
 
+    Loader {
+        id: identityScene
+        anchors.fill: parent
+        active: root.themedScene && root.visible
+        z: 0
+        opacity: root.intro * (1 - root.capture)
+        sourceComponent: ThemeScene {
+            identity: root.themeIdentity
+            accent: config.identityColor || "#e9b872"
+            lightMode: root.themeLight
+            active: root.visible
+            motion: root.sceneMotion
+            iconSource: Qt.resolvedUrl("marks/" + root.themeIdentity + ".svg")
+        }
+    }
+
     UmbraField {
+        visible: !root.themedScene
+        motionActive: root.visible && root.sceneMotion
         z: -8
         anchors.fill: parent
         accent: root.accent
@@ -250,6 +273,8 @@ Rectangle {
 
     UmbraHorizon {
         id: horizon
+        visible: !root.themedScene
+        motionActive: root.visible && root.sceneMotion
         width: root.horizonSize
         height: width
         x: root.width * (0.75 - root.capture * 0.25) - width / 2

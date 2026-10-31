@@ -681,14 +681,12 @@ ClippingRectangle {
 
                 // A track without lyrics shows the project mark, keeping its
                 // asymmetric stream and taking its colour from the palette.
-                WabiSabiBlackHole {
+                ThemeMark {
                     width: parent.width * 0.92
                     height: Math.min(parent.height * 0.52, 350)
                     anchors.horizontalCenter: parent.horizontalCenter
                     y: parent.height * 0.055
                     visible: !Lyrics.available
-                    diskColor: Theme.accent
-
                     rotation: -2.4 + (Theme.motionEnabled ? root.spectrumEnergy * 1.8 : 0)
                     scale: 0.985 + (Theme.motionEnabled ? root.spectrumEnergy * 0.035 : 0)
                     opacity: 0.09 + root.spectrumEnergy * 0.06

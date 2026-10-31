@@ -359,7 +359,7 @@ PanelWindow {
                             module: root.activeInstrument
                             presentation: transition.contentProgress
                         }
-                        WabiSabiBlackHole {
+                        ThemeMark {
                             anchors.centerIn: parent
                             width: Math.min(150, parent.width * 0.3); height: width * 0.7
                             visible: Theme.motionEnabled && transition.phase !== "open" && transition.phase !== "closing"

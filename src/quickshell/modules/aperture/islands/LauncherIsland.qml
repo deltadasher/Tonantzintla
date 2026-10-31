@@ -16,12 +16,10 @@ BarIsland {
         targetPanel: "guide"
         motionKind: "orbit"
         onActivated: root.toggleEphemeris("guide", guideControl)
-        WabiSabiBlackHole {
+        ThemeMark {
             anchors.centerIn: parent
             width: root.isVertical ? 24 : 28
             height: root.isVertical ? 17 : 20
-            diskColor: Theme.accent
-
         }
     }
 

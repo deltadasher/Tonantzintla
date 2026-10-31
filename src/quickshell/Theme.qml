@@ -2,13 +2,25 @@ pragma Singleton
 
 import QtQuick
 import "components/ThemeMode.js" as ThemeMode
+import "components/ThemeIdentity.js" as Identity
 import Quickshell
 import "components/SpectralPalette.js" as SpectralPalette
 import "components/IconFontGlyphs.js" as IconFontGlyphs
 
 QtObject {
     id: themeTokens
-    function modeForSeed(seed) { return ThemeMode.resolve(Settings.themeMode, seed, Settings.spectralColors.accent); }
+    // Stable preset values prevent identity/mode/palette binding cycles.
+    readonly property var identityPresets: ({violet: "#9874cd", cyan: "#83dad9", rose: "#ee927f", amber: "#e9b872", emerald: "#467b50", solar: "#c44f28", silver: "#c8cdd3"})
+    readonly property string identitySelection: Settings.themeIdentity === "auto" ? "auto" : Identity.get(Settings.themeIdentity).id
+    readonly property string identityColor: Identity.sourceColor(Settings.spectralColors.accent, Settings.paletteSeedColor, (Settings.adaptivePalette && AdaptivePalette.ready && AdaptivePalette.appliedSource === Settings.wallpaperPath && AdaptivePalette.appliedSeed === Settings.paletteSeedColor ? AdaptivePalette.sourceColor : identityPresets[Settings.accentName]))
+    readonly property var identity: Identity.resolve(identitySelection, identityColor)
+    readonly property url identitySource: Qt.resolvedUrl("assets/theme-marks/" + identity.id + ".svg")
+    function modeForSeed(seed) {
+        if (identitySelection !== "auto" && identitySelection !== "wabi-sabi")
+            return ThemeMode.resolve(Settings.themeMode, "", "", Identity.recommendedMode(identitySelection, ""));
+        return ThemeMode.resolve(Settings.themeMode, seed, Settings.spectralColors.accent,
+            Identity.recommendedMode(identitySelection, Identity.sourceColor(Settings.spectralColors.accent, seed, identityColor)));
+    }
     readonly property string mode: modeForSeed(Settings.paletteSeedColor)
     readonly property bool isLight: mode === "light"
     readonly property bool adaptive: Settings.adaptivePalette && AdaptivePalette.ready

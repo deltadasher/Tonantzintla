@@ -5,17 +5,23 @@ import Quickshell
 import "../.."
 import "../../services"
 import "../../components"
+import "../../components/identity"
 import "UmbraLayout.js" as Layout
 
 FocusScope {
     id: root
+
+    readonly property bool themedScene: Theme.identity.id !== "wabi-sabi"
+    readonly property color sceneAccent: themedScene && identityScene.item ? identityScene.item.accentColor : Theme.accent
+    readonly property color sceneForeground: themedScene && identityScene.item ? identityScene.item.foregroundColor : Theme.moon
+    readonly property color sceneMuted: themedScene && identityScene.item ? identityScene.item.mutedColor : Theme.muted
 
     property var opticalBackdrop: opticalField
     OpticalBackdrop {
         id: opticalField
         anchors.fill: parent
         scope: "umbra"
-        active: root.surfaceActive && background.mode !== "solid"
+        active: root.surfaceActive && !root.themedScene && background.mode !== "solid"
         viewportSize: Qt.size(root.width, root.height)
         source: background.mode === "solid" ? "" : String(background.actualStillSource)
         sourceKind: background.videoPlaying ? "video" : "image"
@@ -198,13 +204,15 @@ FocusScope {
     UmbraBackground {
         id: background
         anchors.fill: parent
-        active: root.surfaceActive
+        active: root.surfaceActive && !root.themedScene
+        visible: !root.themedScene
         videoEnabled: root.videoOutput
         preview: root.previewMode
     }
 
     Rectangle {
         anchors.fill: parent
+        visible: !root.themedScene
         gradient: Gradient {
             orientation: Gradient.Horizontal
             GradientStop { position: 0; color: Qt.rgba(Theme.void_.r, Theme.void_.g, Theme.void_.b, 0.94) }
@@ -221,6 +229,7 @@ FocusScope {
     }
 
     UmbraField {
+        visible: !root.themedScene
         anchors.fill: parent
         focalX: width * (0.69 - root.plunge * 0.19)
         focalY: height * 0.48
@@ -228,6 +237,21 @@ FocusScope {
         motionActive: root.surfaceActive
         scale: 1 + (1 - root.stage(0.0, 0.8)) * 0.045 + root.plunge * 0.16
         opacity: root.stage(0.08, 0.72) * (1 - root.departure)
+    }
+
+    Loader {
+        id: identityScene
+        anchors.fill: parent
+        active: root.themedScene && root.surfaceActive
+        opacity: root.stage(0.08, 0.72) * (1 - root.departure)
+        sourceComponent: ThemeScene {
+            identity: Theme.identity.id
+            accent: Theme.identity.color
+            lightMode: Theme.isLight
+            active: root.surfaceActive
+            motion: root.motionEnabled
+            iconSource: Theme.identitySource
+        }
     }
 
     Rectangle {
@@ -248,6 +272,7 @@ FocusScope {
     // scenery, status instrument, and authentication feedback simultaneously.
     UmbraEventHorizon {
         id: eventHorizon
+        visible: !root.themedScene
         objectName: "umbraFixedHorizon"
         width: root.horizonSize
         height: width
@@ -278,11 +303,11 @@ FocusScope {
         Rectangle {
             width: 24 * root.sf; height: 2 * root.sf
             anchors.verticalCenter: parent.verticalCenter
-            color: Theme.accent
+            color: root.sceneAccent
         }
         Text {
             text: "UMBRA"
-            color: Theme.moon
+            color: root.sceneForeground
             font.family: Theme.fontMono
             font.pixelSize: 13 * root.sf
             font.letterSpacing: 6 * root.sf
@@ -294,7 +319,7 @@ FocusScope {
         anchors.top: parent.top
         anchors.margins: root.pad
         text: root.previewMode ? "PREVIEW   /   ESC TO CLOSE" : Umbra.stateCode
-        color: Theme.muted
+        color: root.sceneMuted
         font.family: Theme.fontMono
         font.pixelSize: 10 * root.sf
         font.letterSpacing: 1.5 * root.sf
@@ -313,11 +338,16 @@ FocusScope {
         visible: root.layout.clock.visible
         opacity: root.clockArrival * (1 - root.departure)
         UmbraClassicClock {
+            accentColor: root.sceneAccent
+            foregroundColor: root.sceneForeground
             anchors.fill: parent
             visible: Settings.umbraClockVariant === "classic"
             dateTime: clock.date
         }
         InstrumentClock {
+            accentColor: root.sceneAccent
+            foregroundColor: root.sceneForeground
+            mutedColor: root.sceneMuted
             anchors.fill: parent
             visible: Settings.umbraClockVariant !== "classic"
             active: visible && root.surfaceActive && clockBox.visible
@@ -336,7 +366,7 @@ FocusScope {
         Text {
             anchors.fill: parent
         text: Math.round(Number(Weather.current.temp || 0)) + Weather.unitSymbol + "  /  " + String(Weather.current.condition || "").toUpperCase()
-        color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10 * root.sf
+        color: root.sceneMuted; font.family: Theme.fontMono; font.pixelSize: 10 * root.sf
         fontSizeMode: Text.Fit; minimumPixelSize: 8; elide: Text.ElideRight
 
         }
@@ -353,7 +383,7 @@ FocusScope {
             anchors.fill: parent
         text: (Compositor.keyboardLayoutName.length > 0 ? Compositor.keyboardLayoutName : "Keyboard layout unavailable")
             + "  ·  Enter to unlock"
-        color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10 * root.sf
+        color: root.sceneMuted; font.family: Theme.fontMono; font.pixelSize: 10 * root.sf
         fontSizeMode: Text.Fit; minimumPixelSize: 8; elide: Text.ElideRight
 
         }
@@ -366,7 +396,7 @@ FocusScope {
         z: 10 // Editable instruments cannot cover the authentication controls.
         x: root.pad + root.failureOffset
         y: root.height * 0.58
-        width: Math.min(root.width * 0.37, 660 * root.sf)
+        width: root.themedScene && root.height > root.width ? root.width - root.pad * 2 : Math.min(root.width * 0.37, 660 * root.sf)
         height: 120 * root.sf
         opacity: root.inputArrival * (1 - root.departure)
 
@@ -376,7 +406,7 @@ FocusScope {
             text: Umbra.failed || Umbra.authenticating || Umbra.unlocking ? Umbra.statusText
                 : passwordInput.text.length > 0 ? "ENTER TO UNLOCK" : "TYPE YOUR PASSWORD"
             color: Umbra.failed ? Theme.danger
-                : Umbra.authenticating ? Theme.cyan : Theme.muted
+                : Umbra.authenticating ? Theme.cyan : root.sceneMuted
             font.family: Theme.fontMono
             font.pixelSize: 12 * root.sf
             font.weight: Font.Bold
@@ -404,7 +434,7 @@ FocusScope {
             height: width
             radius: width / 2
             color: Umbra.failed ? Theme.danger
-                : passwordInput.text.length > 0 ? Theme.accent : Theme.elevated
+                : passwordInput.text.length > 0 ? root.sceneAccent : Theme.elevated
             scale: 1 + root.visualEnergy * 0.08
 
             Behavior on width { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
@@ -416,7 +446,7 @@ FocusScope {
                 width: Umbra.authenticating ? parent.width * 0.42 : parent.width * 0.12
                 height: width
                 radius: width / 2
-                color: passwordInput.text.length > 0 || Umbra.failed ? Theme.void_ : Theme.muted
+                color: passwordInput.text.length > 0 || Umbra.failed ? Theme.void_ : root.sceneMuted
                 opacity: Umbra.authenticating ? 0.72 : 0.82
                 Behavior on width { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
             }
@@ -491,9 +521,9 @@ FocusScope {
     Text {
         x: root.pad; y: root.height - 22
         width: root.width - root.pad * 2
-        visible: root.previewMode && background.statusText.length > 0
+        visible: !root.themedScene && root.previewMode && background.statusText.length > 0
         text: background.statusText
-        color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: 10
+        color: root.sceneMuted; font.family: Theme.fontMono; font.pixelSize: 10
         elide: Text.ElideRight
     }
 
@@ -537,13 +567,13 @@ FocusScope {
         opacity: root.contentOpacity * 0.8
         Text {
             text: Umbra.userName
-            color: Theme.moon
+            color: root.sceneForeground
             font.family: Theme.fontDisplay
             font.pixelSize: 16 * root.sf
         }
         Text {
             text: root.previewMode ? "SESSION VEIL / PREVIEW" : "SESSION LOCKED"
-            color: Theme.muted
+            color: root.sceneMuted
             font.family: Theme.fontMono
             font.pixelSize: 9 * root.sf
             font.letterSpacing: 2 * root.sf

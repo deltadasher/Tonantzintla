@@ -32,7 +32,7 @@ Window {
   } else if(window.step===1){press("Appearance: Light");}
   else if(window.step===2){window.check(Theme.isLight,"keyboard applies light mode");press("Appearance: Automatic");Settings.spectralColors={accent:"#010101"};}
   else if(window.step===3){
-   window.check(!Theme.isLight && String(Theme.accent)==="#010101","dark custom accent retained");
+   window.check(Theme.isLight && String(Theme.accent)==="#010101","dark custom accent retained");
    window.check(String(Theme.onAccent)==="#ffffff","selected labels readable on dark accents");
    window.check(find(studio,"Clock face: Matrix")===null,"bar controls removed from global theme studio");
    window.check(guide.tabs.length===2 && guide.tabs.indexOf("Lock")<0,"manual lock section removed");

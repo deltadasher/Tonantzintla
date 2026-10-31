@@ -6,7 +6,7 @@ ColumnLayout {
     id: root
     property string barStatus: ""
     spacing: 10
-    property string page: "materials"
+    property string page: "identity"
     function preset(name) {
         if (name === "prism") {
             Settings.themeMode = "auto"; Settings.barMaterial = "liquid"; Settings.panelMaterial = "liquid";
@@ -74,18 +74,21 @@ ColumnLayout {
     }
     SettingChoice {
         Layout.fillWidth: true; label: "Customize"; value: root.page
-        choices: [{label: "Colors", value: "colors"}, {label: "Materials", value: "materials"}]
+        choices: [{label: "Identity", value: "identity"}, {label: "Colors", value: "colors"}, {label: "Materials", value: "materials"}]
         onSelected: value => root.page = value
     }
     ActionButton {
         text: "Open Bar Studio"
         onClicked: ShellState.enterBarEditMode()
     }
+    ThemeIdentityPicker { Layout.fillWidth: true; visible: root.page === "identity" }
     ColumnLayout {
         visible: root.page === "colors"; Layout.fillWidth: true; spacing: 8
         SettingChoice {
             Layout.fillWidth: true; label: "Appearance"; value: Settings.themeMode
-            detail: "Automatic follows your chosen color: dark colors use dark surfaces, bright colors use light surfaces."
+            detail: Theme.identitySelection !== "auto" && Theme.identitySelection !== "wabi-sabi"
+                ? "Automatic follows your logo. Choose Light or Dark to override it."
+                : "Automatic gives dark theme colors light surfaces, and bright colors dark surfaces."
             choices: [{label: "Automatic", value: "auto"}, {label: "Light", value: "light"}, {label: "Dark", value: "dark"}]
             onSelected: value => Settings.themeMode = value
         }

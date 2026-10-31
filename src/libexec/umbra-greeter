@@ -34,17 +34,23 @@ stage_theme() {
         \( -name '*.qml' -o -name '*.js' -o -name '*.png' \
         -o -name '*.webp' -o -name '*.jpg' -o -name '*.svg' \
         -o -name 'metadata.desktop' \) -print0)
+    install -d -- "$destination/identity" "$destination/marks"
+    install -m 0644 "$project_root/src/quickshell/components/identity/"*.qml "$project_root/src/quickshell/components/identity/"*.js "$destination/identity/"
+    install -m 0644 "$project_root/src/quickshell/assets/theme-marks/"*.svg "$destination/marks/"
+    sed -i 's#import "../../../components/identity"#import "identity"#' "$destination/Main.qml"
     python3 "$script_dir/umbra-greeter-palette.py" \
         --output "$destination/theme.conf"
 }
 
 install_theme() {
-    local staging
+    local staging source_file
     staging="$(mktemp -d "${TMPDIR:-/tmp}/tonantzintla-umbra-install.XXXXXX")"
     trap 'rm -rf -- "${staging:-}"' RETURN
     stage_theme "$staging"
     sudo install -d -- "$theme_target"
-    sudo install -m 0644 "$staging"/* "$theme_target/"
+    while IFS= read -r -d '' source_file; do
+        sudo install -Dm 0644 -- "$source_file" "$theme_target/${source_file#"$staging"/}"
+    done < <(find "$staging" -type f -print0)
 }
 
 case "$command_name" in
@@ -52,7 +58,11 @@ case "$command_name" in
         staging="$(mktemp -d "${TMPDIR:-/tmp}/tonantzintla-umbra-preview.XXXXXX")"
         trap 'rm -rf -- "$staging"' EXIT
         stage_theme "$staging"
-        sddm-greeter --test-mode --theme "$staging"
+        if command -v sddm-greeter-qt6 >/dev/null 2>&1; then
+            sddm-greeter-qt6 --test-mode --theme "$staging"
+        else
+            sddm-greeter --test-mode --theme "$staging"
+        fi
         ;;
     stage)
         destination="${2:?Usage: umbra-greeter stage DIR}"

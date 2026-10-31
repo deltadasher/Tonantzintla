@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-labelledby="title"><title id="title">Ringed planet</title><desc>An intact globe and orbital band, with two purples showing the overlap.</desc><g transform="rotate(-24 64 64)">
+<ellipse fill="#65439D" cx="64" cy="64" rx="57" ry="18" stroke="#65439D" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+<circle fill="#9874CD" cx="64" cy="64" r="35" stroke="#9874CD" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+<path fill="#65439D" d="M7 64C7 88 121 88 121 64 103 76 25 76 7 64Z" stroke="#65439D" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+</g></svg>
