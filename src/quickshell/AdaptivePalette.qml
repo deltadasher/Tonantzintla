@@ -53,6 +53,7 @@ QtObject {
         ready = true;
     }
 
+    property string sourceColor: ""
     property string error: ""
     property string appliedMode: ""
     property string appliedSeed: ""
@@ -76,6 +77,7 @@ QtObject {
             error = payload && payload.error ? String(payload.error) : "Invalid Matugen response";
             return false;
         }
+        sourceColor = colorOf(payload.palette, "source_color", "", payload.mode);
         applyPalette(payload.palette, payload.mode);
         appliedSeed = payload.seed || "";
         appliedSource = payload.source || "";
@@ -88,7 +90,7 @@ QtObject {
         if (!seed && !Settings.wallpaperPath) { error = "Apply a wallpaper before choosing Automatic."; return false; }
         refreshDelay.stop();
         jobSeed = seed.toLowerCase(); jobSource = Settings.wallpaperPath;
-        jobMode = ThemeMode.resolve(Settings.themeMode, jobSeed, Settings.spectralColors.accent);
+        jobMode = Theme.modeForSeed(jobSeed);
         jobOriginalMode = Settings.themeMode;
         jobOriginalAccent = Settings.spectralColors.accent || "";
         jobOriginalSeed = Settings.paletteSeedColor;
@@ -108,7 +110,7 @@ QtObject {
         if (!busy) return;
         const current = jobOriginalMode === Settings.themeMode
             && jobOriginalAccent === (Settings.spectralColors.accent || "")
-            && jobMode === ThemeMode.resolve(Settings.themeMode, jobSeed, Settings.spectralColors.accent)
+            && jobMode === Theme.modeForSeed(jobSeed)
             && jobSource === Settings.wallpaperPath
             && jobOriginalSeed === Settings.paletteSeedColor
             && jobOriginalAdaptive === Settings.adaptivePalette;
@@ -120,6 +122,7 @@ QtObject {
                 const payload = JSON.parse(output);
                 if (exitCode === 0 && payload.mode === jobMode && payload.source === jobSource && (payload.seed || "") === jobSeed
                         && applyPayload(payload)) {
+                    if (jobMode !== Theme.mode) pending = true;
                     if (committing) {
                         Settings.paletteSeedColor = jobSeed;
                         Settings.adaptivePalette = true;
@@ -145,13 +148,13 @@ QtObject {
         })
     }
     property Process cachedProcess: Process {
-        command: ["python3", root.helperPath, "--cached", "--mode", ThemeMode.resolve(Settings.themeMode, Settings.paletteSeedColor, Settings.spectralColors.accent)]
+        command: ["python3", root.helperPath, "--cached", "--mode", Theme.modeForSeed(Settings.paletteSeedColor)]
         stdout: StdioCollector {
             onStreamFinished: {
                 if (root.busy || root.ready || !Settings.adaptivePalette) return;
                 try {
                     const payload = JSON.parse(text);
-                    if (payload.mode === ThemeMode.resolve(Settings.themeMode, Settings.paletteSeedColor, Settings.spectralColors.accent)
+                    if (payload.mode === Theme.modeForSeed(Settings.paletteSeedColor)
                             && payload.source === Settings.wallpaperPath
                             && (payload.seed || "") === Settings.paletteSeedColor) root.applyPayload(payload);
                 } catch (exception) {}
@@ -169,6 +172,7 @@ QtObject {
         target: Settings
         function onSpectralColorsChanged() { root.refresh(); }
         function onThemeModeChanged() { root.refresh(); }
+        function onThemeIdentityChanged() { root.refresh(); }
         function onAdaptivePaletteChanged() { root.refresh(); }
         function onPaletteSeedColorChanged() { root.refresh(); }
         function onWallpaperPathChanged() { root.refresh(); }

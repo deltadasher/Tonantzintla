@@ -12,6 +12,12 @@ Window {
  function checkMarks(item){
   let count=0;
   if(item.horizonColor!==undefined){check(String(item.horizonColor)==="#000000","black center under "+Settings.themeMode);count++;}
+  if(item.mark!==undefined) {
+   check(item.mark.id==="wabi-sabi" && item.mark.color.toLowerCase()==="#e9b872","original fixed artwork in bar and dock");
+   const image=item.children.find(child => child.source!==undefined);
+   check(image && String(image.source).endsWith("/wabi-sabi.svg") && image.status===Image.Ready,"approved SVG loaded");
+   count++;
+  }
   for(const child of item.children || [])count+=checkMarks(child);
   return count;
  }

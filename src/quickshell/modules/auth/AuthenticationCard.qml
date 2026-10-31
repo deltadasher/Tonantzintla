@@ -16,7 +16,7 @@ Rectangle {
             ColumnLayout {
                 id: content
                 anchors.fill: parent; anchors.margins: 24; spacing: 14
-                WabiSabiBlackHole { Layout.alignment: Qt.AlignHCenter; Layout.preferredWidth: 86; Layout.preferredHeight: 58; diskColor: Theme.accent }
+                ThemeMark { Layout.alignment: Qt.AlignHCenter; Layout.preferredWidth: 86; Layout.preferredHeight: 58; }
                 Text { text: "Authentication required"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 22; font.bold: true }
                 Text { Layout.fillWidth: true; text: root.flow ? root.flow.message : ""; textFormat: Text.PlainText; wrapMode: Text.WordWrap; color: Theme.moon; font.family: Theme.fontText; font.pixelSize: 14 }
                 Flow {

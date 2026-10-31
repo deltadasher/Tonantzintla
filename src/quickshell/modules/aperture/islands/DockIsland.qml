@@ -15,11 +15,9 @@ BarIsland {
     // the owning BarIsland retains the entire click/drag hit target.
     Item {
         width: 32; height: 30
-        WabiSabiBlackHole {
+        ThemeMark {
             anchors.centerIn: parent
             width: 32; height: 24
-            diskColor: Theme.accent
-
         }
     }
 }

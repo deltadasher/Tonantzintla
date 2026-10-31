@@ -6,6 +6,9 @@ import "../../components/ClockNotation.js" as Notation
 // The host owns the shared minute clock; this face has no time acquisition.
 Item {
     id: root
+    property color accentColor: Theme.accent
+    property color foregroundColor: Theme.moon
+    property color mutedColor: Theme.muted
     objectName: "umbraClassicClock"
     property date dateTime: new Date()
     readonly property string timeText: Notation.time(dateTime, Settings.clock12h)
@@ -13,8 +16,10 @@ Item {
     Text {
         objectName: "classicDate"
         width: parent.width
+        height: 16 * root.metricScale
+        verticalAlignment: Text.AlignVCenter
         text: Qt.formatDateTime(root.dateTime, "dddd, MMMM dd").toUpperCase()
-        color: Theme.accent; font.family: Theme.fontMono
+        color: root.accentColor; font.family: Theme.fontMono
         font.pixelSize: 11 * root.metricScale; font.letterSpacing: 2 * root.metricScale
         elide: Text.ElideRight
     }
@@ -22,7 +27,7 @@ Item {
         objectName: "classicTime"
         y: 23 * root.metricScale; width: parent.width; height: 156 * root.metricScale
         text: root.timeText
-        color: Theme.moon; font.family: Theme.fontDisplay
+        color: root.foregroundColor; font.family: Theme.fontDisplay
         font.pixelSize: 126 * root.metricScale; font.weight: Font.Light
         font.letterSpacing: -5 * root.metricScale
         fontSizeMode: Text.Fit; minimumPixelSize: 1
@@ -30,6 +35,6 @@ Item {
     Rectangle {
         objectName: "classicRule"
         y: 180 * root.metricScale; width: 42 * root.metricScale; height: 2 * root.metricScale
-        color: Theme.accent
+        color: root.accentColor
     }
 }

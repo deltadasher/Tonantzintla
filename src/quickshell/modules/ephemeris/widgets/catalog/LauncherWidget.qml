@@ -143,12 +143,10 @@ Item {
             Layout.fillWidth: true
             spacing: 12
 
-            WabiSabiBlackHole {
+            ThemeMark {
                 Layout.preferredWidth: 64
                 Layout.preferredHeight: 52
-                diskColor: Theme.accent
-
-            }
+                }
 
             Text {
                 text: "BLACKHOLE"

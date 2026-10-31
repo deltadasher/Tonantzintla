@@ -165,11 +165,10 @@ Item {
                 Rectangle {
                     Layout.fillWidth: true; implicitHeight: 190; radius: 24
                     color: Theme.controlRest
-                    WabiSabiBlackHole {
+                    ThemeMark {
                         anchors.right: parent.right; anchors.rightMargin: 12; anchors.verticalCenter: parent.verticalCenter
                         width: Math.min(210, parent.width * 0.38); height: width * 0.72
-                        diskColor: Theme.accent
-                    }
+                        }
                     ColumnLayout {
                         anchors.left: parent.left; anchors.leftMargin: 22; anchors.verticalCenter: parent.verticalCenter
                         width: parent.width * 0.57; spacing: 10

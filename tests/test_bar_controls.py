@@ -12,7 +12,7 @@ class BarControlsTests(unittest.TestCase):
         island = (repo / 'src/quickshell/modules/aperture/islands/DockIsland.qml').read_text()
         self.assertIn('BarIsland {', island)
         self.assertIn('islandId: "dock"', island)
-        self.assertIn('WabiSabiBlackHole {', island)
+        self.assertIn('ThemeMark {', island)
         self.assertNotIn('Repeater {', island)
         self.assertNotIn('DesktopEntries', island)
         self.assertNotIn('MouseArea {', island)

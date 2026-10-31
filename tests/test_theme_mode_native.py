@@ -19,7 +19,7 @@ class NativeModes(unittest.TestCase):
    with self.subTest(tree=tree),tempfile.TemporaryDirectory(prefix='tona-modes-') as temp:
     base=Path(temp);src=ROOT/tree/'quickshell';(base/'services').mkdir();(base/'components').mkdir();(base/'bin').mkdir()
     for name in ('Theme.qml','AdaptivePalette.qml'): shutil.copyfile(src/name,base/name)
-    for name in ('ThemeMode.js','SpectralPalette.js','IconFontGlyphs.js'):
+    for name in ('ThemeMode.js','SpectralPalette.js','IconFontGlyphs.js','ThemeIdentity.js','ThemeIdentities.js'):
      if (src/'components'/name).exists():shutil.copyfile(src/'components'/name,base/'components'/name)
     shutil.copyfile(src/'services/WallpaperPalettePreview.qml',base/'services/WallpaperPalettePreview.qml')
     shutil.copyfile(ROOT/'tests/theme-modes/native.qml',base/'native.qml')
@@ -30,6 +30,7 @@ class NativeModes(unittest.TestCase):
     (base/'Settings.qml').write_text('''pragma Singleton
 import QtQuick
 QtObject {
+ property string themeIdentity: "wabi-sabi"
  property string themeMode: "auto"
  property string paletteSeedColor: ""
  property string wallpaperPath: "/test-wallpaper"

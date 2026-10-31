@@ -21,7 +21,7 @@ QtObject {
     property bool preferencesLoading: false
     property var appearanceCheckpoint: null
     property int checkpointRevision: 0
-    readonly property var appearanceKeys: ["themeMode", "barMaterial", "surfaceFrost", "surfaceRefraction", "surfaceTint", "panelGlassOpacity", "barCornerRadius", "barEdgeStyle", "barWorkspaceStyle", "umbraBackgroundMode", "umbraBackgroundPath", "umbraClockVariant", "umbraLayout", "opticalControls", "controlMaterialScopes", "barClockFace", "barTelemetryFace", "barTelemetryMetrics", "barMediaWidth", "barMediaShowArt", "barMediaShowControls", "launcherWidth", "launcherVisibleRows", "islandDensity", "controlMaterial", "controlOpacity", "controlRadius", "opticalStrength", "opticalFrost", "opticalDispersion", "umbraFingerprintLook", "umbraFingerprintShowText", "spectralColors", "moduleAppearance", "compact", "motion", "barIconMotion", "animateStars", "atmosphereStyle", "adaptivePalette", "paletteSeedColor", "motionStyle", "panelMaterial", "motionSpeedProfile", "accentName", "typographyProfile", "fontText", "fontDisplay", "fontMono", "fontIcon", "barMode", "barMargin", "barOpacity", "barHeightProfile", "barPosition", "barLayoutHorizontal", "barLayoutVertical", "barOutputOverrides", "barIslandPlacements", "ephemerisStyle"]
+    readonly property var appearanceKeys: ["themeIdentity", "themeMode", "barMaterial", "surfaceFrost", "surfaceRefraction", "surfaceTint", "panelGlassOpacity", "barCornerRadius", "barEdgeStyle", "barWorkspaceStyle", "umbraBackgroundMode", "umbraBackgroundPath", "umbraClockVariant", "umbraLayout", "opticalControls", "controlMaterialScopes", "barClockFace", "barTelemetryFace", "barTelemetryMetrics", "barMediaWidth", "barMediaShowArt", "barMediaShowControls", "launcherWidth", "launcherVisibleRows", "islandDensity", "controlMaterial", "controlOpacity", "controlRadius", "opticalStrength", "opticalFrost", "opticalDispersion", "umbraFingerprintLook", "umbraFingerprintShowText", "spectralColors", "moduleAppearance", "compact", "motion", "barIconMotion", "animateStars", "atmosphereStyle", "adaptivePalette", "paletteSeedColor", "motionStyle", "panelMaterial", "motionSpeedProfile", "accentName", "typographyProfile", "fontText", "fontDisplay", "fontMono", "fontIcon", "barMode", "barMargin", "barOpacity", "barHeightProfile", "barPosition", "barLayoutHorizontal", "barLayoutVertical", "barOutputOverrides", "barIslandPlacements", "ephemerisStyle"]
     readonly property bool canUndoAppearance: appearanceCheckpoint !== null && checkpointRevision === externalRevision
         && JSON.stringify(appearanceCheckpoint) !== JSON.stringify(appearanceSnapshot())
 
@@ -150,6 +150,7 @@ QtObject {
     property alias atmosphereStyle: settingsAdapter.atmosphereStyle
     property alias paletteSeedColor: settingsAdapter.paletteSeedColor
     property alias adaptivePalette: settingsAdapter.adaptivePalette
+    property alias themeIdentity: settingsAdapter.themeIdentity
     property alias themeMode: settingsAdapter.themeMode
     property alias barMaterial: settingsAdapter.barMaterial
     property alias surfaceFrost: settingsAdapter.surfaceFrost
@@ -708,6 +709,7 @@ QtObject {
             property string atmosphereStyle: "nominal"
             property string paletteSeedColor: ""
             property bool adaptivePalette: false
+            property string themeIdentity: "wabi-sabi"
             property string themeMode: "auto"
             property string barMaterial: "classic"
             property real surfaceFrost: 0.45

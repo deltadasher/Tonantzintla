@@ -1,15 +1,15 @@
 .pragma library
 
-// Perceived sRGB brightness keeps automatic mode intuitive for a chosen color.
-// Wallpaper extraction has no explicit seed and retains the established dark mode.
-function resolve(preference, seed, exactAccent) {
+// Dark exact accents need light surfaces; pale accents need dark surfaces.
+// Without an explicit color, use the selected identity's recommended mode.
+function resolve(preference, seed, exactAccent, fallback) {
     if (preference === "light" || preference === "dark") return preference;
     if (/^#[0-9a-fA-F]{6}$/.test(String(exactAccent || ""))) seed = exactAccent;
-    if (!/^#[0-9a-fA-F]{6}$/.test(String(seed || ""))) return "dark";
+    if (!/^#[0-9a-fA-F]{6}$/.test(String(seed || ""))) return fallback === "light" ? "light" : "dark";
     var red = parseInt(seed.slice(1, 3), 16) / 255;
     var green = parseInt(seed.slice(3, 5), 16) / 255;
     var blue = parseInt(seed.slice(5, 7), 16) / 255;
-    return red * 0.299 + green * 0.587 + blue * 0.114 >= 0.5 ? "light" : "dark";
+    return red * 0.299 + green * 0.587 + blue * 0.114 >= 0.5 ? "dark" : "light";
 }
 
 // Use the actual displayed accent, including intermediate animation frames.
