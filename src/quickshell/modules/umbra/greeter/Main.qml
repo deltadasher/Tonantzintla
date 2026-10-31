@@ -10,17 +10,17 @@ Rectangle {
     focus: true
 
     readonly property string themeIdentity: String(config.themeIdentity || "wabi-sabi")
-    readonly property bool themedScene: themeIdentity !== "wabi-sabi"
-    readonly property bool themeLight: String(config.themeMode || "dark") === "light"
+    readonly property bool themedScene: true
+    readonly property bool themeLight: String(config.lockMode || config.themeMode || "dark") === "light"
     readonly property bool sceneMotion: String(config.motion || "true") !== "false"
     property color voidColor: identityScene.item ? identityScene.item.backgroundColor : config.voidColor
-    property color mantle: config.mantle
-    property color surface: config.surface
+    property color mantle: identityScene.item ? Qt.rgba(foreground.r, foreground.g, foreground.b, .16) : config.mantle
+    property color surface: identityScene.item ? Qt.rgba(foreground.r, foreground.g, foreground.b, .09) : config.surface
     property color foreground: identityScene.item ? identityScene.item.foregroundColor : config.foreground
     property color muted: identityScene.item ? identityScene.item.mutedColor : config.muted
     property color accent: identityScene.item ? identityScene.item.accentColor : config.accent
-    property color secondary: config.secondary
-    property color danger: config.danger
+    property color secondary: identityScene.item ? identityScene.item.accentColor : config.secondary
+    property color danger: identityScene.item ? identityScene.item.dangerColor : config.danger
     property int currentUserIndex: 0
     property int currentSessionIndex: sessionModel.lastIndex >= 0
         ? sessionModel.lastIndex : 0
@@ -255,7 +255,7 @@ Rectangle {
 
     UmbraField {
         visible: !root.themedScene
-        motionActive: root.visible && root.sceneMotion
+        motionActive: root.visible && root.sceneMotion && !root.themedScene
         z: -8
         anchors.fill: parent
         accent: root.accent
@@ -274,7 +274,7 @@ Rectangle {
     UmbraHorizon {
         id: horizon
         visible: !root.themedScene
-        motionActive: root.visible && root.sceneMotion
+        motionActive: root.visible && root.sceneMotion && !root.themedScene
         width: root.horizonSize
         height: width
         x: root.width * (0.75 - root.capture * 0.25) - width / 2
@@ -393,9 +393,9 @@ Rectangle {
 
     UmbraTrajectory {
         x: root.width * 0.055
-        y: root.height * 0.49
-        width: root.width * 0.63
-        height: root.height * 0.34
+        y: root.height * 0.58
+        width: root.width * (root.height > root.width ? 0.89 : 0.37)
+        height: 120 * root.sf
         count: root.passwordCount
         accent: root.accent
         secondary: root.secondary
@@ -607,11 +607,11 @@ Rectangle {
 
     Text {
         x: root.width * 0.058
-        y: root.height * 0.875
+        y: root.height * 0.58 - 24 * root.sf
         text: root.failed ? "WRONG PASSWORD"
             : root.authenticating ? "CAPTURE IN PROGRESS"
             : root.passwordCount > 0 ? "PRESS ENTER"
-            : ""
+            : "TYPE YOUR PASSWORD"
         visible: text.length > 0
         color: root.failed ? root.danger : root.muted
         opacity: root.intro * (1 - root.capture)

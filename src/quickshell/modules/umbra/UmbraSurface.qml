@@ -11,10 +11,14 @@ import "UmbraLayout.js" as Layout
 FocusScope {
     id: root
 
-    readonly property bool themedScene: Theme.identity.id !== "wabi-sabi"
+    // Wabi-sabi now shares the lightweight illustrated lock with every identity.
+    readonly property bool themedScene: true
     readonly property color sceneAccent: themedScene && identityScene.item ? identityScene.item.accentColor : Theme.accent
     readonly property color sceneForeground: themedScene && identityScene.item ? identityScene.item.foregroundColor : Theme.moon
     readonly property color sceneMuted: themedScene && identityScene.item ? identityScene.item.mutedColor : Theme.muted
+    readonly property color sceneBackground: identityScene.item ? identityScene.item.backgroundColor : Theme.void_
+    readonly property color sceneDanger: identityScene.item ? identityScene.item.dangerColor : Theme.danger
+    readonly property color sceneControl: Qt.rgba(sceneForeground.r, sceneForeground.g, sceneForeground.b, .10)
 
     property var opticalBackdrop: opticalField
     OpticalBackdrop {
@@ -234,7 +238,7 @@ FocusScope {
         focalX: width * (0.69 - root.plunge * 0.19)
         focalY: height * 0.48
         energy: root.visualEnergy
-        motionActive: root.surfaceActive
+        motionActive: root.surfaceActive && !root.themedScene
         scale: 1 + (1 - root.stage(0.0, 0.8)) * 0.045 + root.plunge * 0.16
         opacity: root.stage(0.08, 0.72) * (1 - root.departure)
     }
@@ -247,7 +251,7 @@ FocusScope {
         sourceComponent: ThemeScene {
             identity: Theme.identity.id
             accent: Theme.identity.color
-            lightMode: Theme.isLight
+            lightMode: Theme.lockIsLight
             active: root.surfaceActive
             motion: root.motionEnabled
             iconSource: Theme.identitySource
@@ -286,7 +290,7 @@ FocusScope {
         collapseActive: Umbra.unlocking
         collapseProgress: root.consume
         shock: root.failureShock
-        motionActive: root.surfaceActive
+        motionActive: root.surfaceActive && !root.themedScene
         opacity: root.stage(0.0, 0.08)
         scale: (1 + (1 - root.stage(0.05, 0.90)) * 0.12)
             * (1 - root.failureShock * 0.11)
@@ -405,8 +409,8 @@ FocusScope {
             y: 0
             text: Umbra.failed || Umbra.authenticating || Umbra.unlocking ? Umbra.statusText
                 : passwordInput.text.length > 0 ? "ENTER TO UNLOCK" : "TYPE YOUR PASSWORD"
-            color: Umbra.failed ? Theme.danger
-                : Umbra.authenticating ? Theme.cyan : root.sceneMuted
+            color: Umbra.failed ? root.sceneDanger
+                : Umbra.authenticating ? root.sceneAccent : root.sceneMuted
             font.family: Theme.fontMono
             font.pixelSize: 12 * root.sf
             font.weight: Font.Bold
@@ -425,6 +429,10 @@ FocusScope {
             failed: Umbra.failed
             authenticating: Umbra.authenticating
             motionActive: root.surfaceActive
+            primary: root.sceneAccent
+            secondary: root.sceneAccent
+            foreground: root.sceneForeground
+            danger: root.sceneDanger
         }
 
         Rectangle {
@@ -433,8 +441,8 @@ FocusScope {
             width: 44 * root.sf
             height: width
             radius: width / 2
-            color: Umbra.failed ? Theme.danger
-                : passwordInput.text.length > 0 ? root.sceneAccent : Theme.elevated
+            color: Umbra.failed ? root.sceneDanger
+                : passwordInput.text.length > 0 ? root.sceneAccent : root.sceneControl
             scale: 1 + root.visualEnergy * 0.08
 
             Behavior on width { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
@@ -446,7 +454,7 @@ FocusScope {
                 width: Umbra.authenticating ? parent.width * 0.42 : parent.width * 0.12
                 height: width
                 radius: width / 2
-                color: passwordInput.text.length > 0 || Umbra.failed ? Theme.void_ : root.sceneMuted
+                color: passwordInput.text.length > 0 || Umbra.failed ? root.sceneBackground : root.sceneMuted
                 opacity: Umbra.authenticating ? 0.72 : 0.82
                 Behavior on width { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
             }

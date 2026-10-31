@@ -23,6 +23,7 @@ QtObject {
     }
     readonly property string mode: modeForSeed(Settings.paletteSeedColor)
     readonly property bool isLight: mode === "light"
+    readonly property bool lockIsLight: identity.lockLight !== undefined ? identity.lockLight : isLight
     readonly property bool adaptive: Settings.adaptivePalette && AdaptivePalette.ready
         && AdaptivePalette.appliedMode === mode
         && AdaptivePalette.appliedSeed === Settings.paletteSeedColor

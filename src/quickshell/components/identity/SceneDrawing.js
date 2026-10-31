@@ -7,7 +7,7 @@ function approvedAccent(id) {
 }
 function background(id, light) {
     const lightColors = { ruby: "#F5EBED", seashell: "#FAEEE7", fire: "#F6EDE5", "wabi-sabi": "#F4EFE5", sun: "#F6F0DB", leaf: "#EAF0E7", "ice-cube": "#E9F4F3", "water-droplet": "#E9F0F6", "ringed-planet": "#F0ECF6", "night-sky": "#EDEAF2", snowflake: "#E7EEF2", moon: "#EEF0F2", cloud: "#E9ECEF", ink: "#F0EEE9" };
-    const darkColors = { ruby: "#25151D", seashell: "#211F29", fire: "#231A18", "wabi-sabi": "#16191C", sun: "#22251E", leaf: "#14251E", "ice-cube": "#142A32", "water-droplet": "#132533", "ringed-planet": "#211C32", "night-sky": "#1C1929", snowflake: "#202B38", moon: "#1D2430", cloud: "#202A33", ink: "#272727" };
+    const darkColors = { ruby: "#25151D", seashell: "#211F29", fire: "#231A18", "wabi-sabi": "#16191C", sun: "#22251E", leaf: "#0E1B15", "ice-cube": "#142A32", "water-droplet": "#132533", "ringed-planet": "#211C32", "night-sky": "#1C1929", snowflake: "#202B38", moon: "#1D2430", cloud: "#202A33", ink: "#272727" };
     return (light ? lightColors : darkColors)[id] || (light ? "#F4EFE5" : "#16191C");
 }
 function color(c) { return typeof c === "string" ? Qt.color(c) : c; }
@@ -27,8 +27,8 @@ function readableAccent(a, bg, fg) {
 }
 function markPlacement(id) {
     const marks = {
-        ruby: [436,345,205], seashell: [370,515,195], fire: [445,382,175],
-        "wabi-sabi": [350,315,295], sun: [435,250,180], leaf: [520,300,150],
+        ruby: [436,345,205], seashell: [370,515,195], fire: [410,470,250],
+        "wabi-sabi": [280,260,440], sun: [435,250,180], leaf: [500,290,180],
         "ice-cube": [495,375,185], "water-droplet": [460,320,170],
         "ringed-planet": [345,310,310], "night-sky": [525,280,160],
         snowflake: [440,285,195], moon: [400,240,220], cloud: [355,310,285], ink: [455,430,180]
@@ -56,8 +56,19 @@ function paint(c, id, accent, bg, fg, light) {
     }
     function poly(points,fill,stroke,width) { const p=points.map(function(v,i){return [i?"L":"M",v[0],v[1]];});p.push(["Z"]);path(p,fill,stroke,width); }
     function ellipse(x,y,rx,ry,fill,stroke,width,rotation) {
-        c.save();c.translate(x,y);c.rotate(rotation||0);c.scale(1,ry/rx);c.beginPath();c.arc(0,0,rx,0,Math.PI*2);
-        if(fill){c.fillStyle=fill;c.fill();}if(stroke){c.strokeStyle=stroke;c.lineWidth=(width||2)*rx/ry;c.stroke();}c.restore();
+        // Construct the oval directly so shallow pools and orbits keep an even
+        // stroke weight; scaling a stroked circle exaggerated their side edges.
+        const k = .5522847498;
+        c.save(); c.translate(x,y); c.rotate(rotation||0); c.beginPath();
+        c.moveTo(rx,0);
+        c.bezierCurveTo(rx,k*ry,k*rx,ry,0,ry);
+        c.bezierCurveTo(-k*rx,ry,-rx,k*ry,-rx,0);
+        c.bezierCurveTo(-rx,-k*ry,-k*rx,-ry,0,-ry);
+        c.bezierCurveTo(k*rx,-ry,rx,-k*ry,rx,0);
+        c.closePath();
+        if(fill){c.fillStyle=fill;c.fill();}
+        if(stroke){c.strokeStyle=stroke;c.lineWidth=width||2;c.stroke();}
+        c.restore();
     }
     function stroke(points,col,w) {path(points,null,col,w);}
     function star(x,y,r,col) {path([["M",x-r,y],["Q",x,y,x,y-r],["Q",x,y,x+r,y],["Q",x,y,x,y+r],["Q",x,y,x-r,y],["Z"]],col);}
@@ -105,7 +116,9 @@ function paint(c, id, accent, bg, fg, light) {
         // Broad masonry hearth and stacked firewood, rising flame-shaped negative spaces.
         path([["M",265,800],["L",265,455],["Q",270,240,535,230],["Q",800,240,805,455],["L",805,800],["Z"]],pale);
         path([["M",340,800],["L",340,465],["Q",340,315,535,306],["Q",730,315,730,465],["L",730,800],["Z"]],mid);
-        path([["M",405,730],["C",345,625,475,575,470,505],["C",540,560,515,597,540,615],["C",565,560,620,540,625,490],["C",727,630,690,740,610,755],["Z"]],pale);
+        path([["M",382,782],["L",382,490],["Q",382,365,535,354],["Q",688,365,688,490],["L",688,782],["Z"]],mix(a,paper,.91));
+        stroke([["M",304,462],["Q",304,281,535,270],["Q",766,281,766,462]],mix(a,paper,.73),2);
+        ellipse(535,757,130,19,mix(a,paper,.71));
         poly([[335,760],[365,726],[690,803],[660,838]],deep);
         poly([[382,828],[365,790],[683,709],[700,748]],line);
         c.fillStyle=deep;c.fillRect(250,840,570,27);c.fillStyle=pale;c.fillRect(210,867,650,18);
@@ -118,12 +131,21 @@ function paint(c, id, accent, bg, fg, light) {
         path([["M",330,1010],["Q",500,795,730,820],["Q",900,825,1030,710],["L",1030,1010],["Z"]],deep);
         for(let i=0;i<3;i++) stroke([["M",200+i*40,790+i*47],["Q",365,590+i*82,570,700+i*61],["Q",780,760+i*30,970,620+i*65]],mix(a,paper,.70),2);
     } else if(id === "leaf") {
-        // A diagonal garden branch, seed pods, and a low patch of earth.
-        ellipse(650,867,330,32,pale);
-        branch(710,880,1.8,-.34,false);branch(570,875,1.03,.73,false);
-        branch(805,890,.9,.25,false);
-        stroke([["M",300,890],["Q",535,840,905,893]],mid,2);
-        ellipse(400,830,13,6,deep,null,0,-.3);ellipse(350,868,8,4,mid);
+        // Moonlit garden: a distant canopy, a single leading stem, and a low
+        // fern layer. Keep the original leaf as the bright tip of the branch.
+        c.save(); c.globalAlpha=.36;
+        branch(880,980,2.3,.14,false);
+        branch(595,960,1.65,-.68,false);
+        c.restore();
+        path([["M",220,930],["Q",530,840,800,880],["Q",920,875,1060,905],["L",1060,1050],["L",220,1050],["Z"]],pale);
+        branch(710,920,1.8,-.34,false);
+        branch(900,975,.93,.42,false);
+        stroke([["M",288,946],["Q",600,882,988,940]],mid,1.4);
+        // Dew and seed pods give scale without filling the quiet clock side.
+        ellipse(740,588,3,5,mix(a,fg,.65));
+        ellipse(858,758,2.5,4,mix(a,fg,.50));
+        ellipse(420,918,17,6,deep,null,0,-.3);
+        ellipse(475,926,10,4,mid,null,0,.2);
     } else if(id === "ice-cube") {
         // Tall glacial prisms set into a fractured shelf.
         poly([[180,825],[310,735],[440,780],[630,694],[850,748],[1020,690],[1020,1000],[180,1000]],pale);
@@ -136,6 +158,10 @@ function paint(c, id, accent, bg, fg, light) {
         // Concentric water reflections and asymmetric reeds define a small pool.
         for(let i=5;i>=0;i--) ellipse(550,665,80+i*60,18+i*23,i===5?pale:null,i%2?mid:deep,1.4);
         ellipse(550,665,45,9,mid);
+        stroke([["M",540,515],["L",540,547]],mid,2);
+        ellipse(540,580,2,3,deep);
+        path([["M",220,822],["Q",425,870,650,853],["Q",835,838,980,782]],null,pale,2);
+        path([["M",230,841],["Q",428,897,647,876]],null,pale,1);
         stroke([["M",825,790],["Q",775,545,835,370]],mid,3);
         stroke([["M",845,790],["Q",902,580,883,510]],deep,3);
         path([["M",820,508],["Q",746,450,785,375],["Q",833,421,820,508],["Z"]],mid);
@@ -186,12 +212,15 @@ function paint(c, id, accent, bg, fg, light) {
         for(let i=0;i<6;i++) stroke([["M",790+i*5,243+i*5],["C",560,255+i*6,448,393,520+i*4,499]],mid,1);
         for(let i=0;i<11;i++) ellipse(360+(i*91)%530,250+(i*97)%620,2+i%5,2+i%4,i%3?mid:ink);
     } else {
-        // Quiet original accretion sketch; Wabi's original icon remains the hero.
-        ellipse(500,470,340,100,null,pale,10,-.24);
-        ellipse(500,470,390,120,null,mid,2,-.24);
-        ellipse(500,470,310,82,null,deep,2,-.24);
-        path([["M",170,545],["C",340,540,510,610,815,393]],null,mid,4);
-        for(let i=0;i<16;i++) ellipse(180+(i*157)%690,190+(i*113)%610,1+i%2,1+i%2,mid);
+        // A spare accretion study. The approved Wabi-sabi SVG supplies the
+        // horizon and inner disk; two broad distant ribbons give it space.
+        ellipse(500,480,370,108,null,pale,26,-.24);
+        ellipse(500,480,370,108,null,mid,1.5,-.24);
+        ellipse(500,480,430,146,null,pale,1,-.24);
+        path([["M",176,615],["C",320,673,650,649,884,430]],null,deep,2);
+        const stars=[[242,275,2],[742,235,2],[838,657,1.8],[350,750,1.5],[675,777,2],[893,347,1.4]];
+        for(let i=0;i<stars.length;i++) ellipse(stars[i][0],stars[i][1],stars[i][2],stars[i][2],mid);
+
     }
     // Only opposite-mode combinations with weak mark contrast need local support.
     // A feathered field preserves the exact SVG colors without adding a badge.
