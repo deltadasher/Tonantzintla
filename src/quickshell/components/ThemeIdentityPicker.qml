@@ -52,11 +52,9 @@ ColumnLayout {
                 function choose() { Settings.themeIdentity = modelData.id; }
                 Keys.onSpacePressed: choose()
                 Keys.onReturnPressed: choose()
-                Rectangle {
+                Item {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    y: 7; width: 44; height: 44; radius: 8
-                    // An explicit backing keeps both ink and snow readable in either UI mode.
-                    color: tile.modelData.light ? "#f2f1ef" : "#1b1e26"
+                    y: 7; width: 44; height: 44
                     ThemeMark { anchors.centerIn: parent; width: 34; height: 34; identity: tile.modelData.id }
                 }
                 Text {
@@ -77,7 +75,7 @@ ColumnLayout {
     }
     Text {
         Layout.fillWidth: true; wrapMode: Text.Wrap
-        text: "The logo also chooses your lock illustration. Automatic appearance follows the chosen logo; dark logos use light backgrounds. Light and Dark remain available in Colors."
+        text: "The logo also chooses your lock illustration. Automatic appearance follows the chosen logo; dark logos use light backgrounds. Light and Dark remain available in Colors. Leaf uses a dark garden for its lock and login screens."
         color: Theme.muted; font.family: Theme.fontText; font.pixelSize: 11
     }
     Flow {

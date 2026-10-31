@@ -6,7 +6,7 @@ Item {
     id: root
     property string identity: "wabi-sabi"
     property color accent: Drawing.approvedAccent(identity)
-    property bool lightMode: ["ruby", "fire", "leaf", "night-sky", "cloud", "ink"].indexOf(identity) !== -1
+    property bool lightMode: ["ruby", "fire", "night-sky", "cloud", "ink"].indexOf(identity) !== -1
     property bool active: true
     property bool motion: true
     property url iconSource: Qt.resolvedUrl("../../assets/theme-marks/" + identity + ".svg")
@@ -14,6 +14,7 @@ Item {
     readonly property color foregroundColor: lightMode ? "#24272B" : "#F3F1ED"
     readonly property color mutedColor: Drawing.mix(foregroundColor, backgroundColor, 0.30)
     readonly property color accentColor: Drawing.readableAccent(accent, backgroundColor, foregroundColor)
+    readonly property color dangerColor: Drawing.readableAccent(lightMode ? "#a93649" : "#ed7d8f", backgroundColor, foregroundColor)
     readonly property bool portrait: height > width * 1.12
     readonly property var mark: Drawing.markPlacement(identity)
     property real motionPhase: 0
@@ -51,6 +52,17 @@ Item {
                 ctx.reset();
                 ctx.scale(width / 1000, height / 1000);
                 Drawing.paint(ctx, root.identity, root.accent, root.backgroundColor, root.foregroundColor, root.lightMode);
+                if (root.portrait) {
+                    // Tall displays leave a calm password area below the art.
+                    // Fade its lower edge instead of exposing the artboard cutoff.
+                    ctx.globalCompositeOperation = "destination-in";
+                    const fade = ctx.createLinearGradient(0, 700, 0, 1000);
+                    fade.addColorStop(0, "#ffffff");
+                    fade.addColorStop(1, "transparent");
+                    ctx.fillStyle = fade;
+                    ctx.fillRect(0, 0, 1000, 1000);
+                    ctx.globalCompositeOperation = "source-over";
+                }
             }
             onWidthChanged: requestPaint()
             onHeightChanged: requestPaint()
@@ -82,6 +94,7 @@ Item {
         NumberAnimation { from: -1; to: 0; duration: 5000; easing.type: Easing.InOutSine }
         onStopped: root.motionPhase = 0
     }
+    onPortraitChanged: artwork.requestPaint()
     onIdentityChanged: artwork.requestPaint()
     onAccentChanged: artwork.requestPaint()
     onLightModeChanged: artwork.requestPaint()

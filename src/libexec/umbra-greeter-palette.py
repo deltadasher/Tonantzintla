@@ -94,7 +94,8 @@ def render(payload: dict, settings: dict | None = None) -> str:
         if name == "accent" and identity.valid_color(exact_accent):
             value = exact_accent
         lines.append(f"{name}={value}")
-    lines += [f"themeIdentity={mark['id']}", f"identityColor={mark['color']}", f"themeMode={mode}",
+    lock_mode = ("light" if mark["lockLight"] else "dark") if "lockLight" in mark else mode
+    lines += [f"lockMode={lock_mode}", f"themeIdentity={mark['id']}", f"identityColor={mark['color']}", f"themeMode={mode}",
               "motion=" + ("false" if settings.get("motion") is False or settings.get("umbraMotion") is False else "true")]
     return "\n".join(lines) + "\n"
 

@@ -13,6 +13,8 @@ Item {
     property bool motionActive: true
     property color primary: Theme.accent
     property color secondary: Theme.cyan
+    property color foreground: Theme.moon
+    property color danger: Theme.danger
     property real phase: 0
     readonly property real progress: Math.min(1, count / Math.max(1, maxNodes))
 
@@ -54,6 +56,8 @@ Item {
             function onPhaseChanged() { trajectory.requestPaint(); }
             function onPrimaryChanged() { trajectory.requestPaint(); }
             function onSecondaryChanged() { trajectory.requestPaint(); }
+            function onForegroundChanged() { trajectory.requestPaint(); }
+            function onDangerChanged() { trajectory.requestPaint(); }
         }
 
         onWidthChanged: requestPaint()
@@ -84,8 +88,8 @@ Item {
         onPaint: {
             const ctx = getContext("2d");
             ctx.reset();
-            const stateColor = root.failed ? Theme.danger : root.primary;
-            strokeCurve(ctx, 1, Theme.moon, Math.max(1, height * 0.006), 0.10);
+            const stateColor = root.failed ? root.danger : root.primary;
+            strokeCurve(ctx, 1, root.foreground, Math.max(1, height * 0.006), 0.10);
             if (root.progress > 0)
                 strokeCurve(ctx, root.progress, stateColor,
                     Math.max(2, height * (0.012 + root.energy * 0.008)),
@@ -138,7 +142,7 @@ Item {
             Rectangle {
                 anchors.fill: parent
                 radius: width / 2
-                color: root.failed ? Theme.danger
+                color: root.failed ? root.danger
                     : node.newest ? root.secondary : root.primary
                 opacity: node.newest ? 1 : 0.86
             }

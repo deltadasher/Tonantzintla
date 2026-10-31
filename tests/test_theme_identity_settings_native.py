@@ -47,6 +47,8 @@ def cases():
         add('manual mark wins over colors ' + str(adaptive), dict(adaptivePalette=adaptive,
             themeIdentity='ink', spectralColors={'accent':'#83dad9'}))
         add('explicit mode wins ' + str(adaptive), dict(adaptivePalette=adaptive, themeIdentity='leaf', themeMode='dark'))
+    for mode in ('auto', 'light', 'dark'):
+        add('Leaf lock mode independent of desktop ' + mode, dict(themeIdentity='leaf', themeMode=mode))
     add('selected cyan preset controls accent', dict(accentName='cyan'))
     return rows
 
@@ -84,7 +86,7 @@ QtObject {
                 AdaptivePalette.applyPayload(row.payload);
                 AdaptivePalette.refreshDelay.stop();
                 result.push({themeIdentity: Theme.identity.id, themeMode: Theme.mode,
-                    identityColor: Theme.identity.color, accent: String(Theme.accent), voidColor: String(Theme.void_)});
+                    lockMode: Theme.lockIsLight ? "light" : "dark", identityColor: Theme.identity.color, accent: String(Theme.accent), voidColor: String(Theme.void_)});
             }
             console.log("IDENTITY_PARITY_RESULT", JSON.stringify(result));
             Qt.exit(0);

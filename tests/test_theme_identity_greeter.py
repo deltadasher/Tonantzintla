@@ -34,6 +34,7 @@ console.log(JSON.stringify(JSON.parse(process.argv[1]).map(color=>model.match(co
             self.assertIn('themeIdentity='+mark['id'],content)
             self.assertIn('identityColor='+mark['color'],content)
             self.assertIn('themeMode='+('light' if mark['light'] else 'dark'),content)
+            self.assertIn('lockMode='+('light' if mark.get('lockLight', mark['light']) else 'dark'),content)
             self.assertIn('motion=false',content)
         content=exporter.render({},dict(themeIdentity='../../bad\nextra=yes',themeMode='dark'))
         self.assertIn('themeIdentity=wabi-sabi',content)
