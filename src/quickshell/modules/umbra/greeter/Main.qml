@@ -35,6 +35,14 @@ Rectangle {
     property real capture: 0
     property real shock: 0
     property real identityPhase: 0
+    property date clockDate: new Date()
+    readonly property bool portrait: height > width * 1.12
+    readonly property real pad: Math.max(26, width * .045)
+    readonly property real formWidth: portrait ? width - pad * 2 : Math.min(width * .37, 600 * sf)
+    readonly property real clockTop: identityScene.item ? identityScene.item.suggestedClockY : height * (portrait ? .43 : .29)
+    readonly property real inputTop: identityScene.item ? identityScene.item.suggestedInputY : height * (portrait ? .65 : .58)
+    readonly property real timeSize: portrait ? Math.min(80, width * .17) : 118 * sf
+    readonly property real selectorY: clockTop + timeSize * 1.15 + 46
     readonly property real sf: Math.max(0.70, Math.min(1.45,
         Math.min(width / 1920, height / 1080)))
     readonly property real horizonSize: Math.min(height * 0.95, width * 0.58)
@@ -150,7 +158,7 @@ Rectangle {
         to: 1
         duration: 15000
         loops: Animation.Infinite
-        running: root.visible
+        running: root.visible && root.sceneMotion
     }
 
     SequentialAnimation {
@@ -199,7 +207,7 @@ Rectangle {
 
     SequentialAnimation {
         id: identityPulse
-        NumberAnimation { target: identityBody; property: "scale"; to: 0.72; duration: 100 }
+        NumberAnimation { target: identityBody; property: "scale"; to: 0.97; duration: 100 }
         NumberAnimation {
             target: identityBody
             property: "scale"
@@ -211,7 +219,7 @@ Rectangle {
 
     SequentialAnimation {
         id: sessionPulse
-        NumberAnimation { target: sessionBody; property: "scale"; to: 0.76; duration: 90 }
+        NumberAnimation { target: sessionBody; property: "scale"; to: 0.97; duration: 90 }
         NumberAnimation {
             target: sessionBody
             property: "scale"
@@ -253,150 +261,54 @@ Rectangle {
         }
     }
 
-    UmbraField {
-        visible: !root.themedScene
-        motionActive: root.visible && root.sceneMotion && !root.themedScene
-        z: -8
-        anchors.fill: parent
-        accent: root.accent
-        secondary: root.secondary
-        energy: Math.min(1, root.passwordCount / 12)
-        focalX: root.width * 0.75
-        focalY: root.height * 0.48
-        opacity: root.intro * 0.62 * (1 - root.capture * 0.72)
-    }
+
 
     MouseArea {
         anchors.fill: parent
         onClicked: root.focusInput()
     }
 
-    UmbraHorizon {
-        id: horizon
-        visible: !root.themedScene
-        motionActive: root.visible && root.sceneMotion && !root.themedScene
-        width: root.horizonSize
-        height: width
-        x: root.width * (0.75 - root.capture * 0.25) - width / 2
-            + (1 - root.intro) * root.width * 0.20
-        y: root.height * 0.48 - height / 2
-        scale: 0.76 + root.intro * 0.24
-        opacity: root.intro
-        voidColor: root.voidColor
-        accent: root.accent
-        secondary: root.secondary
-        danger: root.danger
-        deployment: root.intro
-        energy: Math.min(1, root.passwordCount / 10)
-        capture: root.capture
-        shock: root.shock
-        authenticating: root.authenticating
-        failed: root.failed
-        success: root.succeeded
 
-        Behavior on x {
-            NumberAnimation { duration: 720; easing.type: Easing.InOutCubic }
-        }
-    }
 
-    // Time is a fracture in the layout rather than a centered hero clock.
-    Rectangle {
-        x: root.width * 0.043
-        y: root.height * 0.175
-        width: Math.max(7, 8 * root.sf)
-        height: root.height * 0.245
-        color: root.failed ? root.danger : root.accent
-        opacity: 0.82 * root.intro
+    Text {
+        x: root.pad; y: root.pad
+        text: "Umbra"
+        color: root.foreground
+        font.family: "sans-serif"; font.pixelSize: 14
+        opacity: root.intro * (1 - root.capture)
     }
 
     Item {
-        x: root.width * 0.058
-        y: root.height * 0.155
-        width: Math.round(310 * root.sf)
-        height: Math.round(390 * root.sf)
+        x: root.pad; y: root.clockTop
+        width: root.formWidth; height: root.timeSize * 1.15 + 34
         opacity: root.intro * (1 - root.capture)
-
         Text {
-            id: hourText
-            x: Math.sin(root.identityPhase * Math.PI * 2) * 5 * root.sf
-            y: Math.cos(root.identityPhase * Math.PI * 2) * 4 * root.sf
-            text: Qt.formatTime(new Date(), "HH")
-            color: root.foreground
-            font.family: "JetBrains Mono"
-            font.pixelSize: Math.round(142 * root.sf)
-            font.weight: Font.DemiBold
-        }
-
-        Text {
-            id: minuteText
-            x: Math.cos(root.identityPhase * Math.PI * 2 + 0.8) * 6 * root.sf
-            y: Math.round(153 * root.sf)
-                + Math.sin(root.identityPhase * Math.PI * 2 + 0.8) * 5 * root.sf
-            text: Qt.formatTime(new Date(), "mm")
-            color: root.foreground
-            font.family: "JetBrains Mono"
-            font.pixelSize: Math.round(142 * root.sf)
-            font.weight: Font.DemiBold
-        }
-
-        Text {
-            id: secondsText
-            x: Math.round(215 * root.sf)
-                + Math.sin(root.identityPhase * Math.PI * 4) * 9 * root.sf
-            y: Math.round(275 * root.sf)
-                + Math.cos(root.identityPhase * Math.PI * 4) * 7 * root.sf
-            text: Qt.formatTime(new Date(), "ss")
+            text: Qt.formatDate(root.clockDate, "dddd, MMMM d")
             color: root.accent
-            font.family: "JetBrains Mono"
-            font.pixelSize: Math.round(22 * root.sf)
-            font.weight: Font.Bold
+            font.family: "sans-serif"; font.pixelSize: 13
         }
-
         Text {
-            id: dayText
-            x: 0
-            y: Math.round(334 * root.sf)
-            text: Qt.formatDate(new Date(), "dddd").toUpperCase()
+            y: 24; width: parent.width
+            text: Qt.formatTime(root.clockDate, "HH:mm")
             color: root.foreground
-            font.family: "JetBrains Mono"
-            font.pixelSize: Math.round(14 * root.sf)
-            font.weight: Font.Bold
-            font.letterSpacing: 1.0
-        }
-
-        Text {
-            id: dateText
-            x: dayText.implicitWidth + Math.round(15 * root.sf)
-            y: Math.round(338 * root.sf)
-            text: Qt.formatDate(new Date(), "MMM dd").toUpperCase()
-            color: root.muted
-            font.family: "JetBrains Mono"
-            font.pixelSize: Math.round(10 * root.sf)
-            font.weight: Font.Medium
-            font.letterSpacing: 1.8
+            font.family: "sans-serif"; font.pixelSize: root.timeSize
+            font.weight: Font.Light; font.letterSpacing: -2
+            fontSizeMode: Text.Fit; minimumPixelSize: 32
         }
     }
-
     Timer {
-        interval: 1000
-        running: true
-        repeat: true
-        onTriggered: {
-            const now = new Date();
-            hourText.text = Qt.formatTime(now, "HH");
-            minuteText.text = Qt.formatTime(now, "mm");
-            secondsText.text = Qt.formatTime(now, "ss");
-            dayText.text = Qt.formatDate(now, "dddd").toUpperCase();
-            dateText.text = Qt.formatDate(now, "MMM dd").toUpperCase();
-        }
+        interval: 1000; running: root.visible; repeat: true
+        onTriggered: root.clockDate = new Date()
     }
 
     UmbraTrajectory {
-        x: root.width * 0.055
-        y: root.height * 0.58
-        width: root.width * (root.height > root.width ? 0.89 : 0.37)
-        height: 120 * root.sf
+        x: root.pad
+        y: root.inputTop + 24
+        width: root.formWidth - 20
+        height: 90 * root.sf
         count: root.passwordCount
+        motionActive: root.sceneMotion
+        foreground: root.foreground
         accent: root.accent
         secondary: root.secondary
         danger: root.danger
@@ -404,6 +316,31 @@ Rectangle {
         failed: root.failed
         deployment: root.intro
         opacity: root.intro * (1 - root.capture)
+    }
+
+    Rectangle {
+        x: root.pad + root.formWidth - width
+        y: root.inputTop + 24 + 90 * root.sf * .24 - height / 2
+        width: 44; height: 44; radius: 22
+        color: root.passwordCount > 0 ? root.accent : root.surface
+        border.width: 1
+        border.color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, .24)
+        opacity: root.intro * (1 - root.capture)
+        Accessible.role: Accessible.Button
+        Accessible.name: "Sign in"
+        Accessible.onPressAction: root.submit()
+        Text {
+            anchors.centerIn: parent
+            text: root.authenticating ? "·" : "→"
+            color: root.passwordCount > 0 ? root.voidColor : root.foreground
+            font.family: "sans-serif"; font.pixelSize: 22
+        }
+        MouseArea {
+            anchors.fill: parent
+            enabled: root.passwordCount > 0 && !root.authenticating && !root.succeeded
+            cursorShape: Qt.PointingHandCursor
+            onClicked: root.submit()
+        }
     }
 
     // Resolve SDDM's named session role without guessing its numeric role.
@@ -423,202 +360,68 @@ Rectangle {
         }
     }
 
-    // Identity and session form their own binary system in the quiet space
-    // between the clock and horizon instead of sitting on top of the hero.
+    // User and session are stationary controls in the form, not drifting artwork.
     Item {
         id: identityBody
-        width: Math.round(122 * root.sf)
-        height: Math.round(106 * root.sf)
-        x: root.width * 0.45 + Math.cos(root.identityPhase * Math.PI * 2) * 10 - width / 2
-        y: root.height * 0.18 + Math.sin(root.identityPhase * Math.PI * 2) * 7 - height / 2
+        x: root.pad; y: root.selectorY
+        width: root.formWidth * .46; height: 44
         opacity: root.intro * (1 - root.capture)
-
-        Rectangle {
-            id: identityPlanet
-            width: Math.round(92 * root.sf)
-            height: Math.round(72 * root.sf)
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: parent.top
-            radius: height / 2
-            rotation: identityPointer.containsMouse ? 4 : -8
-            color: identityPointer.containsMouse ? root.mantle : root.surface
-
-            Behavior on color { ColorAnimation { duration: 170 } }
-            Behavior on rotation {
-                NumberAnimation { duration: 260; easing.type: Easing.OutBack }
-            }
-
-            // A luminous meridian makes the profile read as an occulted body,
-            // not an avatar placeholder.
-            Rectangle {
-                x: Math.round(10 * root.sf)
-                anchors.verticalCenter: parent.verticalCenter
-                width: Math.round(23 * root.sf)
-                height: parent.height * 0.82
-                radius: width / 2
-                color: identityPointer.containsMouse ? root.secondary : root.accent
-
-                Behavior on color { ColorAnimation { duration: 170 } }
-            }
-
-            Rectangle {
-                anchors.right: parent.right
-                anchors.rightMargin: Math.round(11 * root.sf)
-                anchors.verticalCenter: parent.verticalCenter
-                width: Math.round(19 * root.sf)
-                height: Math.round(6 * root.sf)
-                radius: height / 2
-                color: root.secondary
-                opacity: 0.72
-            }
-        }
-
-        Rectangle {
-            width: Math.round(14 * root.sf)
-            height: width
-            radius: width / 2
-            color: root.secondary
-            x: identityPlanet.x + identityPlanet.width * 0.84
-                + Math.cos(root.identityPhase * Math.PI * 4) * 6
-            y: identityPlanet.y - height * 0.15
-                + Math.sin(root.identityPhase * Math.PI * 4) * 5
-        }
-
         Text {
-            anchors.centerIn: identityPlanet
-            text: root.currentUserName.length > 0
-                ? root.currentUserName.charAt(0).toUpperCase() : "•"
-            color: root.foreground
-            font.family: "JetBrains Mono"
-            font.pixelSize: Math.round(26 * root.sf)
-            font.weight: Font.Bold
+            text: "User"; color: root.muted
+            font.family: "sans-serif"; font.pixelSize: 12
         }
-
         Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: identityPlanet.bottom
-            anchors.topMargin: Math.round(9 * root.sf)
-            text: root.currentUserName.toUpperCase()
-            color: root.foreground
-            font.family: "JetBrains Mono"
-            font.pixelSize: Math.round(12 * root.sf)
-            font.weight: Font.DemiBold
-            font.letterSpacing: 1.3
+            y: 19; width: parent.width
+            text: root.currentUserName + (userModel.count > 1 ? "  ›" : "")
+            color: identityPointer.containsMouse ? root.accent : root.foreground
+            font.family: "sans-serif"; font.pixelSize: 15
+            elide: Text.ElideRight
         }
-
         MouseArea {
-            id: identityPointer
-            anchors.fill: parent
-            hoverEnabled: true
+            id: identityPointer; anchors.fill: parent; hoverEnabled: true
             cursorShape: userModel.count > 1 ? Qt.PointingHandCursor : Qt.ArrowCursor
             onClicked: root.cycleUser(1)
         }
     }
-
     Item {
         id: sessionBody
-        width: Math.round(116 * root.sf)
-        height: Math.round(66 * root.sf)
-        x: root.width * 0.40 + Math.cos(root.identityPhase * Math.PI * -2) * 8 - width / 2
-        y: root.height * 0.27 + Math.sin(root.identityPhase * Math.PI * -2) * 6 - height / 2
+        x: root.pad + root.formWidth * .52; y: root.selectorY
+        width: root.formWidth * .48; height: 44
         opacity: root.intro * (1 - root.capture)
-
-        // The session selector is a little slingshot body with a particle
-        // wake, visually related to the profile without repeating its shape.
-        Rectangle {
-            x: Math.round(2 * root.sf)
-            anchors.verticalCenter: parent.verticalCenter
-            width: Math.round(7 * root.sf)
-            height: width
-            radius: width / 2
-            color: root.secondary
-            opacity: 0.34
-        }
-
-        Rectangle {
-            x: Math.round(14 * root.sf)
-            anchors.verticalCenter: parent.verticalCenter
-            width: Math.round(11 * root.sf)
-            height: width
-            radius: width / 2
-            color: root.secondary
-            opacity: 0.56
-        }
-
-        Rectangle {
-            id: sessionCapsule
-            x: Math.round(31 * root.sf)
-            anchors.verticalCenter: parent.verticalCenter
-            width: Math.round(76 * root.sf)
-            height: Math.round(48 * root.sf)
-            radius: height / 2
-            rotation: sessionPointer.containsMouse ? 5 : -9
-            color: sessionPointer.containsMouse ? root.accent : root.secondary
-
-            Behavior on color { ColorAnimation { duration: 170 } }
-            Behavior on rotation {
-                NumberAnimation { duration: 260; easing.type: Easing.OutBack }
-            }
-
-            Rectangle {
-                anchors.left: parent.left
-                anchors.leftMargin: Math.round(9 * root.sf)
-                anchors.verticalCenter: parent.verticalCenter
-                width: Math.round(8 * root.sf)
-                height: parent.height * 0.58
-                radius: width / 2
-                color: root.voidColor
-                opacity: 0.72
-            }
-        }
-
         Text {
-            anchors.centerIn: sessionCapsule
-            text: "↻"
-            color: root.voidColor
-            font.family: "JetBrains Mono"
-            font.pixelSize: Math.round(21 * root.sf)
-            font.weight: Font.Bold
+            text: "Session"; color: root.muted
+            font.family: "sans-serif"; font.pixelSize: 12
         }
-
         Text {
-            anchors.left: parent.right
-            anchors.leftMargin: Math.round(14 * root.sf)
-            anchors.verticalCenter: parent.verticalCenter
-            width: Math.round(220 * root.sf)
-            horizontalAlignment: Text.AlignLeft
-            text: root.currentSessionName.toUpperCase()
-            color: root.foreground
+            y: 19; width: parent.width
+            text: root.currentSessionName + (sessionModel.count > 1 ? "  ›" : "")
+            color: sessionPointer.containsMouse ? root.accent : root.foreground
+            font.family: "sans-serif"; font.pixelSize: 15
             elide: Text.ElideRight
-            font.family: "JetBrains Mono"
-            font.pixelSize: Math.round(11 * root.sf)
-            font.weight: Font.DemiBold
-            font.letterSpacing: 1.1
         }
-
         MouseArea {
-            id: sessionPointer
-            anchors.fill: parent
-            hoverEnabled: true
+            id: sessionPointer; anchors.fill: parent; hoverEnabled: true
             cursorShape: sessionModel.count > 1 ? Qt.PointingHandCursor : Qt.ArrowCursor
             onClicked: root.cycleSession(1)
         }
     }
 
     Text {
-        x: root.width * 0.058
-        y: root.height * 0.58 - 24 * root.sf
-        text: root.failed ? "WRONG PASSWORD"
-            : root.authenticating ? "CAPTURE IN PROGRESS"
-            : root.passwordCount > 0 ? "PRESS ENTER"
-            : "TYPE YOUR PASSWORD"
+        x: root.pad
+        y: root.inputTop
+        width: root.formWidth
+        wrapMode: Text.Wrap
+        text: root.failed ? "Wrong password"
+            : root.authenticating ? "Signing in…"
+            : root.passwordCount > 0 ? "Press Enter"
+            : "Type your password"
         visible: text.length > 0
         color: root.failed ? root.danger : root.muted
         opacity: root.intro * (1 - root.capture)
         font.family: "JetBrains Mono"
-        font.pixelSize: Math.round((root.failed ? 15 : 11) * root.sf)
+        font.pixelSize: 13
         font.weight: root.failed ? Font.Bold : Font.Medium
-        font.letterSpacing: root.failed ? 0.8 : 1.7
+        font.letterSpacing: 0
     }
 
     Text {
@@ -636,13 +439,13 @@ Rectangle {
     Row {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.rightMargin: Math.round(48 * root.sf)
-        anchors.bottomMargin: Math.round(55 * root.sf)
+        anchors.rightMargin: root.pad
+        anchors.bottomMargin: root.pad + 16
         spacing: Math.round(17 * root.sf)
         opacity: root.intro * (1 - root.capture)
 
         OrbitalAction {
-            width: Math.round(52 * root.sf)
+            width: Math.max(44, Math.round(52 * root.sf))
             height: width
             symbol: "◐"
             label: "Suspend"
@@ -653,7 +456,7 @@ Rectangle {
         }
 
         OrbitalAction {
-            width: Math.round(52 * root.sf)
+            width: Math.max(44, Math.round(52 * root.sf))
             height: width
             symbol: "↻"
             label: "Reboot"
@@ -664,7 +467,7 @@ Rectangle {
         }
 
         OrbitalAction {
-            width: Math.round(52 * root.sf)
+            width: Math.max(44, Math.round(52 * root.sf))
             height: width
             symbol: "⏻"
             label: "Power"

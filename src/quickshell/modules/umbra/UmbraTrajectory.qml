@@ -89,7 +89,7 @@ Item {
             const ctx = getContext("2d");
             ctx.reset();
             const stateColor = root.failed ? root.danger : root.primary;
-            strokeCurve(ctx, 1, root.foreground, Math.max(1, height * 0.006), 0.10);
+            strokeCurve(ctx, 1, root.foreground, Math.max(1.5, height * 0.006), 0.40);
             if (root.progress > 0)
                 strokeCurve(ctx, root.progress, stateColor,
                     Math.max(2, height * (0.012 + root.energy * 0.008)),

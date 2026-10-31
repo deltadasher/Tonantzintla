@@ -6,6 +6,8 @@ Item {
     property int count: 0
     property int maxNodes: 32
     property color accent: "#a99cff"
+    property bool motionActive: true
+    property color foreground: "#eee9dc"
     property color secondary: "#72d9e7"
     property color danger: "#ed7d8f"
     property bool authenticating: false
@@ -37,7 +39,7 @@ Item {
         to: 1
         duration: 5200
         loops: Animation.Infinite
-        running: root.visible
+        running: root.visible && root.motionActive
     }
 
     Canvas {
@@ -47,6 +49,10 @@ Item {
         Connections {
             target: root
             function onCountChanged() { path.requestPaint(); }
+            function onForegroundChanged() { path.requestPaint(); }
+            function onAccentChanged() { path.requestPaint(); }
+            function onSecondaryChanged() { path.requestPaint(); }
+            function onDangerChanged() { path.requestPaint(); }
             function onPhaseChanged() { path.requestPaint(); }
             function onAuthenticatingChanged() { path.requestPaint(); }
             function onFailedChanged() { path.requestPaint(); }
@@ -82,7 +88,7 @@ Item {
             const ctx = getContext("2d");
             ctx.reset();
             const stateColor = root.failed ? root.danger : root.accent;
-            strokeCurve(ctx, 1, root.secondary, Math.max(1, height * 0.005), 0.08);
+            strokeCurve(ctx, 1, root.foreground, Math.max(1.5, height * 0.005), 0.40);
             if (root.progress > 0)
                 strokeCurve(ctx, root.progress, stateColor,
                     Math.max(2, height * 0.013), 0.76);
