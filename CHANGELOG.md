@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Add optional Matugen-colored bar and app logos, with original colors available
+  and Wabi Sabi’s black center preserved.
+
 ## 1.2 - 2026-10-31
 
 - Add fourteen fixed-color logos and matching illustrated lock and login themes,

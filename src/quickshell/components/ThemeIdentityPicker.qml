@@ -16,13 +16,21 @@ ColumnLayout {
         label: "Logo selection"
         value: root.automatic ? "auto" : "manual"
         choices: [{label: "Choose a logo", value: "manual"}, {label: "Follow theme color", value: "auto"}]
-        detail: "Every logo keeps its original colors."
+        detail: "Follow theme color chooses the logo shape; set its colors below."
         onSelected: value => Settings.themeIdentity = value === "auto" ? "auto" : root.current.id
+    }
+    SettingChoice {
+        Layout.fillWidth: true
+        label: "Logo colors"
+        value: Settings.logoColorMode === "theme" ? "theme" : "original"
+        choices: [{label: "Original", value: "original"}, {label: "Theme color", value: "theme"}]
+        detail: "Theme color uses your Matugen accent or custom button color for bar and app logos."
+        onSelected: value => Settings.logoColorMode = value
     }
     Text {
         Layout.fillWidth: true
         text: root.automatic ? "Matched to " + Theme.identityColor.toUpperCase() + ": " + root.current.name
-                             : root.current.name + " · " + root.current.color
+                             : root.current.name + " · " + (Settings.logoColorMode === "theme" ? String(Theme.accent).toUpperCase() : root.current.color)
         color: Theme.moon; font.family: Theme.fontText; font.pixelSize: 12
         wrapMode: Text.Wrap
     }
