@@ -55,7 +55,15 @@ Window {
   } else if(w.step===5){
    w.check(Theme.identity.id==="ink" && mark.mark.color==="#000000" && !Theme.isLight,"manual ink remains black without changing the chosen appearance");
    w.check(Settings.spectralColors.accent==="#83dad9","manual logo preserves separate exact accent");
-  } else if(w.step>8 && !Settings.saveTimer.running && !Settings.preferencesLoading){
+  } else if(w.step===6){
+   w.press("Logo colors: Theme color");
+  } else if(w.step===7){
+   w.check(Settings.logoColorMode==="theme" && mark.useThemeColor,"keyboard enables Matugen-colored logos");
+   w.press("Logo colors: Original");
+  } else if(w.step===8){
+   w.check(Settings.logoColorMode==="original" && !mark.useThemeColor,"original artwork can be restored");
+   w.press("Logo colors: Theme color");
+  } else if(w.step>10 && !Settings.saveTimer.running && !Settings.preferencesLoading){
    console.log("IDENTITY_COMPLETE",w.failures);Qt.exit(w.failures?1:0);stop();
   }
   w.step++;
@@ -71,5 +79,6 @@ Window {
     self.assertNotIn(error,log)
    saved=json.loads(config.read_text())
    self.assertEqual(saved['themeIdentity'],'ink')
+   self.assertEqual(saved['logoColorMode'],'theme')
    self.assertEqual(saved['paletteSeedColor'],'#d11e40')
    self.assertEqual(saved['spectralColors']['accent'],'#83dad9')

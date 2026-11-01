@@ -4,7 +4,7 @@ Open **Settings → Appearance → Logo**.
 
 Choose one of fourteen approved SVGs, or select **Follow theme color**. Automatic selection prioritizes your exact action color, then your chosen Matugen seed, then the wallpaper's source color or the selected accent preset. Generated lighter primary colors are not used to override an explicit choice.
 
-Choosing a logo does not change your palette. **Use [name] color** separately applies its exact color and generates supporting colors through Matugen. Logos always retain their original SVG colors. Wabi Sabi is the default and keeps its original amber stream and black horizon.
+Choosing a logo does not change your palette. **Use [name] color** separately applies its exact color and generates supporting colors through Matugen. Logos retain their original SVG colors by default; Logo colors can opt into the interface accent. Wabi Sabi is the default and keeps its original amber stream and black horizon.
 
 **Color mode** is always visible above Logo, Colors and Style. Light and Dark stay selected when you change logos or styles, and also apply to the lock and login screens. Auto follows your theme color (or your separate button color), not the logo. Leaf keeps its dark lock background in Auto; you can still choose Light explicitly.
 
@@ -33,3 +33,5 @@ blackhole greeter activate sddm  # also select it for the next login screen
 These commands request administrator authentication through the existing installer. They never restart SDDM or end the current session. Selecting a different logo later updates session locks immediately; run install again to update the login snapshot. Other existing display-manager adapters retain their previous behavior; the illustrated login theme is for SDDM.
 
 The original twelve replacement marks came from the approved V3 SVG archive. Snowflake and Wabi Sabi are the approved unchanged originals. Their hashes are recorded in `ThemeIdentities.js`; the shared registry also supplies the greeter exporter. Authentication, password storage, PAM, session selection and Wayland lock ownership are unchanged.
+
+**Logo colors → Theme color** recolors bar and app logos with the current interface accent, including Matugen palettes and custom button colors. Original remains the default. This is independent of logo selection and Light/Dark mode. SVG geometry and shading are retained, and Wabi Sabi’s black center stays black. Lock/login illustrations keep their identity artwork palette.
