@@ -54,7 +54,9 @@ ColumnLayout {
                 border.width: activeFocus ? 2 : chosen ? 1 : 0
                 border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, .85)
                 Accessible.role: Accessible.RadioButton
-                Accessible.name: modelData.name + ", " + modelData.color
+                Accessible.name: modelData.name + ", " + (Settings.logoColorMode === "theme"
+                    ? String(Theme.accent).toUpperCase()
+                    : modelData.color)
                 Accessible.checked: chosen
                 Accessible.onPressAction: choose()
                 function choose() { Settings.themeIdentity = modelData.id; }
