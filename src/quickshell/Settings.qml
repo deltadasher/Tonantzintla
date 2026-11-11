@@ -213,6 +213,8 @@ QtObject {
     property alias wallpaperRenderer: settingsAdapter.wallpaperRenderer
     property alias nativeWallpaperAssignments: settingsAdapter.nativeWallpaperAssignments
     property alias wallpaperTransition: settingsAdapter.wallpaperTransition
+    property alias liveWallpaper: settingsAdapter.liveWallpaper
+    property alias liveWallpaperProps: settingsAdapter.liveWallpaperProps
     property alias weatherEnabled: settingsAdapter.weatherEnabled
     property alias weatherLocation: settingsAdapter.weatherLocation
     property alias temperatureUnit: settingsAdapter.temperatureUnit
@@ -770,6 +772,9 @@ QtObject {
             property string wallpaperRenderer: "external"
             property var nativeWallpaperAssignments: ({})
             property string wallpaperTransition: "any"
+            // Scene id while wallpaperKind is "live"; wallpaperPath then holds its still.
+            property string liveWallpaper: ""
+            property var liveWallpaperProps: ({})
             property bool weatherEnabled: true
             property string weatherLocation: ""
             property string temperatureUnit: "celsius"

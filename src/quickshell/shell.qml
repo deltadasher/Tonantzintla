@@ -11,6 +11,7 @@ import "modules/umbra"
 import "modules/umbra/reveal"
 import "services"
 import "components"
+import "components/LiveScenes.js" as LiveScenes
 
 ShellRoot {
     id: root
@@ -29,6 +30,15 @@ ShellRoot {
             transitionName: wallpaperEntry.transition || "fade"
             onSourcePresented: (outputName, generation) => Environment.reportNativeWallpaperPresented(outputName, generation)
             onSourceFailed: (outputName, generation, message) => Environment.reportNativeWallpaperFailed(outputName, generation, message)
+        }
+    }
+    // Live scenes sit on the same background layer and replace the still while applied.
+    Binding { target: Environment; property: "liveWallpapers"; value: LiveScenes.entries(Environment.liveRoot) }
+    Variants {
+        model: Quickshell.screens.filter(function(screen) { return Environment.liveWallpaperShownOn(screen.name); })
+        LiveWallpaper {
+            sceneId: Settings.liveWallpaper
+            onSceneFailed: (outputName, message) => Environment.reportLiveWallpaperFailed(outputName, message)
         }
     }
     IpcHandler {

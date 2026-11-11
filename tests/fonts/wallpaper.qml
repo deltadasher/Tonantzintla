@@ -19,9 +19,9 @@ Window {
                 console.log("WALL SYMBOL",JSON.stringify({text:text,family:item.font.family,weight:item.font.weight,visible:item.visible}));
                 check(item.font.family===Theme.iconFamily(text),"symbol "+text+" uses configured icon family");
                 check(item.font.weight===Font.Normal,"symbol "+text+" avoids heavy fallback");
-            }else if(["LIBRARY","OPTIONS","OUTPUT","TRANSITION","A"].indexOf(text)>=0 && item.font.bold){
+            }else if(["LIBRARY","Options","Displays","Transition","A"].indexOf(text)>=0 && item.font.bold){
                 labels++;
-                check(item.font.family===(text==="OPTIONS"||text==="A"?Settings.fontDisplay:Settings.fontMono),"text label preserves configured family");
+                check(item.font.family===(text==="Options"||text==="A"?Settings.fontDisplay:Settings.fontMono),"text label preserves configured family");
             }
         }
         for(const child of item.children||[])inspect(child);

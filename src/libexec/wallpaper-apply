@@ -27,6 +27,12 @@ stop_tonantzintla_video() {
     fi
 }
 
+# A live scene is drawn by the shell itself; it only needs an owned video gone.
+if [[ "$kind" == "stop-video" ]]; then
+    stop_tonantzintla_video
+    exit 0
+fi
+
 [[ -f "$wallpaper_path" ]] || exit 2
 stop_tonantzintla_video
 
