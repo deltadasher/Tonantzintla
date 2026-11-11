@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add live wallpapers to Parallax: Snowfall, Life, Flow field, Deep field,
+  Constellations, Aurora, Orrery and a System monitor, drawn by the shell itself
+  with no web engine or extra process. They
+  orbit with the rest of the library, have a Live filter, react to the pointer,
+  and expose their settings in the Options panel.
+- Parallax Options uses larger sentence-case labels and hides the transition
+  note unless the chosen transition is mapped to a different built-in one.
 - Add optional Matugen-colored bar and app logos, with original colors available
   and Wabi Sabi’s black center preserved.
 

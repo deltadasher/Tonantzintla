@@ -13,6 +13,7 @@ authorization to redesign working surfaces.
   backgrounds, translucent controls, and Resonance's rounded clipping.
 - Do not restore Chronos or the diamond's duplicate telemetry sidepanel.
 - Do not add desktop background widgets. Clocks, telemetry and controls must stay useful while application windows are open, through Aperture or an on-demand instrument. Visual/customization inspiration from another shell must fit this rule.
+  Parallax live wallpapers are the one exception ([details](docs/parallax-live.md)): they are wallpapers the user applies, nothing may be available only there, and they show local system readings at most, never collected user telemetry.
 - Inspect the current branch, dirty tree, source and installed runtime separately.
   Preserve existing changes. Commit, push, install, restart and rewrite history
   only when the current request authorizes those actions.
