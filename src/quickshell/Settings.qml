@@ -215,6 +215,7 @@ QtObject {
     property alias wallpaperTransition: settingsAdapter.wallpaperTransition
     property alias liveWallpaper: settingsAdapter.liveWallpaper
     property alias liveWallpaperProps: settingsAdapter.liveWallpaperProps
+    property alias undertowWallpaper: settingsAdapter.undertowWallpaper
     property alias weatherEnabled: settingsAdapter.weatherEnabled
     property alias weatherLocation: settingsAdapter.weatherLocation
     property alias temperatureUnit: settingsAdapter.temperatureUnit
@@ -775,6 +776,8 @@ QtObject {
             // Scene id while wallpaperKind is "live"; wallpaperPath then holds its still.
             property string liveWallpaper: ""
             property var liveWallpaperProps: ({})
+            // undertow wallpaper id while wallpaperKind is "web".
+            property string undertowWallpaper: ""
             property bool weatherEnabled: true
             property string weatherLocation: ""
             property string temperatureUnit: "celsius"
