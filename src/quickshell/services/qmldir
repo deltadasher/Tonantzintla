@@ -3,6 +3,7 @@ singleton Audio 1.0 Audio.qml
 singleton Clipboard 1.0 Clipboard.qml
 singleton DeviceState 1.0 DeviceState.qml
 singleton Environment 1.0 Environment.qml
+singleton Undertow 1.0 Undertow.qml
 singleton Equalizer 1.0 Equalizer.qml
 singleton Focus 1.0 Focus.qml
 singleton FontState 1.0 FontState.qml

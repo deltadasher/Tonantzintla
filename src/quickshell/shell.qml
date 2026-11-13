@@ -34,6 +34,9 @@ ShellRoot {
     }
     // Live scenes sit on the same background layer and replace the still while applied.
     Binding { target: Environment; property: "liveWallpapers"; value: LiveScenes.entries(Environment.liveRoot) }
+    // Web wallpapers come from the optional undertow daemon; see services/Undertow.qml.
+    Binding { target: Environment; property: "webWallpapers"; value: Undertow.entries }
+    Connections { target: Environment; function onWebWallpaperRequested(id) { Undertow.apply(id); } }
     Variants {
         model: Quickshell.screens.filter(function(screen) { return Environment.liveWallpaperShownOn(screen.name); })
         LiveWallpaper {

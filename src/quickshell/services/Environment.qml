@@ -339,7 +339,7 @@ QtObject {
     }
     property var onlineWallpapers: []
     readonly property var wallpapers: (localWallpapers.length > 0
-        ? localWallpapers : bundledEntries()).concat(onlineWallpapers).concat(liveWallpapers)
+        ? localWallpapers : bundledEntries()).concat(onlineWallpapers).concat(liveWallpapers).concat(webWallpapers)
     readonly property bool captureActive: ShellState.ephemerisVisible
         && ShellState.ephemerisTab === "capture"
     readonly property var outputNames: {
@@ -397,6 +397,7 @@ QtObject {
 
     function kindFor(path) {
         if (liveEntryFor(path)) return "live";
+        if (String(path || "").indexOf("undertow://") === 0) return "web";
         return /\.(mp4|mkv|mov|webm|avi|m4v)$/i.test(path || "") ? "video" : "image";
     }
 
@@ -404,6 +405,10 @@ QtObject {
     // shell.qml supplies the catalog, so this service has no component import.
     // Each entry's `path` is its bundled still: the orbit, palette and optics
     // treat it like any image, while Settings.liveWallpaper names the scene.
+    // Web wallpapers belong to the optional Undertow service. shell.qml supplies
+    // its entries and answers the request below, so this service stays standalone.
+    property var webWallpapers: []
+    signal webWallpaperRequested(string id)
     readonly property string liveRoot: bundledRoot + "/live"
     property var liveWallpapers: []
     readonly property bool liveWallpaperActive: Settings.wallpaperKind === "live" && Settings.liveWallpaper.length > 0
@@ -565,6 +570,11 @@ QtObject {
 
     function applyWallpaper(path, kind) {
         if ((kind || kindFor(path)) === "live") { applyLiveWallpaper(path); return; }
+        if ((kind || kindFor(path)) === "web") {
+            // On restore the path is still the last image; Undertow restores itself.
+            if (kindFor(path) === "web") webWallpaperRequested(String(path).substring(11));
+            return;
+        }
         if (Settings.wallpaperRenderer === "native" && path) {
             if (!nativeOutputNames.length) syncNativeOutputs(currentNativeOutputs());
             const nativeKind=kind || kindFor(path);

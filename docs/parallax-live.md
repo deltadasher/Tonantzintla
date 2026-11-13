@@ -38,6 +38,35 @@ Scenes take their colors from Theme, so they follow the active palette.
   When one is centered, the Options panel leads with its sliders and a Reset.
 - Reduced or instant motion holds a scene on a still frame.
 
+## Web wallpapers through undertow
+
+undertow is a separate project: a daemon that draws web pages as wallpapers with
+its own web engine, and installs them from GitHub. It is optional and is not
+bundled or installed by Tonantzintla. When `undertow` is on PATH, Parallax is its
+interface:
+
+- `services/Undertow.qml` looks for the command once, reads the library with
+  `undertow list --json` when Parallax opens and after each action, and never polls.
+- Web wallpapers orbit as kind `web` with a Web filter. Applying one runs
+  `undertow set <id> --headless`, so no tray icon or picker of undertow's appears.
+  The kind becomes `web` only after that command succeeds. `wallpaperPath` keeps
+  the last image, so colors and optics stay on it.
+- With one centered and running, Options shows its slider and switch settings
+  and passes changes to `undertow prop`. Its color, list and text settings are not
+  shown. "Add from GitHub" runs `undertow add` and reports the result.
+- Applying any other wallpaper releases it: undertow is quit if this shell
+  started it, and only paused if the user had started it themselves.
+- After a restart, the web wallpaper in use is started again on the first listing.
+- Without undertow, Web entries do not exist and the Web filter explains why.
+
+`shell.qml` passes the entries to `Environment.webWallpapers` and answers
+`Environment.webWallpaperRequested`, so `Environment` does not depend on the service.
+
+Checked against a local undertow build in an isolated config: detection, listing,
+apply, a setting change, a rejected source, release, and the not-installed state.
+Not checked: the Parallax panel itself with a web wallpaper centered, Niri and
+Hyprland, and installing from GitHub.
+
 ## The desktop-widget rule
 
 AGENTS.md excludes desktop background widgets. Live wallpapers are the stated
