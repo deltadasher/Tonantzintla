@@ -26,3 +26,27 @@ to read through your changes for context.
 
 Tonantzintla is licensed under GPL-3.0-or-later. New third-party material must
 arrive with explicit source, copyright, and license records.
+
+### Packaging an installer binary
+
+Build from the checkout root. Cargo can include local paths in dependency panic
+messages even when a release binary is stripped. The following Bash command
+remaps the build directories before compiling the installer for distribution.
+It preserves spaces in path names.
+
+```bash
+(
+    flags=(
+        "--remap-path-prefix=${HOME}=/build/home"
+        "--remap-path-prefix=${PWD}=/build/tonantzintla"
+        "--remap-path-prefix=${CARGO_HOME:-$HOME/.cargo}=/build/cargo"
+        "--remap-path-prefix=${CARGO_TARGET_DIR:-$PWD/install/target}=/build/target"
+    )
+    IFS=$'\x1f'
+    export CARGO_ENCODED_RUSTFLAGS="${flags[*]}"
+    cargo build --release --locked --manifest-path install/Cargo.toml
+)
+```
+
+The installer finds the checkout containing its executable or working directory.
+Pass `--source /path/to/Tonantzintla` when distributing the binary separately.

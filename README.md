@@ -5,7 +5,7 @@
 ## Tonantzintla 1.2
 
 Built with Quickshell for Niri & Hyprland (to be extended to other wayland compositors in the near future).
-Extended distro compatibility: Arch, similar derivatives, Fedora, Debian.
+The installer supports Arch Linux and compatible Arch derivatives, including Obarun. On Fedora and Debian the installer can report the configuration but does not install the shell.
 Highly customizable!
 
 ## ARTIX NOT SUPPORTED INTENTIONALLY
@@ -23,7 +23,7 @@ Use the five public entry points to see what each part does and find its direct 
 ### Install
 
 ```bash
-sudo [insert package manager installation command] --needed git rust
+sudo pacman -S --needed git rust base-devel
 git clone https://github.com/deltadasher/Tonantzintla.git Tonantzintla
 cd Tonantzintla
 bin/blackhole install --profile recommended --niri keep --umbra lock --yes
