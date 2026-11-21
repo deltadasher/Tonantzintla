@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Parser)]
 #[command(name = "tonantzintla-installer", version, about)]
 pub struct Cli {
-    /// Tonantzintla source checkout. Defaults to the current or compiled checkout.
+    /// Tonantzintla checkout. Defaults to the checkout containing the working directory or executable.
     #[arg(long, global = true)]
     pub source: Option<PathBuf>,
 
