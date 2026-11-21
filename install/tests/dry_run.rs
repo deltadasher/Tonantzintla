@@ -278,3 +278,40 @@ fn report_reads_hardware_and_desktop_owners_without_starting_them() {
     assert_eq!(value["desktop_processes"][0]["role"], "notifications");
     assert_eq!(value["desktop_processes"][0]["tonantzintla_owned"], false);
 }
+
+#[test]
+fn moved_installer_discovers_only_runtime_checkouts() {
+    let temp = tempfile::tempdir().unwrap();
+    let standalone = temp.path().join("installer");
+    fs::copy(env!("CARGO_BIN_EXE_tonantzintla-installer"), &standalone).unwrap();
+    let report = |exe: &Path, cwd: &Path| {
+        Command::new(exe)
+            .arg("report")
+            .current_dir(cwd)
+            .env("HOME", temp.path())
+            .env("PATH", "/nonexistent")
+            .output()
+            .unwrap()
+    };
+    let missing = report(&standalone, temp.path());
+    assert!(!missing.status.success());
+    assert!(String::from_utf8_lossy(&missing.stderr).contains("--source"));
+
+    let checkout = temp.path().join("renamed checkout");
+    for dir in ["bin", "install", "src/quickshell"] {
+        fs::create_dir_all(checkout.join(dir)).unwrap();
+    }
+    for file in ["VERSION", "bin/blackhole", "src/quickshell/shell.qml"] {
+        fs::write(checkout.join(file), "").unwrap();
+    }
+    fs::write(
+        checkout.join("install/features.toml"),
+        include_str!("../features.toml"),
+    )
+    .unwrap();
+    assert!(report(&standalone, &checkout.join("src")).status.success());
+
+    let bundled = checkout.join("bin/tonantzintla-installer");
+    fs::rename(&standalone, &bundled).unwrap();
+    assert!(report(&bundled, temp.path()).status.success());
+}

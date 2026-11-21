@@ -93,15 +93,16 @@ fn discover_source(explicit: Option<&PathBuf>) -> Result<PathBuf> {
     }
 
     let cwd = std::env::current_dir().context("could not read the current directory")?;
-    if is_source(&cwd) {
-        return Ok(cwd);
+    if let Some(root) = cwd.ancestors().find(|path| is_source(path)) {
+        return Ok(root.to_path_buf());
     }
 
-    let compiled_from = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("installer crate has a repository parent")
-        .to_path_buf();
-    canonical_source(&compiled_from)
+    let executable =
+        std::env::current_exe().context("could not locate the installer executable")?;
+    if let Some(root) = executable.ancestors().skip(1).find(|path| is_source(path)) {
+        return Ok(root.to_path_buf());
+    }
+    bail!("cannot find a Tonantzintla checkout. Run from the checkout or pass --source <path>")
 }
 
 fn canonical_source(path: &std::path::Path) -> Result<PathBuf> {
