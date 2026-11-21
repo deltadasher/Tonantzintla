@@ -65,6 +65,9 @@ fn json_dry_run_is_machine_readable() {
         .arg("--format")
         .arg("json")
         .env("HOME", &home)
+        .env_remove("XDG_CONFIG_HOME")
+        .env_remove("XDG_DATA_HOME")
+        .env_remove("XDG_STATE_HOME")
         .env("TONANTZINTLA_INSTALLER_OS_RELEASE", &os_release)
         .env("PATH", "/nonexistent")
         .output()
@@ -83,13 +86,14 @@ fn json_dry_run_is_machine_readable() {
         .iter()
         .find(|operation| operation["id"] == "link-shell")
         .unwrap();
-    assert!(
-        shell_link["detail"]
-            .as_str()
-            .unwrap()
-            .ends_with(".local/share/tonantzintla")
+    assert_eq!(
+        shell_link["detail"],
+        format!(
+            "{} -> {}",
+            home.join(".config/quickshell/tonantzintla").display(),
+            home.join(".local/share/tonantzintla").display()
+        )
     );
-    assert!(!shell_link["detail"].as_str().unwrap().contains("/Codex/"));
 }
 
 #[test]
