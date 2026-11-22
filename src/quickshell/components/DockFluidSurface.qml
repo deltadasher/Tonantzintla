@@ -41,5 +41,8 @@ Canvas {
         c.closePath();
         c.fillStyle = fillColor.toString();
         c.fill();
+        c.lineWidth = 1;
+        c.strokeStyle = Theme.barHairline.toString();
+        c.stroke();
     }
 }

@@ -44,8 +44,8 @@ stage_theme() {
 
 install_theme() {
     local staging source_file
-    staging="$(mktemp -d "${TMPDIR:-/tmp}/tonantzintla-umbra-install.XXXXXX")"
-    trap 'rm -rf -- "${staging:-}"' RETURN
+    staging="$(umask 077 && mktemp -d "${TMPDIR:-/tmp}/tonantzintla-umbra-install.XXXXXX")"
+    trap 'rm -rf -- "${staging:-}"; trap - RETURN' RETURN
     stage_theme "$staging"
     sudo install -d -- "$theme_target"
     while IFS= read -r -d '' source_file; do
@@ -55,7 +55,7 @@ install_theme() {
 
 case "$command_name" in
     preview)
-        staging="$(mktemp -d "${TMPDIR:-/tmp}/tonantzintla-umbra-preview.XXXXXX")"
+        staging="$(umask 077 && mktemp -d "${TMPDIR:-/tmp}/tonantzintla-umbra-preview.XXXXXX")"
         trap 'rm -rf -- "$staging"' EXIT
         stage_theme "$staging"
         if command -v sddm-greeter-qt6 >/dev/null 2>&1; then

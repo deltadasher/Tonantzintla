@@ -455,9 +455,11 @@ QtObject {
         : (showSeconds ? "HH:mm:ss" : "HH:mm")
     readonly property string configRoot: {
         const xdg = Quickshell.env("XDG_CONFIG_HOME") || "";
-        const home = Quickshell.env("HOME") || "/tmp";
-        return (xdg.length > 0 ? xdg : home + "/.config")
-            + "/tonantzintla";
+        const home = Quickshell.env("HOME") || "";
+        const runtime = Quickshell.env("XDG_RUNTIME_DIR") || "";
+        if (xdg.length > 0) return xdg + "/tonantzintla";
+        if (home.length > 0) return home + "/.config/tonantzintla";
+        return (runtime.length > 0 ? runtime : "/tmp") + "/tonantzintla-config";
     }
     readonly property string configPath: configRoot + "/settings.json"
 

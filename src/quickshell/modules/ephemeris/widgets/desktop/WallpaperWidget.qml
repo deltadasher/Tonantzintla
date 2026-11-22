@@ -26,9 +26,11 @@ Item {
         anchors.bottom: parent.bottom
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottomMargin: 16
-        width: 310; height: 40; radius: 12; z: 100
+        width: 310; height: 38; radius: Theme.radiusSmall; z: 100
         visible: !root.optionsOpen && (Environment.libraryLoading || Environment.libraryError.length > 0 || root.missingPreviews)
         color: Theme.mantle
+        border.width: 1
+        border.color: Theme.surfaceBorder
         Text {
             anchors.centerIn: parent; width: parent.width - 20; color: Theme.moon
             font.family: Theme.fontMono; font.pixelSize: Theme.textCaption
@@ -76,10 +78,10 @@ Item {
     }
 
     readonly property var filters: [
-        { "label": "EVERYTHING", "value": "All", "glyph": "✦", "tone": Theme.accent },
-        { "label": "TONANTZINTLA", "value": "Tonantzintla", "glyph": "A", "tone": Theme.cyan },
-        { "label": "ONLINE", "value": "Online", "glyph": "◎", "tone": Theme.success },
-        { "label": "VIDEO", "value": "Video", "glyph": "▶", "tone": Theme.rose }
+        { "label": "Everything", "value": "All", "glyph": "✦", "tone": Theme.accent },
+        { "label": "Tonantzintla", "value": "Tonantzintla", "glyph": "A", "tone": Theme.cyan },
+        { "label": "Online", "value": "Online", "glyph": "◎", "tone": Theme.success },
+        { "label": "Video", "value": "Video", "glyph": "▶", "tone": Theme.rose }
     ]
     readonly property bool hasOnlineWorlds: Environment.wallpapers.some(function(entry) { return entry.source === "Online"; })
     readonly property bool hasVideoWorlds: Environment.wallpapers.some(function(entry) { return entry.kind === "video"; })

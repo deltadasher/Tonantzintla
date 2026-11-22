@@ -37,6 +37,7 @@ Surfaces:
   lock-status             Query actual lock acquisition (read-only)
   preview-lock            Preview Umbra without locking the session
   greeter ACTION [TARGET] Manage Umbra adapters for SDDM, LightDM, greetd, Ly, or GDM
+  plasma ACTION [OPTS]    Build, install, sync, apply, or remove the native KDE Plasma 6 theme
   capture ACTION          Run region-copy, region-save, full-copy, or full-save
   notify SUMMARY [BODY]   Show a Tonantzintla notification
   terminal                Open the configured terminal, or a system default
@@ -151,12 +152,40 @@ except (OSError, ValueError, TypeError):
 PY
 }
 
+exec_command_string() {
+    local command_string="$1"
+    shift
+    exec python3 - "$command_string" "$@" <<'PY'
+import os
+import shlex
+import sys
+
+raw = sys.argv[1]
+extra = sys.argv[2:]
+if "\x00" in raw or "\n" in raw or "\r" in raw:
+    print("Refusing command containing control characters.", file=sys.stderr)
+    sys.exit(2)
+try:
+    argv = shlex.split(raw)
+except ValueError as error:
+    print(f"Invalid configured command: {error}", file=sys.stderr)
+    sys.exit(2)
+if not argv:
+    sys.exit(1)
+try:
+    os.execvp(argv[0], argv + extra)
+except OSError as error:
+    print(f"Could not start '{argv[0]}': {error}", file=sys.stderr)
+    sys.exit(127)
+PY
+}
+
 run_setting() {
     local key="$1"
     local configured
     configured="$(setting_value "$key")"
     if [[ -n "$configured" ]]; then
-        exec sh -lc "$configured"
+        exec_command_string "$configured"
     fi
     return 1
 }
@@ -170,6 +199,7 @@ import json
 import os
 import re
 import sys
+import tempfile
 
 settings_path = sys.argv[1]
 action = sys.argv[2] if len(sys.argv) > 2 else "get"
@@ -187,9 +217,26 @@ if os.path.exists(settings_path):
             sys.exit(1)
 
 def save_data(d):
-    os.makedirs(os.path.dirname(settings_path), exist_ok=True)
-    with open(settings_path, "w", encoding="utf-8") as f:
-        json.dump(d, f, indent=2)
+    parent = os.path.dirname(settings_path) or "."
+    os.makedirs(parent, mode=0o700, exist_ok=True)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", dir=parent, suffix=".tmp", delete=False, encoding="utf-8"
+        ) as f:
+            temporary = f.name
+            json.dump(d, f, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.chmod(temporary, 0o600)
+        os.replace(temporary, settings_path)
+        temporary = None
+    finally:
+        if temporary is not None:
+            try:
+                os.unlink(temporary)
+            except OSError:
+                pass
 
 if action == "get":
     if args:
@@ -319,21 +366,13 @@ launch_terminal() {
     local configured
     configured="$(setting_value terminal)"
     if [[ -n "$configured" ]]; then
-        if [[ ${#cmd[@]} -gt 0 ]]; then
-            exec sh -lc "$configured \"\$@\"" -- "${cmd[@]}"
-        else
-            exec sh -lc "$configured"
-        fi
+        exec_command_string "$configured" "${cmd[@]}"
     fi
     if command -v xdg-terminal-exec >/dev/null 2>&1; then
         exec xdg-terminal-exec "${cmd[@]}"
     fi
     if [[ -n "${TERMINAL:-}" ]]; then
-        if [[ ${#cmd[@]} -gt 0 ]]; then
-            exec sh -lc "$TERMINAL \"\$@\"" -- "${cmd[@]}"
-        else
-            exec sh -lc "$TERMINAL"
-        fi
+        exec_command_string "$TERMINAL" "${cmd[@]}"
     fi
     local candidate
     for candidate in foot kitty alacritty wezterm konsole gnome-terminal \
@@ -351,7 +390,7 @@ launch_files() {
     local configured
     configured="$(setting_value fileManager)"
     if [[ -n "$configured" ]]; then
-        exec sh -lc "$configured \"\$1\"" -- "$target"
+        exec_command_string "$configured" "$target"
     fi
     exec xdg-open "$target"
 }
@@ -550,6 +589,21 @@ case "$command_name" in
     greeter)
         action="${2:-help}"
         exec "$libexec/umbra-greeter-portable" "$action" "${3:-auto}"
+        ;;
+    plasma)
+        action="${2:-status}"
+        case "$action" in
+            build|install|sync|apply|uninstall|status|validate)
+                exec python3 "$libexec/plasma-theme.py" "$action" "${@:3}"
+                ;;
+            help|-h|--help)
+                printf 'Usage: blackhole plasma [build|install|sync|apply|uninstall|status|validate] [--mode dark|light] [--layout]\n'
+                ;;
+            *)
+                printf 'Usage: blackhole plasma [build|install|sync|apply|uninstall|status|validate] [--mode dark|light] [--layout]\n' >&2
+                exit 2
+                ;;
+        esac
         ;;
     reveal-lock)
         call_ipc umbra reveal

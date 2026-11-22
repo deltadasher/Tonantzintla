@@ -62,10 +62,20 @@ def load() -> dict:
 def save(value: dict) -> None:
     root = state_root()
     root.mkdir(mode=0o700, parents=True, exist_ok=True)
-    temporary = state_path().with_suffix(".json.tmp")
-    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    os.chmod(temporary, 0o600)
-    os.replace(temporary, state_path())
+    os.chmod(root, 0o700)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w", dir=root, suffix=".tmp", delete=False, encoding="utf-8"
+        ) as handle:
+            temporary = Path(handle.name)
+            handle.write(json.dumps(value, indent=2, sort_keys=True) + "\n")
+        os.chmod(temporary, 0o600)
+        os.replace(temporary, state_path())
+        temporary = None
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
 def digest(path: Path) -> str | None:
@@ -155,13 +165,18 @@ def snapshot(state: dict, path: Path, label: str) -> dict:
     if not valid:
         return {"ok": False, "message": detail}
     shell, reasons = classify(path)
+    safe_label = re.sub(r"[^A-Za-z0-9_-]+", "-", str(label)).strip("-")[:48] or "manual"
     stamp = time.strftime("%Y%m%d_%H%M%S", time.localtime())
-    destination = state_root() / "snapshots" / f"{stamp}_{current_hash[:12]}_{label}.kdl"
-    destination.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    snapshots_dir = state_root() / "snapshots"
+    snapshots_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+    destination = snapshots_dir / f"{stamp}_{current_hash[:12]}_{safe_label}.kdl"
+    if not destination.resolve().is_relative_to(snapshots_dir.resolve()):
+        return {"ok": False, "message": "Invalid snapshot label"}
     shutil.copy2(path, destination)
+    os.chmod(destination, 0o600)
     record = {
         "path": str(destination), "hash": current_hash, "fingerprint": current_fingerprint, "shell": shell,
-        "label": label, "verified": True, "created": int(time.time()),
+        "label": safe_label, "verified": True, "created": int(time.time()),
         "reasons": reasons,
     }
     state.setdefault("snapshots", []).append(record)

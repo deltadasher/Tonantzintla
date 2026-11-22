@@ -1,0 +1,18 @@
+{
+    "KPackageStructure": "Plasma/Theme",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Tonantzintla Contributors"
+            }
+        ],
+        "Description": "Serpantinum-refined matte obsidian Plasma 6 desktop style for Tonantzintla",
+        "EnabledByDefault": true,
+        "Id": "tonantzintla",
+        "License": "GPL-3.0-or-later",
+        "Name": "Tonantzintla",
+        "Version": "1.2.0",
+        "Website": "https://github.com/deltadasher/Tonantzintla"
+    },
+    "X-Plasma-API": "5.0"
+}

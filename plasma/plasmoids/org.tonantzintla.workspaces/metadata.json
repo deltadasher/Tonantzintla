@@ -1,0 +1,18 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Tonantzintla Contributors"
+            }
+        ],
+        "Category": "Windows and Tasks",
+        "Description": "Serpantinum-style pill and dot virtual desktop indicator for Tonantzintla",
+        "Icon": "preferences-desktop-virtual",
+        "Id": "org.tonantzintla.workspaces",
+        "License": "GPL-3.0-or-later",
+        "Name": "Tonantzintla Workspaces",
+        "Version": "1.2.0"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

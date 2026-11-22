@@ -18,6 +18,8 @@ Item {
         height: Math.max(0, root.geometry.height)
         radius: Math.max(0, Math.min(root.geometry.radius, width / 2, height / 2))
         color: root.fillColor
+        border.width: 1
+        border.color: Theme.surfaceBorder
         antialiasing: true
     }
 }

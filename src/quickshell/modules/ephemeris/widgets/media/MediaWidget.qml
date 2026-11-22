@@ -60,7 +60,7 @@ ClippingRectangle {
         property string accessibleName: ""
         property bool primary: false
         property bool enabledControl: true
-        readonly property color ink: primary ? Theme.void_ : Theme.moon
+        readonly property color ink: primary ? Theme.onAccent : Theme.moon
         signal activated
         activeFocusOnTab: enabledControl
         enabled: enabledControl
@@ -70,14 +70,15 @@ ClippingRectangle {
         Accessible.onPressAction: activated()
         Keys.onReturnPressed: activated()
         Keys.onSpacePressed: activated()
-        implicitWidth: primary ? 58 : 46
-        implicitHeight: primary ? 58 : 46
-        radius: primary ? 19 : 15
+        implicitWidth: primary ? 54 : 42
+        implicitHeight: primary ? 54 : 42
+        radius: primary ? 14 : Theme.radiusSmall
         color: primary ? (transportPointer.pressed ? Qt.darker(Theme.accent, 1.14) : Theme.accent)
             : transportPointer.pressed ? Theme.controlActive
-            : transportPointer.containsMouse ? Theme.accentVeil : Theme.elevated
-        border.width: activeFocus ? 2 : 0
-        border.color: primary ? Theme.moon : Theme.accent
+            : transportPointer.containsMouse ? Theme.controlHover : Theme.elevated
+        border.width: activeFocus ? 2 : primary ? 0 : 1
+        border.color: activeFocus ? (primary ? Theme.moon : Theme.focusRing)
+            : transportPointer.containsMouse ? Theme.surfaceBorderHover : Theme.surfaceBorder
         Column {
             anchors.centerIn: parent
             spacing: 2
@@ -166,17 +167,17 @@ ClippingRectangle {
         implicitWidth: modeContent.implicitWidth + Theme.spaceXl
         implicitHeight: Theme.controlHeight
         radius: Theme.radiusSmall
-        color: modePointer.pressed ? Theme.controlActive : active ? Theme.accentVeil
-            : modePointer.containsMouse ? Theme.elevated : Theme.mantle
-        border.width: activeFocus ? 2 : 0
-        border.color: Theme.accent
+        color: modePointer.pressed ? Theme.controlActive : active ? Theme.accent
+            : modePointer.containsMouse ? Theme.elevated : Theme.fieldRest
+        border.width: activeFocus ? 2 : 1
+        border.color: activeFocus ? Theme.focusRing : active ? Theme.accent : Theme.surfaceBorder
         opacity: enabledControl ? 1 : 0.42
         Row {
             id: modeContent
             anchors.centerIn: parent
             spacing: 6
-            Text { width: 14; horizontalAlignment: Text.AlignHCenter; text: modeButton.glyph; color: modeButton.active ? Theme.accent : Theme.muted; font.family: Theme.iconFamily(text); font.pixelSize: 14; anchors.verticalCenter: parent.verticalCenter }
-            Text { text: modeButton.label; color: modeButton.active ? Theme.moon : Theme.muted; font.family: Theme.fontMono; font.pixelSize: Theme.textMicro; font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
+            Text { width: 14; horizontalAlignment: Text.AlignHCenter; text: modeButton.glyph; color: modeButton.active ? Theme.onAccent : Theme.muted; font.family: Theme.iconFamily(text); font.pixelSize: 14; anchors.verticalCenter: parent.verticalCenter }
+            Text { text: modeButton.label; color: modeButton.active ? Theme.onAccent : Theme.muted; font.family: Theme.fontMono; font.pixelSize: Theme.textMicro; font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
         }
         MouseArea { id: modePointer; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { modeButton.forceActiveFocus(Qt.MouseFocusReason); modeButton.activated(); } }
         Behavior on color { ColorAnimation { duration: Theme.motionFast } }
@@ -288,68 +289,68 @@ ClippingRectangle {
             spacing: 14
             Text {
                 Layout.fillWidth: true
-                text: "MEDIA"
+                text: "Media"
                 color: Theme.moon
                 font.family: Theme.fontDisplay
                 font.pixelSize: Theme.textTitle
-                font.weight: Font.Black
+                font.weight: Font.DemiBold
             }
-            RowLayout {
-                id: tabRow
-                spacing: 5
-                focus: true
-                Repeater {
-                    id: tabButtons
-                    model: [
-                        { "label": "NOW PLAYING", "code": "MPR" },
-                        { "label": "LYRICS", "code": "LRC" },
-                        { "label": "PITCHER", "code": "PCH" },
-                        { "label": "EQUALIZER", "code": "EQL" }
-                    ]
-                    Rectangle {
-                        id: tabButton
-                        required property var modelData
-                        required property int index
-                        readonly property bool active: root.currentTab === index
-                        activeFocusOnTab: true
-                        Accessible.role: Accessible.PageTab
-                        Accessible.name: modelData.label
-                        Accessible.onPressAction: root.currentTab = index
-                        Keys.onReturnPressed: root.currentTab = index
-                        Keys.onSpacePressed: root.currentTab = index
-                        Keys.onLeftPressed: {
-                            root.currentTab = Math.max(0, index - 1);
-                            root.focusPrimary();
-                        }
-                        Keys.onRightPressed: {
-                            root.currentTab = Math.min(3, index + 1);
-                            root.focusPrimary();
-                        }
-                        Layout.preferredWidth: tabButton.index === 0 ? 116 : 94; Layout.preferredHeight: 38
-                        radius: 9
-                        color: tabPointer.pressed ? Theme.controlActive : active ? Theme.controlActive : tabPointer.containsMouse
-                            ? Theme.controlHover : Theme.controlRest
-                        border.width: activeFocus ? 2 : 0
-                        border.color: Theme.accent
-                        Text {
-                            anchors.centerIn: parent
-                            text: tabButton.modelData.label
-                            color: tabButton.active ? Theme.moon : Theme.muted
-                            font.family: Theme.fontMono
-                            font.pixelSize: Theme.textLabel
-                            font.weight: Font.Bold
-                        }
+            Rectangle {
+                radius: Theme.radiusSmall + 2
+                color: Theme.fieldRest
+                border.width: 1
+                border.color: Theme.surfaceBorder
+                implicitWidth: tabRow.implicitWidth + 8
+                implicitHeight: 40
+                RowLayout {
+                    id: tabRow
+                    anchors.centerIn: parent
+                    spacing: 4
+                    focus: true
+                    Repeater {
+                        id: tabButtons
+                        model: [
+                            { "label": "Now Playing", "code": "MPR" },
+                            { "label": "Lyrics", "code": "LRC" },
+                            { "label": "Pitcher", "code": "PCH" },
+                            { "label": "Equalizer", "code": "EQL" }
+                        ]
                         Rectangle {
-                            anchors.left: parent.left
-                            anchors.bottom: parent.bottom
-                            width: tabButton.active ? parent.width : 0
-                            height: 2
-                            color: Theme.accent
-                            opacity: tabButton.active ? 1 : 0
-                            Behavior on width { NumberAnimation { duration: Theme.duration(140); easing.type: Easing.OutCubic } }
-                            Behavior on opacity { NumberAnimation { duration: Theme.duration(90) } }
+                            id: tabButton
+                            required property var modelData
+                            required property int index
+                            readonly property bool active: root.currentTab === index
+                            activeFocusOnTab: true
+                            Accessible.role: Accessible.PageTab
+                            Accessible.name: modelData.label
+                            Accessible.onPressAction: root.currentTab = index
+                            Keys.onReturnPressed: root.currentTab = index
+                            Keys.onSpacePressed: root.currentTab = index
+                            Keys.onLeftPressed: {
+                                root.currentTab = Math.max(0, index - 1);
+                                root.focusPrimary();
+                            }
+                            Keys.onRightPressed: {
+                                root.currentTab = Math.min(3, index + 1);
+                                root.focusPrimary();
+                            }
+                            Layout.preferredWidth: tabButton.index === 0 ? 114 : 92; Layout.preferredHeight: 32
+                            radius: Theme.radiusSmall - 1
+                            color: tabPointer.pressed ? Theme.controlPressed : active ? Theme.accent : tabPointer.containsMouse
+                                ? Theme.controlHover : "transparent"
+                            border.width: activeFocus ? 2 : 0
+                            border.color: active ? Theme.moon : Theme.focusRing
+                            Text {
+                                anchors.centerIn: parent
+                                text: tabButton.modelData.label
+                                color: tabButton.active ? Theme.onAccent : tabPointer.containsMouse ? Theme.moon : Theme.muted
+                                font.family: Theme.fontMono
+                                font.pixelSize: Theme.textCaption
+                                font.weight: tabButton.active ? Font.Bold : Font.Medium
+                            }
+                            MouseArea { id: tabPointer; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { root.currentTab = tabButton.index; tabButton.forceActiveFocus(Qt.MouseFocusReason); } }
+                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
                         }
-                        MouseArea { id: tabPointer; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { root.currentTab = tabButton.index; tabButton.forceActiveFocus(Qt.MouseFocusReason); } }
                     }
                 }
             }

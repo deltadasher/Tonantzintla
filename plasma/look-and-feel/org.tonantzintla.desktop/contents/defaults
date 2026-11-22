@@ -1,0 +1,26 @@
+[kdeglobals][General]
+ColorScheme=TonantzintlaDark
+font=JetBrains Mono,10,-1,5,400,0,0,0,0,0
+fixed=JetBrains Mono,10,-1,5,400,0,0,0,0,0
+menuFont=JetBrains Mono,10,-1,5,400,0,0,0,0,0
+smallestReadableFont=JetBrains Mono,8,-1,5,400,0,0,0,0,0
+toolBarFont=JetBrains Mono,10,-1,5,400,0,0,0,0,0
+
+[kdeglobals][KDE]
+widgetStyle=Breeze
+
+[plasmarc][Theme]
+name=tonantzintla
+
+[kwinrc][org.kde.kdecoration2]
+ButtonsOnLeft=
+ButtonsOnRight=IAX
+library=org.kde.kwin.aurorae
+theme=__aurorae__svg__Tonantzintla
+
+[KSplash]
+Engine=KSplashQML
+Theme=org.tonantzintla.desktop
+
+[Wallpaper]
+Image=Tonantzintla

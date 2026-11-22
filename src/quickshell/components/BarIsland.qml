@@ -81,11 +81,12 @@ Rectangle {
             return root.barWindow.barPointToScreen(point.x, point.y);
         }
     }
-    // Studio mode keeps the bar surface transparent so the desktop remains
-    // visible; retain a real outline around each live island so it does not
-    // disappear into the canvas.
-    border.width: ShellState.barEditMode && barWindow ? 1 : 0
-    border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.72)
+    // Studio mode highlights each island in accent; live capsules carry a crisp
+    // Serpantinum-style 1px matte hairline so they never melt into dark skies.
+    border.width: (ShellState.barEditMode && barWindow) ? 1 : (root.separate ? 1 : 0)
+    border.color: (ShellState.barEditMode && barWindow)
+        ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.72)
+        : (surfaceHover.hovered && root.reactive ? Theme.barHairlineHover : Theme.barHairline)
     // Keep the real bar's geometry in place while its live, full-size twin
     // follows the pointer in the studio overlay.
     opacity: ShellState.isDraggingIsland && ShellState.draggedIslandSourceItem === root

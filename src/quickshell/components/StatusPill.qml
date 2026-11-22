@@ -36,12 +36,17 @@ Rectangle {
         contentItem: Text { text: root.accessibleLabel; color: Theme.moon; font.family: Theme.fontText; font.pixelSize: Theme.textLabel }
     }
 
-    implicitWidth: root.isVertical ? (Settings.compact ? 36 : 40) : (layoutGrid.implicitWidth + 16)
-    implicitHeight: root.isVertical ? (layoutGrid.implicitHeight + 8) : (Settings.compact ? 34 : 38)
-    radius: 9
-    color: "transparent"
-    border.width: activeFocus ? 1 : 0
-    border.color: Theme.accent
+    implicitWidth: root.isVertical ? (Settings.compact ? 32 : 36) : (layoutGrid.implicitWidth + 16)
+    implicitHeight: root.isVertical ? (layoutGrid.implicitHeight + 8) : (Settings.compact ? 26 : 30)
+    radius: Math.min(Theme.radiusSmall, height / 2)
+    readonly property bool inverted: root.sourceActive || root.warning
+    color: root.warning ? Theme.warning
+        : root.sourceActive ? Theme.accent
+        : root.hovered ? Theme.controlHover : Theme.pillRest
+    border.width: 1
+    border.color: activeFocus ? Theme.focusRing
+        : root.inverted ? color
+        : root.hovered ? Theme.surfaceBorderHover : Theme.surfaceBorder
     opacity: enabled ? 1 : 0.45
 
 
@@ -55,19 +60,19 @@ Rectangle {
         Text {
             Layout.alignment: root.isVertical ? Qt.AlignHCenter : Qt.AlignVCenter
             text: root.code
-            color: root.warning ? Theme.warning : root.active ? root.accentColor : Theme.muted
-            font.family: Theme.fontText
+            color: root.inverted ? Theme.onAccent : root.active ? root.accentColor : Theme.muted
+            font.family: Theme.fontMono
             font.pixelSize: root.isVertical ? Theme.textMicro : Theme.textCaption
             font.weight: Font.DemiBold
-            font.letterSpacing: 0.45
+            font.letterSpacing: 0.3
             horizontalAlignment: root.isVertical ? Text.AlignHCenter : Text.AlignLeft
         }
         Text {
             Layout.alignment: root.isVertical ? Qt.AlignHCenter : Qt.AlignVCenter
             text: root.value
-            color: root.active ? Theme.moon : Theme.muted
-            font.family: Theme.fontText
-            font.pixelSize: root.isVertical ? Theme.textMicro : Theme.textLabel
+            color: root.inverted ? Theme.onAccent : root.active ? Theme.moon : Theme.muted
+            font.family: Theme.fontMono
+            font.pixelSize: root.isVertical ? Theme.textMicro : Theme.textCaption
             font.weight: Font.DemiBold
             horizontalAlignment: root.isVertical ? Text.AlignHCenter : Text.AlignLeft
         }

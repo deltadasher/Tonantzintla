@@ -8,8 +8,9 @@ Rectangle {
     radius: Theme.radiusMedium
     color: pointer.pressed ? Theme.controlPressed
         : pointer.containsMouse || activeFocus ? Theme.controlHover : Theme.controlRest
-    border.width: activeFocus ? 1 : 0
-    border.color: Theme.focusRing
+    border.width: 1
+    border.color: activeFocus ? Theme.focusRing
+        : pointer.containsMouse ? Theme.surfaceBorderHover : Theme.surfaceBorder
     opacity: enabled ? 1 : 0.45
     activeFocusOnTab: enabled
     Accessible.role: Accessible.CheckBox

@@ -1,0 +1,20 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Tonantzintla Contributors"
+            }
+        ],
+        "Category": "",
+        "Description": "Tonantzintla global KDE Plasma 6 theme with Serpantinum-refined matte surfaces, floating top bar, and centered dock",
+        "Id": "org.tonantzintla.desktop",
+        "License": "GPL-3.0-or-later",
+        "Name": "Tonantzintla",
+        "Version": "1.2.0",
+        "Website": "https://github.com/deltadasher/Tonantzintla"
+    },
+    "Keywords": "Desktop;Workspace;Appearance;Look and Feel;Tonantzintla;Serpantinum;",
+    "X-KDE-fallbackPackage": "org.kde.breezedark.desktop",
+    "X-Plasma-APIVersion": "2"
+}

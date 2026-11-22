@@ -84,11 +84,11 @@ Item {
         RowLayout {
             Layout.fillWidth: true
             Text {
-                text: "SETTINGS"
+                text: "Settings"
                 color: Theme.moon
                 font.family: Theme.fontDisplay
                 font.pixelSize: Theme.textTitle
-                font.weight: Font.Black
+                font.weight: Font.DemiBold
             }
             Item { Layout.fillWidth: true }
             ActionButton { text: "Undo appearance changes"; enabled: Settings.canUndoAppearance; onClicked: Settings.undoAppearance() }
@@ -97,17 +97,18 @@ Item {
                 color: Theme.muted
                 font.family: Theme.fontMono
                 font.pixelSize: Theme.textCaption
-                font.letterSpacing: 1
+                font.letterSpacing: 0.6
             }
         }
 
         Rectangle {
-            Layout.fillWidth: true; implicitHeight: 42
-            radius: 12; color: Theme.controlRest
-            border.width: searchInput.activeFocus ? 1 : 0; border.color: Theme.accent
+            Layout.fillWidth: true; implicitHeight: 40
+            radius: Theme.radiusSmall; color: Theme.fieldRest
+            border.width: 1
+            border.color: searchInput.activeFocus ? Theme.accent : Theme.surfaceBorder
             TextInput {
                 id: searchInput
-                anchors.fill: parent; anchors.margins: 12
+                anchors.fill: parent; anchors.margins: 11
                 color: Theme.moon; font.family: Theme.fontText; font.pixelSize: 13
                 Accessible.name: "Search settings"
                 onTextChanged: root.query = text
@@ -143,16 +144,17 @@ Item {
             spacing: Theme.spaceLg
 
             Rectangle {
-                Layout.preferredWidth: 168
+                Layout.preferredWidth: 176
                 Layout.fillHeight: true
-                radius: Theme.radiusLarge
+                radius: Theme.radiusMedium
                 color: Theme.controlRest
-                border.width: 0
+                border.width: 1
+                border.color: Theme.surfaceBorder
 
                 ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: 6
-                    spacing: 2
+                    anchors.margins: 8
+                    spacing: 4
 
                     Repeater {
                         model: [
@@ -177,8 +179,8 @@ Item {
                             Keys.onSpacePressed: choose()
                             readonly property bool active: ShellState.settingsSection === modelData.key
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 40
-                            radius: Theme.radiusMedium
+                            Layout.preferredHeight: 38
+                            radius: Theme.radiusSmall
                             color: sectionPointer.pressed ? Theme.controlPressed : active ? Theme.accent
                                 : sectionPointer.containsMouse ? Theme.controlHover : "transparent"
                             border.width: activeFocus ? 1 : 0
@@ -194,15 +196,15 @@ Item {
                                 spacing: 8
 
                                 Rectangle {
-                                    Layout.preferredWidth: 6
-                                    Layout.preferredHeight: sectionButton.active ? 16 : 6
-                                    radius: 3
+                                    Layout.preferredWidth: 5
+                                    Layout.preferredHeight: sectionButton.active ? 16 : 5
+                                    radius: 2.5
                                     color: sectionButton.active ? Theme.onAccent : Theme.lineBright
                                 }
                                 Text {
                                     Layout.fillWidth: true
                                     text: sectionButton.modelData.label
-                                    color: sectionButton.active && !sectionPointer.pressed ? Theme.void_ : Theme.moon
+                                    color: sectionButton.active && !sectionPointer.pressed ? Theme.onAccent : Theme.moon
                                     font.family: Theme.fontText
                                     font.pixelSize: Theme.textBody
                                     font.weight: sectionButton.active ? Font.DemiBold : Font.Normal

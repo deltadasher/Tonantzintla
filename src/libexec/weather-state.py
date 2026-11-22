@@ -7,6 +7,7 @@ import json
 import math
 import os
 import sys
+import tempfile
 import time
 import urllib.parse
 import urllib.request
@@ -18,12 +19,20 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 CACHE_PATH = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "tonantzintla" / "weather.json"
 CACHE_SCHEMA = 3
 USER_AGENT = "Tonantzintla/0.9 (Quickshell weather widget)"
+MAX_RESPONSE_BYTES = 2 * 1024 * 1024
+ALLOWED_HOSTS = frozenset({"geocoding-api.open-meteo.com", "api.open-meteo.com"})
 
 
 def request_json(url: str) -> dict:
+    parsed = urllib.parse.urlsplit(url)
+    if parsed.scheme.lower() != "https" or (parsed.hostname or "").lower() not in ALLOWED_HOSTS:
+        raise ValueError("Unsupported weather endpoint")
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     with urllib.request.urlopen(request, timeout=10) as response:
-        return json.load(response)
+        payload = response.read(MAX_RESPONSE_BYTES + 1)
+    if len(payload) > MAX_RESPONSE_BYTES:
+        raise RuntimeError("Weather response exceeded size limit")
+    return json.loads(payload.decode("utf-8"))
 
 
 def condition(code: int, is_day: bool = True) -> tuple[str, str]:
@@ -269,8 +278,20 @@ def main() -> int:
         return 0
     try:
         data = build_forecast(location, unit)
-        CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        CACHE_PATH.write_text(json.dumps(data, separators=(",", ":")))
+        CACHE_PATH.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                "w", dir=CACHE_PATH.parent, suffix=".tmp", delete=False, encoding="utf-8"
+            ) as handle:
+                temporary = Path(handle.name)
+                json.dump(data, handle, separators=(",", ":"))
+            os.chmod(temporary, 0o600)
+            temporary.replace(CACHE_PATH)
+            temporary = None
+        finally:
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
     except Exception as error:  # Network and malformed responses share one graceful path.
         data = any_cache(location, unit) or {
             "ok": False,

@@ -10,7 +10,8 @@ Rectangle {
     implicitHeight: Math.max(52, content.implicitHeight + Theme.spaceXl)
     radius: Theme.radiusMedium
     color: Theme.controlRest
-    border.width: 0
+    border.width: 1
+    border.color: Theme.surfaceBorder
     opacity: enabled ? 1 : 0.45
 
     property string label: "Choice"
@@ -90,9 +91,11 @@ Rectangle {
                         radius: Theme.radiusSmall
                         color: optionPointer.pressed ? Theme.controlPressed
                             : active ? Theme.accent : optionPointer.containsMouse || activeFocus
-                            ? (Settings.opticalControls ? "transparent" : Theme.controlHover) : "transparent"
-                        border.width: activeFocus ? 1 : 0
-                        border.color: active ? Theme.moon : Theme.focusRing
+                            ? (Settings.opticalControls ? "transparent" : Theme.controlHover) : Theme.fieldRest
+                        border.width: 1
+                        border.color: activeFocus ? (active ? Theme.moon : Theme.focusRing)
+                            : active ? Theme.accent
+                            : optionPointer.containsMouse ? Theme.surfaceBorderHover : Theme.surfaceBorder
                         activeFocusOnTab: root.enabled
                         Accessible.role: Accessible.Button
                         Accessible.name: root.label + ": " + (option.modelData.label || "")

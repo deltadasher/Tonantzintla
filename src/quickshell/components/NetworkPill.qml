@@ -41,29 +41,33 @@ Rectangle {
         contentItem: Text { text: root.accessibleLabel; color: Theme.moon; font.family: Theme.fontText; font.pixelSize: Theme.textLabel }
     }
 
-    implicitWidth: isVertical ? (Settings.compact ? 36 : 40) : Math.max(126, row.implicitWidth + 18)
-    implicitHeight: Settings.compact ? 34 : 38
-    radius: 10
-    color: "transparent"
-    border.width: activeFocus ? 1 : 0
-    border.color: Theme.accent
+    readonly property bool inverted: NetState.connected && !root.isVertical
+    implicitWidth: isVertical ? (Settings.compact ? 32 : 36) : Math.max(96, row.implicitWidth + 18)
+    implicitHeight: Settings.compact ? 26 : 30
+    radius: Math.min(Theme.radiusSmall, height / 2)
+    color: root.inverted ? (root.hovered ? Qt.lighter(Theme.accent, 1.06) : Theme.accent)
+        : root.hovered ? Theme.controlHover : Theme.pillRest
+    border.width: 1
+    border.color: activeFocus ? Theme.focusRing
+        : root.inverted ? color
+        : root.hovered ? Theme.surfaceBorderHover : Theme.surfaceBorder
 
     RowLayout {
         id: row
         anchors.centerIn: parent
-        spacing: 7
+        spacing: 6
 
         Canvas {
             id: networkIcon
-            Layout.preferredWidth: 20
-            Layout.preferredHeight: 20
+            Layout.preferredWidth: 18
+            Layout.preferredHeight: 18
             Layout.alignment: Qt.AlignVCenter
 
             readonly property bool connected: NetState.connected
             readonly property bool isEthernet: NetState.kind === "LINK"
             readonly property int sigLevel: root.signal > 0 ? root.signal : (connected ? 80 : 0)
-            readonly property color activeColor: Theme.cyan
-            readonly property color mutedColor: Theme.lineBright
+            readonly property color activeColor: root.inverted ? Theme.onAccent : Theme.cyan
+            readonly property color mutedColor: root.inverted ? Theme.onAccent : Theme.lineBright
 
             onPaint: {
                 const ctx = getContext("2d");
@@ -142,27 +146,26 @@ Rectangle {
             onMutedColorChanged: requestPaint()
         }
 
-        ColumnLayout {
+        RowLayout {
             visible: !root.isVertical
-            spacing: 0
+            spacing: 5
             Text {
                 Layout.maximumWidth: 112
-                text: Settings.showNetworkLabel ? NetState.label : "NETWORK"
-                color: Theme.moon
-                font.family: Theme.fontText
-                font.pixelSize: Theme.textLabel
+                text: !NetState.connected ? "Offline"
+                    : Settings.showNetworkLabel ? NetState.label : "Online"
+                color: root.inverted ? Theme.onAccent : Theme.danger
+                font.family: Theme.fontMono
+                font.pixelSize: Theme.textCaption
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
             }
             Text {
-                text: NetState.connected
-                    ? "CONNECTED" + (root.signal > 0 ? "  " + root.signal + "%" : "")
-                    : "DISCONNECTED"
-                color: NetState.connected ? Theme.cyan : Theme.danger
-                font.family: Theme.fontText
+                visible: NetState.connected && root.signal > 0
+                text: root.signal + "%"
+                color: root.inverted ? Qt.rgba(Theme.onAccent.r, Theme.onAccent.g, Theme.onAccent.b, 0.78) : Theme.muted
+                font.family: Theme.fontMono
                 font.pixelSize: Theme.textMicro
-                font.weight: Font.DemiBold
-                font.letterSpacing: 0.35
+                font.weight: Font.Bold
             }
         }
     }

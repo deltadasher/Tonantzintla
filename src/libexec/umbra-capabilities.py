@@ -7,6 +7,7 @@ import json
 import math
 import os
 from pathlib import Path
+import pwd
 import re
 import shutil
 import subprocess
@@ -117,7 +118,7 @@ def prepare_video(value):
         message='Silent loop · first 8 seconds · up to 640 × 360 / 12 fps')
 
 def profile_uses_fingerprint(profile, root=Path('/etc/pam.d'), seen=None):
-    if not re.fullmatch(r'[A-Za-z0-9_.-]{1,80}', profile):
+    if not re.fullmatch(r'[A-Za-z0-9_.-]{1,80}', profile) or profile.startswith('.') or '..' in profile:
         return False
     seen = set() if seen is None else seen
     if profile in seen or len(seen) >= 8:
@@ -153,8 +154,9 @@ def fingerprint(profile):
             text=True, timeout=4, check=True).stdout
     devices = call('/net/reactivated/Fprint/Manager', 'net.reactivated.Fprint.Manager.GetDevices')
     paths = re.findall(r"'(/net/reactivated/Fprint/Device/[^']+)'", devices)
+    current_user = pwd.getpwuid(os.getuid()).pw_name
     for device in paths[:4]:
-        enrolled = call(device, 'net.reactivated.Fprint.Device.ListEnrolledFingers', os.environ.get('USER', ''))
+        enrolled = call(device, 'net.reactivated.Fprint.Device.ListEnrolledFingers', current_user)
         if re.search(r"'(?:left|right)-[a-z-]+'", enrolled):
             return {'available': True, 'message': 'Enrolled fingerprint and existing PAM profile found'}
     raise ValueError('No enrolled fingerprint reader found; use password')

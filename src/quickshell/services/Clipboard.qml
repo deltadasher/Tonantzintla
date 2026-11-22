@@ -18,7 +18,13 @@ QtObject {
     readonly property bool busy: actionProcess.running
     readonly property bool paused: Settings.clipboardPaused
     readonly property string actionHelper: Environment.script("clipboard-actions.py")
-    readonly property string pinPath: (Quickshell.env("XDG_STATE_HOME") || ((Quickshell.env("HOME") || "/tmp")+"/.local/state"))+"/tonantzintla/clipboard-pins"
+    readonly property string pinPath: {
+        const xdg = Quickshell.env("XDG_STATE_HOME") || "";
+        const home = Quickshell.env("HOME") || "";
+        const runtime = Quickshell.env("XDG_RUNTIME_DIR") || "";
+        const base = xdg.length > 0 ? xdg : home.length > 0 ? home + "/.local/state" : runtime;
+        return base.length > 0 ? base + "/tonantzintla/clipboard-pins" : "";
+    }
     function action(verb, identifier, kind) {
         if(actionProcess.running) { status="Wait for the current clipboard action."; return; }
         actionProcess.command=["python3",actionHelper,verb,pinPath,identifier || "","--kind",kind || "text"];
@@ -34,9 +40,10 @@ QtObject {
     readonly property string helperPath: Environment.script("clipboard-index.py")
     readonly property string cachePath: {
         const xdg = Quickshell.env("XDG_CACHE_HOME") || "";
-        const home = Quickshell.env("HOME") || "/tmp";
-        return (xdg.length > 0 ? xdg : home + "/.cache")
-            + "/tonantzintla/clipboard";
+        const home = Quickshell.env("HOME") || "";
+        const runtime = Quickshell.env("XDG_RUNTIME_DIR") || "";
+        const base = xdg.length > 0 ? xdg : home.length > 0 ? home + "/.cache" : runtime;
+        return base.length > 0 ? base + "/tonantzintla/clipboard" : "";
     }
 
     function refresh() {

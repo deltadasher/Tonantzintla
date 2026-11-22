@@ -115,7 +115,10 @@ Item {
             Clipboard.setText(entry.result);
             ShellState.closeEphemeris();
         } else if (entry.kind === "terminal_cmd") {
-            Quickshell.execDetached([Environment.controlPath, "terminal", "-e", "sh", "-c", entry.cmd + "; exec ${SHELL:-bash}"]);
+            Quickshell.execDetached([
+                Environment.controlPath, "terminal", "-e", "sh", "-c",
+                "sh -c \"$1\"; exec \"${SHELL:-bash}\"", "blackhole-run", String(entry.cmd || "")
+            ]);
             ShellState.closeEphemeris();
         }
     }
@@ -149,12 +152,12 @@ Item {
                 }
 
             Text {
-                text: "BLACKHOLE"
+                text: "Blackhole"
                 color: Theme.moon
-                font.family: Theme.fontText
+                font.family: Theme.fontDisplay
                 font.pixelSize: 17
                 font.weight: Font.DemiBold
-                font.letterSpacing: 2
+                font.letterSpacing: 0.6
             }
 
             Rectangle {
@@ -162,18 +165,17 @@ Item {
                 Layout.leftMargin: 8
                 Layout.rightMargin: 8
                 Layout.preferredHeight: 1
-                color: Theme.accentLine
-                opacity: 0.3
+                color: Theme.surfaceBorder
             }
 
             Rectangle {
                 id: closeButton
                 Layout.preferredWidth: 42
-                Layout.preferredHeight: 32
-                radius: 9
-                color: closePointer.containsMouse || activeFocus ? Theme.controlHover : Theme.controlRest
+                Layout.preferredHeight: 30
+                radius: Theme.radiusSmall
+                color: closePointer.containsMouse || activeFocus ? Theme.controlHover : Theme.fieldRest
                 border.width: 1
-                border.color: activeFocus ? Theme.accent : Theme.line
+                border.color: activeFocus ? Theme.focusRing : closePointer.containsMouse ? Theme.surfaceBorderHover : Theme.surfaceBorder
                 activeFocusOnTab: true
                 Accessible.role: Accessible.Button
                 Accessible.name: "Close launcher"

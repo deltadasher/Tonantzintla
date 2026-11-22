@@ -1,0 +1,13 @@
+{
+    "KPackageStructure": "Plasma/Image",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Tonantzintla Contributors"
+            }
+        ],
+        "Id": "Tonantzintla",
+        "License": "GPL-3.0-or-later",
+        "Name": "Tonantzintla Observatory"
+    }
+}

@@ -8,16 +8,20 @@ import hashlib
 import json
 import os
 import pathlib
+import stat
 import sys
+import tempfile
 import urllib.error
 import urllib.parse
 import urllib.request
+
+MAX_RESPONSE_BYTES = 1024 * 1024
 
 
 def cache_root() -> pathlib.Path:
     base = os.environ.get("XDG_CACHE_HOME") or os.path.expanduser("~/.cache")
     path = pathlib.Path(base) / "tonantzintla" / "lyrics"
-    path.mkdir(parents=True, exist_ok=True)
+    path.mkdir(parents=True, exist_ok=True, mode=0o700)
     return path
 
 
@@ -45,8 +49,12 @@ def local_lyrics(source_url: str) -> dict | None:
     for suffix in (".lrc", ".LRC"):
         try:
             candidate = track.with_suffix(suffix)
-            # Bound retained lyric text and avoid large sidecar allocations.
-            with candidate.open("rb") as stream:
+            # Bound retained lyric text and reject non-regular files (FIFOs/devices).
+            fd = os.open(candidate, os.O_RDONLY | os.O_NONBLOCK)
+            with os.fdopen(fd, "rb") as stream:
+                info = os.fstat(stream.fileno())
+                if not stat.S_ISREG(info.st_mode):
+                    continue
                 content = stream.read(256 * 1024 + 1)
             if len(content) > 256 * 1024:
                 continue
@@ -101,7 +109,10 @@ def main() -> int:
 
     try:
         with urllib.request.urlopen(request, timeout=9) as response:
-            result = json.loads(response.read().decode("utf-8"))
+            raw = response.read(MAX_RESPONSE_BYTES + 1)
+        if len(raw) > MAX_RESPONSE_BYTES:
+            raise ValueError("Lyrics response exceeded size limit")
+        result = json.loads(raw.decode("utf-8"))
         payload = {
             "status": "instrumental" if result.get("instrumental") else "ready",
             "plain": result.get("plainLyrics") or "",
@@ -110,7 +121,19 @@ def main() -> int:
             "source": "LRCLIB",
             "trackId": result.get("id", 0),
         }
-        cache_file.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                "w", dir=cache_file.parent, suffix=".tmp", delete=False, encoding="utf-8"
+            ) as handle:
+                temporary = pathlib.Path(handle.name)
+                json.dump(payload, handle, ensure_ascii=False)
+            os.chmod(temporary, 0o600)
+            temporary.replace(cache_file)
+            temporary = None
+        finally:
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
         emit(payload)
         return 0
     except urllib.error.HTTPError as error:
@@ -119,7 +142,7 @@ def main() -> int:
                   "instrumental": False, "source": "LRCLIB"})
             return 0
         message = f"LRCLIB HTTP {error.code}"
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError) as error:
+    except (urllib.error.URLError, TimeoutError, ValueError, json.JSONDecodeError, OSError) as error:
         message = str(error)
 
     if cache_file.exists():

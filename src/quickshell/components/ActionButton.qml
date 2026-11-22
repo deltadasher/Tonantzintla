@@ -8,13 +8,16 @@ Rectangle {
     property bool pending: false
     property bool destructive: false
     signal clicked()
-    implicitWidth: label.implicitWidth + 28
-    implicitHeight: 36
-    radius: 11
+    implicitWidth: label.implicitWidth + 24
+    implicitHeight: 34
+    radius: Theme.radiusSmall
     activeFocusOnTab: enabled && visible
-    color: selected ? Theme.accent : pointer.containsMouse || activeFocus ? Theme.controlHover : Theme.controlRest
-    border.width: activeFocus ? 2 : 0
-    border.color: Theme.accent
+    color: selected ? Theme.accent : pointer.pressed ? Theme.controlPressed
+        : pointer.containsMouse || activeFocus ? Theme.controlHover : Theme.controlRest
+    border.width: activeFocus ? 2 : 1
+    border.color: activeFocus ? Theme.focusRing
+        : selected ? Theme.accent
+        : pointer.containsMouse ? Theme.surfaceBorderHover : Theme.surfaceBorder
     opacity: enabled ? 1 : 0.45
     Accessible.role: Accessible.Button
     Accessible.name: text

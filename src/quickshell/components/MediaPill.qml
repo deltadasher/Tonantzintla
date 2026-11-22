@@ -17,12 +17,13 @@ ClippingRectangle {
     property var anchorHost: null
     readonly property bool sourceActive: ShellState.ephemerisVisible
         && ShellState.ephemerisAnchorTarget === root
-    implicitWidth: root.media.available ? Math.min(Math.max(180, Math.min(480, Settings.barMediaWidth)), root.compactContent ? 320 : 480) : 0
-    implicitHeight: root.compactContent ? 36 : 42
-    radius: embedded ? 9 : height / 2
+    implicitWidth: root.media.available ? Math.min(Math.max(180, Math.min(480, Settings.barMediaWidth)), root.compactContent ? 300 : 440) : 0
+    implicitHeight: root.compactContent ? 30 : 34
+    radius: embedded ? 8 : Math.min(Theme.radiusSmall, height / 2)
     color: sourceActive ? Theme.void_ : embedded ? "transparent"
         : mediaHover.hovered ? Theme.elevated : Theme.mantle
-    border.width: 0
+    border.width: embedded ? 0 : 1
+    border.color: mediaHover.hovered ? Theme.barHairlineHover : Theme.barHairline
     opacity: root.media.available ? 1 : 0
     clip: true
 
@@ -61,9 +62,9 @@ ClippingRectangle {
 
         ClippingRectangle {
             visible: root.artVisible
-            Layout.preferredWidth: root.compactContent ? 30 : 36
+            Layout.preferredWidth: root.compactContent ? 24 : 28
             Layout.preferredHeight: Layout.preferredWidth
-            radius: root.compactContent ? 8 : 9
+            radius: 6
             color: Theme.elevated
             border.width: 0
             clip: true

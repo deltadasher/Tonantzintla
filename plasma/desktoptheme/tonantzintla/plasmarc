@@ -1,0 +1,8 @@
+[Wallpaper]
+defaultWallpaperTheme=Tonantzintla
+defaultFileSuffix=.png
+defaultWidth=3840
+defaultHeight=2160
+
+[AdaptiveTransparency]
+enabled=true

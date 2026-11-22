@@ -10,6 +10,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import tempfile
 
 
 PRESETS: dict[str, list[int]] = {
@@ -70,10 +71,25 @@ def read_state() -> dict[str, object]:
     return data
 
 
-def write_state(data: dict[str, object]) -> None:
-    path = state_path()
+def atomic_write_text(path: Path, text: str, mode: int = 0o600) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, separators=(",", ":")), encoding="utf-8")
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w", dir=path.parent, suffix=".tmp", delete=False, encoding="utf-8"
+        ) as handle:
+            temporary = Path(handle.name)
+            handle.write(text)
+        os.chmod(temporary, mode)
+        temporary.replace(path)
+        temporary = None
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+def write_state(data: dict[str, object]) -> None:
+    atomic_write_text(state_path(), json.dumps(data, separators=(",", ":")))
 
 
 def interpolated_gain(frequency: float, bands: list[int]) -> float:
@@ -158,10 +174,8 @@ def easy_effects_preset(data: dict[str, object]) -> dict[str, object]:
 def apply(data: dict[str, object]) -> None:
     if not shutil.which("easyeffects"):
         return
-    preset_dir = config_home() / "easyeffects" / "output"
-    preset_dir.mkdir(parents=True, exist_ok=True)
-    preset_file = preset_dir / f"{PRESET_NAME}.json"
-    preset_file.write_text(json.dumps(easy_effects_preset(data), indent=2), encoding="utf-8")
+    preset_file = config_home() / "easyeffects" / "output" / f"{PRESET_NAME}.json"
+    atomic_write_text(preset_file, json.dumps(easy_effects_preset(data), indent=2))
     try:
         subprocess.Popen(
             ["easyeffects", "-l", PRESET_NAME],

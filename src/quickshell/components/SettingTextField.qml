@@ -8,8 +8,8 @@ Rectangle {
     implicitHeight: Math.max(56, content.implicitHeight + Theme.spaceXl)
     radius: Theme.radiusMedium
     color: Theme.controlRest
-    border.width: editor.activeFocus ? 1 : 0
-    border.color: Theme.focusRing
+    border.width: 1
+    border.color: editor.activeFocus ? Theme.focusRing : Theme.surfaceBorder
     opacity: enabled ? 1 : 0.45
 
     property string label: "Command"
@@ -59,7 +59,8 @@ Rectangle {
                 Layout.preferredHeight: Theme.controlHeight
                 radius: Theme.radiusSmall
                 color: editor.activeFocus ? Theme.fieldFocus : Theme.fieldRest
-                border.width: 0
+                border.width: 1
+                border.color: editor.activeFocus ? Theme.accent : Theme.surfaceBorder
 
                 TextInput {
                     id: editor

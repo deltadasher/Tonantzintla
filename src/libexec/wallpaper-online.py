@@ -12,10 +12,13 @@ import argparse
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import http.cookiejar
+import ipaddress
 import json
 import mimetypes
 import os
 from pathlib import Path
+import socket
+import tempfile
 import time
 import urllib.error
 import urllib.parse
@@ -25,11 +28,49 @@ import urllib.request
 USER_AGENT = "Tonantzintla/1.0 wallpaper-browser (https://github.com/deltadasher/Tonantzintla)"
 MAX_RESULTS = 24
 QUERY_LIMIT = 32
+MAX_JSON_BYTES = 8 * 1024 * 1024
+MAX_THUMB_BYTES = 2 * 1024 * 1024
 MAX_DOWNLOAD = 64 * 1024 * 1024
+MAX_REDIRECTS = 4
 PREVIEW_WIDTH = 640
 THUMBNAIL_WORKERS = 6
 SEARCH_CACHE_SECONDS = 15 * 60
 COMMONS_API = "https://commons.wikimedia.org/w/api.php"
+ALLOWED_HOSTS = frozenset({"commons.wikimedia.org", "upload.wikimedia.org"})
+
+
+def validate_remote_url(url: str) -> str:
+    """Allow only HTTPS Wikimedia URLs resolving to public IP addresses."""
+    parsed = urllib.parse.urlsplit(url)
+    if parsed.scheme.lower() != "https":
+        raise ValueError("Only HTTPS Wikimedia URLs are allowed")
+    if parsed.username or parsed.password:
+        raise ValueError("URL credentials are not allowed")
+    if parsed.port not in (None, 443):
+        raise ValueError("Non-standard ports are not allowed")
+    host = (parsed.hostname or "").rstrip(".").lower()
+    if host not in ALLOWED_HOSTS:
+        raise ValueError("Remote host is not in the Wikimedia allowlist")
+    try:
+        infos = socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)
+    except OSError as error:
+        raise RuntimeError(f"Could not resolve {host}") from error
+    if not infos:
+        raise RuntimeError(f"Could not resolve {host}")
+    for _family, _socktype, _proto, _canonname, sockaddr in infos:
+        address = ipaddress.ip_address(sockaddr[0])
+        if not address.is_global:
+            raise ValueError("Remote host resolved to a non-public address")
+    return url
+
+
+class SafeRedirectHandler(urllib.request.HTTPRedirectHandler):
+    max_redirections = MAX_REDIRECTS
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        target = urllib.parse.urljoin(req.full_url, newurl)
+        validate_remote_url(target)
+        return super().redirect_request(req, fp, code, msg, headers, target)
 
 
 def valid_image_bytes(data: bytes) -> bool:
@@ -45,21 +86,27 @@ def valid_image_bytes(data: bytes) -> bool:
 
 
 def cache_root() -> Path:
-    return Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "tonantzintla" / "online-wallpapers"
+    root = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "tonantzintla" / "online-wallpapers"
+    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    return root
 
 
 def opener() -> urllib.request.OpenerDirector:
     cookies = http.cookiejar.CookieJar()
-    return urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookies))
+    return urllib.request.build_opener(SafeRedirectHandler(), urllib.request.HTTPCookieProcessor(cookies))
 
 
 def request_json(client: urllib.request.OpenerDirector, url: str) -> dict:
+    validate_remote_url(url)
     request = urllib.request.Request(url, headers={
         "User-Agent": USER_AGENT,
         "Accept": "application/json",
     })
     with client.open(request, timeout=12) as response:
-        return json.loads(response.read().decode("utf-8"))
+        payload = response.read(MAX_JSON_BYTES + 1)
+    if len(payload) > MAX_JSON_BYTES:
+        raise RuntimeError("Search response exceeded size limit")
+    return json.loads(payload.decode("utf-8"))
 
 
 def metadata_value(info: dict[str, object], key: str) -> str:
@@ -142,18 +189,30 @@ def parse_commons_results(data: dict[str, object]) -> list[dict[str, object]]:
 
 def download_thumbnail(url: str, key: str) -> str:
     directory = cache_root() / "thumbs"
-    directory.mkdir(parents=True, exist_ok=True)
+    directory.mkdir(parents=True, exist_ok=True, mode=0o700)
     destination = directory / f"{key}.jpg"
     if destination.is_file() and destination.stat().st_size > 512:
         return str(destination)
-    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     try:
-        with urllib.request.urlopen(request, timeout=6) as response:
-            data = response.read(2 * 1024 * 1024)
-        if len(data) > 512 and valid_image_bytes(data):
-            destination.write_bytes(data)
+        validate_remote_url(url)
+        client = opener()
+        request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+        with client.open(request, timeout=6) as response:
+            data = response.read(MAX_THUMB_BYTES + 1)
+        if 512 < len(data) <= MAX_THUMB_BYTES and valid_image_bytes(data):
+            temporary = None
+            try:
+                with tempfile.NamedTemporaryFile(dir=directory, suffix=".tmp", delete=False) as handle:
+                    temporary = Path(handle.name)
+                    handle.write(data)
+                os.chmod(temporary, 0o600)
+                temporary.replace(destination)
+                temporary = None
+            finally:
+                if temporary is not None:
+                    temporary.unlink(missing_ok=True)
             return str(destination)
-    except (OSError, urllib.error.URLError):
+    except (OSError, ValueError, RuntimeError, urllib.error.URLError):
         pass
     return ""
 
@@ -181,13 +240,20 @@ def cached_search(query: str) -> list[dict[str, object]] | None:
 
 def cache_search(query: str, entries: list[dict[str, object]]) -> None:
     path = search_cache_path(query)
+    temporary = None
     try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        temporary = path.with_suffix(".tmp")
-        temporary.write_text(json.dumps(entries, separators=(",", ":")), encoding="utf-8")
+        path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        with tempfile.NamedTemporaryFile("w", dir=path.parent, suffix=".tmp", delete=False, encoding="utf-8") as handle:
+            temporary = Path(handle.name)
+            json.dump(entries, handle, separators=(",", ":"))
+        os.chmod(temporary, 0o600)
         temporary.replace(path)
+        temporary = None
     except OSError:
         pass
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
 def prepare_result(result: dict[str, object]) -> dict[str, object] | None:
@@ -227,21 +293,24 @@ def safe_extension(content_type: str, url: str) -> str:
 
 
 def download(url: str) -> dict[str, object]:
+    validate_remote_url(url)
     directory = Path.home() / "Pictures" / "Wallpapers" / "Tonantzintla" / "Stills"
     directory.mkdir(parents=True, exist_ok=True)
+    client = opener()
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(request, timeout=20) as response:
+    with client.open(request, timeout=20) as response:
         content_type = response.headers.get("Content-Type", "image/jpeg")
         if not content_type.lower().startswith("image/"):
             raise RuntimeError("Remote result did not return an image")
         extension = safe_extension(content_type, url)
         key = hashlib.sha1(url.encode()).hexdigest()[:18]
         destination = directory / f"tonantzintla-{key}{extension}"
-        temporary = destination.with_suffix(destination.suffix + ".part")
+        temporary = None
         written = 0
         signature = bytearray()
         try:
-            with temporary.open("wb") as handle:
+            with tempfile.NamedTemporaryFile(dir=directory, suffix=".part", delete=False) as handle:
+                temporary = Path(handle.name)
                 while True:
                     block = response.read(128 * 1024)
                     if not block:
@@ -256,9 +325,12 @@ def download(url: str) -> dict[str, object]:
                 raise RuntimeError("Remote wallpaper was empty")
             if not valid_image_bytes(bytes(signature)):
                 raise RuntimeError("Remote result was not a supported image")
+            os.chmod(temporary, 0o644)
             temporary.replace(destination)
+            temporary = None
         finally:
-            temporary.unlink(missing_ok=True)
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
     return {"ok": True, "path": str(destination), "name": destination.name, "kind": "image"}
 
 

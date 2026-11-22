@@ -48,13 +48,24 @@ Add `~/.local/bin` to your PATH if your shell cannot find the commands.
 The shell is supervised within your Wayland session on both Arch and Obarun.
 `blackhole daemon logs` shows its recent log.
 
+### KDE Plasma 6
+
+Tonantzintla also ships as a native **KDE Plasma 6 Global Theme** (Look & Feel, Plasma Style, Dark/Light color schemes, Aurorae window decorations, wallpaper, splash screen, and four native Plasma 6 Plasmoids):
+
+```bash
+bin/blackhole plasma install
+bin/blackhole plasma apply
+```
+
+See [KDE Plasma 6](docs/kde-plasma.md) for `--keep-layout`, `--mode light`, and `sync`.
+
 ### Make it yours
 
 Choose your applications, weather location, fonts, and motion in Settings.
 Put wallpapers in `~/Pictures/Wallpapers`. Screenshots stay entirely separate.
 
 [Architecture](docs/architecture.md) · [Dependencies](docs/dependencies.md) ·
-[Machines](docs/machines.md) · [Umbra](docs/umbra.md) · [Contributing](CONTRIBUTING.md)
+[KDE Plasma 6](docs/kde-plasma.md) · [Machines](docs/machines.md) · [Umbra](docs/umbra.md) · [Contributing](CONTRIBUTING.md)
 
 GPL-3.0-or-later. Copyright © 2026 deltadasher.
 See [LICENSE](LICENSE). Third-party work retains its own attribution and license.

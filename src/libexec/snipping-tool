@@ -70,15 +70,16 @@ capture_image() {
     fi
 
     if [[ "$action" == "edit" ]]; then
-        local temporary
-        temporary="$(mktemp --suffix=.png)"
-        trap 'rm -f -- "$temporary"' EXIT
+        local temp_base="${XDG_RUNTIME_DIR:-$state_dir}"
+        mkdir -m 0700 -p -- "$temp_base"
+        temporary_capture="$(umask 077 && mktemp "$temp_base/tonantzintla-snip.XXXXXX.png")"
+        trap 'rm -f -- "${temporary_capture:-}"' EXIT
         if [[ -n "$geometry" ]]; then
-            grim -g "$geometry" "$temporary"
+            grim -g "$geometry" "$temporary_capture"
         else
-            grim "$temporary"
+            grim "$temporary_capture"
         fi
-        satty --filename "$temporary" --output-filename "$output" \
+        satty --filename "$temporary_capture" --output-filename "$output" \
             --copy-command wl-copy
         return
     fi

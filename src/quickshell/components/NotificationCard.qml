@@ -45,10 +45,10 @@ Rectangle {
 
     implicitHeight: Math.max(78 + root.massBoost, content.implicitHeight + 20)
 
-    radius: Theme.radiusLarge
+    radius: Theme.radiusMedium
     color: critical ? Theme.danger
-        : hover.hovered ? Theme.controlHover : Theme.mantle
-    opacity: hover.hovered || activeFocus || critical ? 1 : 0.88 + visibleFreshness * 0.12
+        : hover.hovered ? Theme.elevated : Theme.mantle
+    opacity: hover.hovered || activeFocus || critical ? 1 : 0.90 + visibleFreshness * 0.10
     activeFocusOnTab: true
     Accessible.role: Accessible.Button
     Accessible.name: appName + ": " + summary
@@ -56,8 +56,8 @@ Rectangle {
     Keys.onReturnPressed: activated()
     Keys.onSpacePressed: activated()
     Keys.onDeletePressed: dismissed()
-    border.width: activeFocus ? 1 : 0
-    border.color: Theme.accent
+    border.width: 1
+    border.color: activeFocus ? Theme.focusRing : critical ? Theme.danger : hover.hovered ? Theme.surfaceBorderHover : Theme.surfaceBorder
     clip: true
 
     Rectangle {

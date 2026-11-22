@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+umask 077
 
 kind="${1:-image}"
 wallpaper_path="${2:-}"
@@ -14,14 +15,25 @@ case "$transition" in
     any|fade|grow|wave|left|right|top|bottom|wipe|none|simple|center|outer|random) ;;
     *) transition=fade ;;
 esac
-runtime_root="${XDG_RUNTIME_DIR:-/tmp}/tonantzintla"
+state_base="${XDG_RUNTIME_DIR:-${XDG_STATE_HOME:-${HOME:?}/.local/state}}"
+runtime_root="$state_base/tonantzintla"
+mkdir -m 0700 -p -- "$runtime_root"
+[[ -d "$runtime_root" && ! -L "$runtime_root" && -O "$runtime_root" ]] || exit 1
+chmod 0700 -- "$runtime_root"
 pid_file="$runtime_root/mpvpaper.pids"
-mkdir -p "$runtime_root"
+mpvpaper_log="$runtime_root/mpvpaper.log"
+awww_log="$runtime_root/awww.log"
+[[ ! -L "$pid_file" && ! -L "$mpvpaper_log" && ! -L "$awww_log" ]] || exit 1
 
 stop_tonantzintla_video() {
-    if [[ -f "$pid_file" ]]; then
+    if [[ -f "$pid_file" && ! -L "$pid_file" ]]; then
         while IFS= read -r process_id; do
-            [[ "$process_id" =~ ^[0-9]+$ ]] && kill "$process_id" 2>/dev/null || true
+            if [[ "$process_id" =~ ^[0-9]+$ ]] \
+                && [[ -O "/proc/$process_id" ]] \
+                && [[ -r "/proc/$process_id/comm" ]] \
+                && [[ "$(<"/proc/$process_id/comm")" == "mpvpaper" ]]; then
+                kill -- "$process_id" 2>/dev/null || true
+            fi
         done < "$pid_file"
         : > "$pid_file"
     fi
@@ -38,7 +50,7 @@ if [[ "$kind" == "video" ]]; then
     fi
     for output_name in "${targets[@]}"; do
         nohup mpvpaper -p -o "loop no-audio hwdec=auto profile=high-quality" \
-            "$output_name" "$wallpaper_path" >/tmp/tonantzintla-mpvpaper.log 2>&1 &
+            "$output_name" "$wallpaper_path" >"$mpvpaper_log" 2>&1 &
         printf '%s\n' "$!" >> "$pid_file"
     done
     exit 0
@@ -46,7 +58,7 @@ fi
 
 if [[ "$backend" == "awww" ]]; then
     awww query >/dev/null 2>&1 || {
-        nohup awww-daemon -q >/tmp/tonantzintla-awww.log 2>&1 &
+        nohup awww-daemon -q >"$awww_log" 2>&1 &
         sleep 0.35
     }
 fi

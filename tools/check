@@ -9,7 +9,8 @@ fi
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 project_root="$(cd -- "$script_dir/.." && pwd)"
-python_cache="${TMPDIR:-/tmp}/tonantzintla-check-pycache"
+python_cache="$(umask 077 && mktemp -d "${TMPDIR:-/tmp}/tonantzintla-check-pycache.XXXXXX")"
+trap 'rm -rf -- "$python_cache"' EXIT
 failures=0
 silent_qmllint=0
 silent_qml_files=()
