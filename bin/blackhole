@@ -138,7 +138,7 @@ check_niri_start_allowed() {
 
 setting_value() {
     local key="$1"
-    python3 - "$settings_file" "$key" <<'PY'
+    python3 -I - "$settings_file" "$key" <<'PY'
 import json
 import sys
 
@@ -155,7 +155,7 @@ PY
 exec_command_string() {
     local command_string="$1"
     shift
-    exec python3 - "$command_string" "$@" <<'PY'
+    exec python3 -I - "$command_string" "$@" <<'PY'
 import os
 import shlex
 import sys
@@ -194,7 +194,7 @@ manage_config() {
     local action="${1:-get}"
     shift || true
 
-    python3 - "$settings_file" "$action" "$@" <<'PY'
+    python3 -I - "$settings_file" "$action" "$@" <<'PY'
 import json
 import os
 import re

@@ -23,12 +23,26 @@ MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 ALLOWED_HOSTS = frozenset({"geocoding-api.open-meteo.com", "api.open-meteo.com"})
 
 
-def request_json(url: str) -> dict:
+def validate_endpoint(url: str) -> None:
     parsed = urllib.parse.urlsplit(url)
     if parsed.scheme.lower() != "https" or (parsed.hostname or "").lower() not in ALLOWED_HOSTS:
         raise ValueError("Unsupported weather endpoint")
+
+
+class AllowlistedRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """A redirect is a new request, so it has to pass the same endpoint check as the first one."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        target = urllib.parse.urljoin(req.full_url, newurl)
+        validate_endpoint(target)
+        return super().redirect_request(req, fp, code, msg, headers, target)
+
+
+def request_json(url: str) -> dict:
+    validate_endpoint(url)
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(request, timeout=10) as response:
+    client = urllib.request.build_opener(AllowlistedRedirectHandler())
+    with client.open(request, timeout=10) as response:
         payload = response.read(MAX_RESPONSE_BYTES + 1)
     if len(payload) > MAX_RESPONSE_BYTES:
         raise RuntimeError("Weather response exceeded size limit")

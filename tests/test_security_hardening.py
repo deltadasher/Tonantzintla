@@ -143,6 +143,58 @@ class SecurityHardeningTests(unittest.TestCase):
             os.mkfifo(fifo)
             self.assertIsNone(lyrics.local_lyrics(track.as_uri()))
 
+    def test_inline_python_ignores_modules_planted_in_the_current_directory(self):
+        with tempfile.TemporaryDirectory(prefix="tona-cwd-") as tmp:
+            root = Path(tmp)
+            config_home = root / "config"
+            (config_home / "tonantzintla").mkdir(parents=True)
+            (config_home / "tonantzintla/settings.json").write_text('{"accentName": "cyan"}', encoding="utf-8")
+            hostile = root / "hostile"
+            hostile.mkdir()
+            for module in ("json", "shlex", "tempfile"):
+                (hostile / f"{module}.py").write_text("raise SystemExit(99)\n", encoding="utf-8")
+            env = dict(os.environ, XDG_CONFIG_HOME=str(config_home), HOME=str(root))
+
+            result = subprocess.run(
+                [str(REPO / "bin/blackhole"), "config", "get", "accentName"],
+                cwd=hostile, env=env, capture_output=True, text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), "cyan")
+        snipping = (REPO / "src/libexec/snipping-tool").read_text(encoding="utf-8")
+        self.assertNotIn("python3 -c", snipping)
+
+    def test_weather_and_lyrics_redirects_cannot_leave_their_service(self):
+        import urllib.error
+        import urllib.request
+
+        weather = load_helper("weather-state.py")
+        lyrics = load_helper("lyrics-state.py")
+        weather_request = urllib.request.Request("https://api.open-meteo.com/v1/forecast")
+        lyrics_request = urllib.request.Request("https://lrclib.net/api/get")
+        for target in ("http://127.0.0.1:8080/", "https://169.254.169.254/latest/", "http://api.open-meteo.com/", "ftp://lrclib.net/x"):
+            with self.assertRaises(ValueError):
+                weather.AllowlistedRedirectHandler().redirect_request(weather_request, None, 302, "Found", {}, target)
+            with self.assertRaises(urllib.error.URLError):
+                lyrics.SameHostRedirectHandler().redirect_request(lyrics_request, None, 302, "Found", {}, target)
+        self.assertIsNotNone(weather.AllowlistedRedirectHandler().redirect_request(
+            weather_request, None, 302, "Found", {}, "https://geocoding-api.open-meteo.com/v1/search"))
+        self.assertIsNotNone(lyrics.SameHostRedirectHandler().redirect_request(
+            lyrics_request, None, 302, "Found", {}, "/api/get/2"))
+
+    def test_player_metadata_cannot_be_read_as_helper_options(self):
+        lyrics_service = (REPO / "src/quickshell/services/Lyrics.qml").read_text(encoding="utf-8")
+        self.assertIn('"--title=" + Media.title', lyrics_service)
+        self.assertNotIn('"--title", Media.title', lyrics_service)
+        online = subprocess.run(
+            ["python3", str(REPO / "src/libexec/wallpaper-online.py"), "search", "--help"],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(online.returncode, 0)
+        environment = (REPO / "src/quickshell/services/Environment.qml").read_text(encoding="utf-8")
+        self.assertIn('"search", "--", cleaned', environment)
+
     def test_wallpaper_apply_has_no_predictable_tmp_logs(self):
         source = (REPO / "src/libexec/wallpaper-apply").read_text(encoding="utf-8")
         self.assertNotIn("/tmp/tonantzintla-", source)

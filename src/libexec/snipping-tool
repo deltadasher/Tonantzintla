@@ -103,7 +103,7 @@ case "$mode" in
     --record-start) shift; exec python3 "${script_dir}/capture-state.py" start "$@" ;;
     --record-stop) exec python3 "${script_dir}/capture-state.py" stop ;;
     --record-status-json) exec python3 "${script_dir}/capture-state.py" status ;;
-    --record-status) python3 "${script_dir}/capture-state.py" status | python3 -c 'import json,sys; print(json.load(sys.stdin).get("state", "idle"))' ;;
+    --record-status) python3 "${script_dir}/capture-state.py" status | python3 -I -c 'import json,sys; print(json.load(sys.stdin).get("state", "idle"))' ;;
     --open-captures)
         mkdir -p -- "$picture_dir"
         xdg-open "$picture_dir"

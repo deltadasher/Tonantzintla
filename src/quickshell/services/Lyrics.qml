@@ -91,9 +91,10 @@ QtObject {
         clear("loading");
         busy = true;
         const command = ["python3", helperPath,
-            "--title", Media.title, "--artist", Media.artist,
-            "--album", Media.album, "--duration", String(Math.round(Media.length)),
-            "--source-url", Media.sourceUrl];
+            // The player supplies these. Joined with "=" so a title such as "--refresh" stays a value.
+            "--title=" + Media.title, "--artist=" + Media.artist,
+            "--album=" + Media.album, "--duration=" + String(Math.round(Media.length)),
+            "--source-url=" + Media.sourceUrl];
         if (forceOnline)
             command.push("--refresh");
         fetchProcess.command = command;

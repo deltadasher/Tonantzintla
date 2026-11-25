@@ -16,6 +16,18 @@ import urllib.parse
 import urllib.request
 
 MAX_RESPONSE_BYTES = 1024 * 1024
+LYRICS_HOST = "lrclib.net"
+
+
+class SameHostRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Follow a redirect only if it stays on the lyrics service over HTTPS."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        target = urllib.parse.urljoin(req.full_url, newurl)
+        parsed = urllib.parse.urlsplit(target)
+        if parsed.scheme.lower() != "https" or (parsed.hostname or "").lower() != LYRICS_HOST:
+            raise urllib.error.URLError("Lyrics service redirected to an unexpected address")
+        return super().redirect_request(req, fp, code, msg, headers, target)
 
 
 def cache_root() -> pathlib.Path:
@@ -108,7 +120,7 @@ def main() -> int:
     )
 
     try:
-        with urllib.request.urlopen(request, timeout=9) as response:
+        with urllib.request.build_opener(SameHostRedirectHandler()).open(request, timeout=9) as response:
             raw = response.read(MAX_RESPONSE_BYTES + 1)
         if len(raw) > MAX_RESPONSE_BYTES:
             raise ValueError("Lyrics response exceeded size limit")

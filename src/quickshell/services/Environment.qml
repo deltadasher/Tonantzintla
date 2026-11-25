@@ -637,7 +637,7 @@ QtObject {
             return;
         onlineBusy = true;
         onlineWallpapers = [];
-        onlineSearchProcess.command = ["python3", onlineHelper, "search", cleaned];
+        onlineSearchProcess.command = ["python3", onlineHelper, "search", "--", cleaned];
         onlineSearchProcess.running = true;
     }
 
