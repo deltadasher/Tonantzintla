@@ -79,7 +79,7 @@ else
     printf 'SKIP node is unavailable; website and dock model tests were not run.\n'
 fi
 bash tests/test_cli.sh
-bash -n bin/blackhole tools/check \
+bash -n bin/blackhole bin/uranus uranus/install.sh tools/check \
     src/libexec/tonantzintla-profile src/libexec/snipping-tool src/libexec/umbra-greeter \
     src/libexec/umbra-greeter-portable src/libexec/wallpaper-apply src/libexec/audio-recover \
     src/libexec/obarun-audit tests/test_cli.sh

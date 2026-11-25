@@ -59,13 +59,24 @@ bin/blackhole plasma apply
 
 See [KDE Plasma 6](docs/kde-plasma.md) for `--keep-layout`, `--mode light`, and `sync`.
 
+### Uranus: just the Plasma theme
+
+Staying on KDE Plasma? Uranus installs the theme by itself, with no Quickshell or Niri:
+
+```bash
+uranus/install.sh
+uranus apply
+```
+
+See [Uranus](docs/uranus.md).
+
 ### Make it yours
 
 Choose your applications, weather location, fonts, and motion in Settings.
 Put wallpapers in `~/Pictures/Wallpapers`. Screenshots stay entirely separate.
 
 [Architecture](docs/architecture.md) · [Dependencies](docs/dependencies.md) ·
-[KDE Plasma 6](docs/kde-plasma.md) · [Machines](docs/machines.md) · [Umbra](docs/umbra.md) · [Contributing](CONTRIBUTING.md)
+[KDE Plasma 6](docs/kde-plasma.md) · [Uranus](docs/uranus.md) · [Machines](docs/machines.md) · [Umbra](docs/umbra.md) · [Contributing](CONTRIBUTING.md)
 
 GPL-3.0-or-later. Copyright © 2026 deltadasher.
 See [LICENSE](LICENSE). Third-party work retains its own attribution and license.

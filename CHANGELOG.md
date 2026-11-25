@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Add Uranus, a standalone install of the KDE Plasma theme (`uranus/install.sh`,
+  `uranus`) that needs no Quickshell, Niri, or `blackhole` runtime.
+- Plasma: keep window borders at a 1px hairline, give light mode a matching light
+  window decoration, center window titles, even out the workspace indicator, and
+  follow the system week start in the calendar.
+- Plasma: save the current panels before applying the layout, add
+  `restore-layout` and `doctor`, and hand settings back to Breeze on uninstall.
+- Plasma widgets no longer run shell commands; quick actions open the user's
+  default apps, and album art loads only from ordinary image locations.
+- Keep inline Python off the current directory's import path, validate
+  redirects in the weather and lyrics fetchers, and stop player metadata from
+  being parsed as helper options.
 - Add optional Matugen-colored bar and app logos, with original colors available
   and Wabi Sabi’s black center preserved.
 

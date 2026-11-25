@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# Uranus: Tonantzintla for KDE Plasma 6, installed and managed on its own.
+# It needs Plasma and Python, and nothing from the Quickshell desktop.
+
+set -euo pipefail
+
+script_path="$(readlink -f -- "${BASH_SOURCE[0]}")"
+script_dir="$(cd -- "$(dirname -- "$script_path")" && pwd)"
+runtime_root="$(cd -- "$script_dir/.." && pwd)"
+helper="$runtime_root/src/libexec/plasma-theme.py"
+# Written by uranus/install.sh. Only a directory carrying it is ever removed.
+runtime_marker="$runtime_root/.uranus-runtime"
+
+usage() {
+    cat <<'USAGE'
+Usage: uranus COMMAND [OPTIONS]
+
+  doctor                  Check that this machine has what the theme needs
+  install                 Install the Global Theme, Plasma Style, colors, window
+                          decorations, wallpaper, splash, and widgets for your user
+  apply [--mode dark|light] [--keep-layout]
+                          Switch Plasma to the theme. Your current panels are saved
+                          first; --keep-layout leaves them in place instead
+  sync                    Rebuild the colors from your Tonantzintla palette, if you have one
+  restore-layout          Bring back the panels saved by the last 'apply'
+  status                  Show what is installed
+  uninstall [--purge]     Remove the theme and hand Plasma back to Breeze.
+                          --purge also removes Uranus itself
+  version                 Print the version
+  path                    Print where Uranus is running from
+
+Add --json to any command for machine-readable output.
+USAGE
+}
+
+fail() {
+    printf 'uranus: %s\n' "$1" >&2
+    exit "${2:-1}"
+}
+
+command -v python3 >/dev/null 2>&1 || fail "python3 is required."
+[[ -f "$helper" ]] || fail "this copy is incomplete: $helper is missing."
+
+run_helper() {
+    local action="$1"
+    shift
+    local format=(--human)
+    local argument
+    for argument in "$@"; do
+        [[ "$argument" == "--json" ]] && format=()
+    done
+    python3 "$helper" "$action" "${format[@]}" "$@"
+}
+
+purge_runtime() {
+    [[ -f "$runtime_marker" ]] || fail "not an installed copy, so there is nothing to purge. Delete the checkout yourself if you want it gone."
+    [[ ! -e "$runtime_root/.git" ]] || fail "refusing to purge a git checkout."
+    local link="${URANUS_BIN_DIR:-$HOME/.local/bin}/uranus"
+    if [[ -L "$link" && "$(readlink -f -- "$link")" == "$script_path" ]]; then
+        rm -f -- "$link"
+    fi
+    rm -rf -- "$runtime_root"
+    printf 'Removed Uranus from %s.\n' "$runtime_root"
+}
+
+main() {
+    local command_name="${1:-help}"
+    [[ $# -gt 0 ]] && shift
+    case "$command_name" in
+        doctor|install|sync|status|restore-layout)
+            run_helper "$command_name" "$@"
+            ;;
+        apply)
+            run_helper apply "$@"
+            ;;
+        uninstall)
+            local purge=0
+            local passthrough=()
+            local argument
+            for argument in "$@"; do
+                if [[ "$argument" == "--purge" ]]; then
+                    purge=1
+                else
+                    passthrough+=("$argument")
+                fi
+            done
+            run_helper uninstall "${passthrough[@]}"
+            if (( purge )); then
+                purge_runtime
+            fi
+            ;;
+        version|--version)
+            if [[ -f "$runtime_root/VERSION" ]]; then
+                printf 'Uranus %s\n' "$(tr -d '[:space:]' < "$runtime_root/VERSION")"
+            else
+                printf 'Uranus (unversioned)\n'
+            fi
+            ;;
+        path)
+            printf '%s\n' "$runtime_root"
+            ;;
+        help|-h|--help)
+            usage
+            ;;
+        *)
+            usage >&2
+            exit 2
+            ;;
+    esac
+}
+
+# Everything runs from this one call, so bash has read the whole file before
+# --purge deletes it.
+main "$@"
+exit $?
