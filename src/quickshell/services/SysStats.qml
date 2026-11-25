@@ -9,9 +9,10 @@ QtObject {
     id: root
 
     readonly property string helperPath: Environment.script("system-telemetry.py")
-    readonly property bool detailActive: ShellState.ephemerisVisible
+    readonly property bool detailActive: (ShellState.ephemerisVisible
         && (ShellState.ephemerisTab === "system"
-            || ShellState.ephemerisTab === "quickstats")
+            || ShellState.ephemerisTab === "quickstats"))
+        || (Settings.wallpaperKind === "live" && Settings.liveWallpaper === "procmon")
 
     property bool available: false
     property int cpuPercent: 0

@@ -6,13 +6,14 @@ import "../../../.."
 import "../../../../services"
 import "../../../../components"
 import "../../../../components/WallpaperOrbit.js" as WallpaperOrbit
+import "../../../../components/LiveScenes.js" as LiveScenes
 
 pragma ComponentBehavior: Bound
 
 Item {
     id: root
 
-    Component.onCompleted: { Environment.ensureWallpapers(); rebuildOrbit(); }
+    Component.onCompleted: { Environment.ensureWallpapers(); Undertow.refresh(); rebuildOrbit(); }
 
     property string query: ""
     property string currentFilter: "All"
@@ -60,10 +61,13 @@ Item {
     property var pendingOrbitWallpapers: []
     property var orbitWallpapers: []
     readonly property int satelliteCount: Math.max(0, orbitWallpapers.length - 1)
-    readonly property var currentEntry: WallpaperOrbit.current(Environment.wallpapers, Settings.wallpaperPath, Settings.wallpaperKind)
+    // A web wallpaper is identified by its undertow id; wallpaperPath keeps the last image for colors.
+    readonly property var currentEntry: Settings.wallpaperKind === "web"
+        ? (Environment.wallpapers.find(function(entry) { return entry.kind === "web" && entry.webId === Settings.undertowWallpaper; }) || null)
+        : WallpaperOrbit.current(Environment.wallpapers, Settings.wallpaperPath, Settings.wallpaperKind)
     readonly property bool selectedIsCurrent: isCurrent(selectedEntry)
     onCurrentEntryChanged: rebuildOrbit()
-    onVisibleChanged: if (visible) rebuildOrbit()
+    onVisibleChanged: if (visible) { Undertow.refresh(); rebuildOrbit(); }
 
     function isCurrent(entry) {
         return !!entry && !!currentEntry && WallpaperOrbit.key(entry) === WallpaperOrbit.key(currentEntry);
@@ -81,7 +85,9 @@ Item {
         { "label": "Everything", "value": "All", "glyph": "✦", "tone": Theme.accent },
         { "label": "Tonantzintla", "value": "Tonantzintla", "glyph": "A", "tone": Theme.cyan },
         { "label": "Online", "value": "Online", "glyph": "◎", "tone": Theme.success },
-        { "label": "Video", "value": "Video", "glyph": "▶", "tone": Theme.rose }
+        { "label": "Video", "value": "Video", "glyph": "▶", "tone": Theme.rose },
+        { "label": "Live", "value": "Live", "glyph": "∿", "tone": Theme.warning },
+        { "label": "Web", "value": "Web", "glyph": "⊕", "tone": Theme.accent }
     ]
     readonly property bool hasOnlineWorlds: Environment.wallpapers.some(function(entry) { return entry.source === "Online"; })
     readonly property bool hasVideoWorlds: Environment.wallpapers.some(function(entry) { return entry.kind === "video"; })
@@ -90,6 +96,8 @@ Item {
         const textMatch = !needle || (entry.name + " " + entry.source).toLowerCase().indexOf(needle) >= 0;
         if (!textMatch && root.currentFilter !== "Online") return false;
         if (root.currentFilter === "All") return textMatch;
+        if (root.currentFilter === "Live") return entry.kind === "live" && textMatch;
+        if (root.currentFilter === "Web") return entry.kind === "web" && textMatch;
         if (root.currentFilter === "Video") return !root.hasVideoWorlds ? textMatch : entry.kind === "video" && textMatch;
         if (root.currentFilter === "Online") return !root.hasOnlineWorlds ? textMatch : entry.source === "Online";
         return entry.source === root.currentFilter && textMatch;
@@ -98,6 +106,13 @@ Item {
     readonly property var selectedEntry: orbitWallpapers.length > 0
         ? orbitWallpapers[((orbitOffset % orbitWallpapers.length) + orbitWallpapers.length) % orbitWallpapers.length]
         : null
+
+    // The centered wallpaper's live scene, if it is one, and its current values.
+    readonly property var liveScene: selectedEntry && selectedEntry.kind === "live" ? LiveScenes.find(selectedEntry.liveId) : null
+    property int liveRevision: 0
+    // The centered wallpaper's undertow record, if it is a web wallpaper.
+    readonly property var webEntry: selectedEntry && selectedEntry.kind === "web" ? Undertow.find(selectedEntry.webId) : null
+    readonly property bool webPanel: !!webEntry || currentFilter === "Web"
 
     WallpaperPalettePreview {
         id:selectedPalette
@@ -526,7 +541,8 @@ Item {
             width: 268
             height: 268
             z: 5
-            readonly property bool canApply: root.selectedEntry && Environment.canSetWallpaper && !Environment.wallpaperBusy
+            // Live scenes are drawn by the shell, so they need no wallpaper backend.
+            readonly property bool canApply: root.selectedEntry && (Environment.canSetWallpaper || !!root.liveScene || !!root.webEntry) && !Environment.wallpaperBusy && !(root.webEntry && Undertow.busy)
             activeFocusOnTab: canApply
             Accessible.role: Accessible.Button
             Accessible.name: root.selectedEntry ? (root.selectedIsCurrent ? "Current wallpaper " : "Apply wallpaper ") + root.selectedEntry.name : "No wallpaper selected"
@@ -569,11 +585,13 @@ Item {
                         }
                         Text {
                             width: parent.width
-                            text: Environment.wallpaperBusy ? "APPLYING…"
+                            text: Environment.wallpaperBusy || (root.webEntry && Undertow.busy) ? "APPLYING…"
                                 : !root.selectedEntry ? "CHOOSE A WALLPAPER"
-                                : root.selectedIsCurrent ? "IN USE"
+                                : root.selectedIsCurrent ? (root.liveScene ? "LIVE · IN USE" : "IN USE")
+                                : root.liveScene ? "APPLY LIVE WALLPAPER"
+                                : root.webEntry ? "APPLY WEB WALLPAPER"
                                 : !Environment.canSetWallpaper ? "WALLPAPER UNAVAILABLE" : "APPLY WALLPAPER"
-                            color: Environment.wallpaperBusy || !Environment.canSetWallpaper ? Theme.warning : Theme.accent
+                            color: Environment.wallpaperBusy || (!Environment.canSetWallpaper && !root.liveScene && !root.webEntry) ? Theme.warning : Theme.accent
                             font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.Bold
                             horizontalAlignment: Text.AlignHCenter
                         }
@@ -776,7 +794,92 @@ Item {
             ColumnLayout {
                 id: optionsLayout
                 width: optionsScroll.width; spacing: 12
-                Text { text: "OPTIONS"; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 14; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
+                Text { text: root.liveScene ? root.liveScene.name : root.webEntry ? root.webEntry.title : root.webPanel ? "Web wallpapers" : "Options"; Layout.fillWidth: true; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; color: Theme.moon; font.family: Theme.fontDisplay; font.pixelSize: 18; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
+                ColumnLayout {
+                    objectName: "liveWallpaperSettings"
+                    visible: !!root.liveScene
+                    Layout.fillWidth: true; spacing: 10
+                    Text {
+                        Layout.fillWidth: true; wrapMode: Text.Wrap
+                        text: root.selectedIsCurrent ? "Running on your desktop. Changes show as you drag."
+                            : "A live wallpaper drawn by Tonantzintla. Select the center to apply it."
+                        color: Theme.muted; font.family: Theme.fontText; font.pixelSize: Theme.textBody
+                    }
+                    Repeater {
+                        // Rebuilt on Reset so the sliders pick the defaults back up.
+                        model: root.liveRevision >= 0 && root.liveScene ? root.liveScene.props : []
+                        DockSettingSlider {
+                            id: liveSlider
+                            required property var modelData
+                            Layout.fillWidth: true
+                            label: modelData.label; suffix: modelData.suffix
+                            from: modelData.from; to: modelData.to; stepSize: modelData.step
+                            Component.onCompleted: value = LiveScenes.values(root.liveScene, Settings.liveWallpaperProps)[modelData.name]
+                            onEdited: function(value) { Settings.liveWallpaperProps = LiveScenes.withValue(Settings.liveWallpaperProps, root.liveScene.id, liveSlider.modelData.name, Math.round(value)); }
+                        }
+                    }
+                    ActionButton {
+                        Layout.fillWidth: true; text: "Reset " + (root.liveScene ? root.liveScene.name : "")
+                        onClicked: { Settings.liveWallpaperProps = LiveScenes.without(Settings.liveWallpaperProps, root.liveScene.id); root.liveRevision++; }
+                    }
+                    Rectangle { Layout.fillWidth: true; Layout.topMargin: 4; implicitHeight: 1; color: Theme.elevated }
+                }
+                ColumnLayout {
+                    objectName: "webWallpaperSettings"
+                    visible: root.webPanel
+                    Layout.fillWidth: true; spacing: 10
+                    Text {
+                        Layout.fillWidth: true; wrapMode: Text.Wrap
+                        text: !Undertow.probed ? "Looking for undertow…"
+                            : !Undertow.available ? "Web wallpapers are drawn by undertow, a separate program that is not installed."
+                            : !root.webEntry ? "Web pages as wallpapers, drawn by undertow. Add one from GitHub below."
+                            : root.selectedIsCurrent ? "Running through undertow. Changes show as you drag."
+                            : "A web wallpaper drawn by undertow. Select the center to apply it; its settings unlock once it is running."
+                        color: Undertow.probed && !Undertow.available ? Theme.warning : Theme.muted
+                        font.family: Theme.fontText; font.pixelSize: Theme.textBody
+                    }
+                    Repeater {
+                        // Sliders and switches only; undertow's other setting types stay in its own picker.
+                        model: root.webEntry && root.selectedIsCurrent
+                            ? Object.keys(root.webEntry.props).filter(function(name) { return root.webEntry.props[name].type === "slider" && root.webEntry.values[name] !== undefined; }) : []
+                        DockSettingSlider {
+                            id: webSlider
+                            required property string modelData
+                            readonly property var definition: root.webEntry ? root.webEntry.props[modelData] : ({})
+                            readonly property real grain: Number(definition.step) > 0 ? Number(definition.step) : 1
+                            Layout.fillWidth: true
+                            label: definition.text || modelData
+                            from: Number(definition.min) || 0; to: definition.max !== undefined ? Number(definition.max) : 100; stepSize: grain
+                            Component.onCompleted: value = Number(root.webEntry.values[modelData])
+                            onEdited: function(value) { Undertow.setValue(root.webEntry.id, webSlider.modelData, Math.round(value / grain) * grain); }
+                        }
+                    }
+                    Repeater {
+                        model: root.webEntry && root.selectedIsCurrent
+                            ? Object.keys(root.webEntry.props).filter(function(name) { return root.webEntry.props[name].type === "checkbox"; }) : []
+                        SettingToggle {
+                            id: webToggle
+                            required property string modelData
+                            Layout.fillWidth: true
+                            label: root.webEntry ? (root.webEntry.props[modelData].text || modelData) : ""
+                            Component.onCompleted: checked = root.webEntry.values[modelData] === true
+                            onToggled: { checked = !checked; Undertow.setValue(root.webEntry.id, webToggle.modelData, checked); }
+                        }
+                    }
+                    SettingTextField {
+                        visible: Undertow.available
+                        Layout.fillWidth: true
+                        label: "Add from GitHub"; detail: "owner/repo or a GitHub link"
+                        status: Undertow.busy ? "Working…" : Undertow.message; statusOk: !Undertow.messageError
+                        onCommitted: function(value) { Undertow.add(value); }
+                    }
+                    ActionButton {
+                        visible: !!root.webEntry && root.webEntry.kind !== "preset" && !root.selectedIsCurrent
+                        Layout.fillWidth: true; text: "Remove " + (root.webEntry ? root.webEntry.title : ""); destructive: true
+                        onClicked: Undertow.remove(root.webEntry.id)
+                    }
+                    Rectangle { Layout.fillWidth: true; Layout.topMargin: 4; implicitHeight: 1; color: Theme.elevated }
+                }
                 SettingChoice {
                     objectName: "wallpaperRendererChoice"
                     Layout.fillWidth: true
@@ -792,9 +895,9 @@ Item {
                     text: Settings.wallpaperRenderer === "native"
                         ? "Built-in images: up to 2560 px on the longest edge. Larger images are reduced. Choosing a video switches all displays to External app."
                         : "Use your wallpaper app and its transitions."
-                    color: Theme.muted; font.family: Theme.fontText; font.pixelSize: Theme.textCaption
+                    color: Theme.muted; font.family: Theme.fontText; font.pixelSize: Theme.textLabel
                 }
-                Text { text: "DISPLAY"; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
+                Text { text: "Displays"; color: Theme.moon; font.family: Theme.fontMono; font.pixelSize: Theme.textBody; font.weight: Font.DemiBold; Layout.alignment: Qt.AlignHCenter }
                 Flow {
                     Layout.fillWidth: true
                     Layout.preferredHeight: childrenRect.height
@@ -820,7 +923,7 @@ Item {
                         }
                     }
                 }
-                Text { text: "TRANSITION"; color: Theme.muted; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption; font.weight: Font.Bold; Layout.alignment: Qt.AlignHCenter }
+                Text { text: "Transition"; color: Theme.moon; font.family: Theme.fontMono; font.pixelSize: Theme.textBody; font.weight: Font.DemiBold; Layout.alignment: Qt.AlignHCenter }
                 GridLayout {
                     columns: optionsScroll.width < 220 ? 2 : 3
                     Layout.alignment: Qt.AlignHCenter
@@ -846,18 +949,18 @@ Item {
                     }
                 }
                 Text {
-                    visible: Settings.wallpaperRenderer === "native"
+                    visible: Settings.wallpaperRenderer === "native" && Environment.nativeTransitionName(Settings.wallpaperTransition) !== Settings.wallpaperTransition
                     Layout.fillWidth: true; wrapMode: Text.Wrap
                     text: "Built-in transition: " + Environment.nativeTransitionName(Settings.wallpaperTransition)
                         + (Settings.wallpaperTransition === "any" ? " (Any uses the orbital reveal)" : Environment.nativeTransitionName(Settings.wallpaperTransition) !== Settings.wallpaperTransition ? " (mapped from " + Settings.wallpaperTransition + ")" : "")
-                    color: Theme.muted; font.family: Theme.fontText; font.pixelSize: Theme.textCaption
+                    color: Theme.muted; font.family: Theme.fontText; font.pixelSize: Theme.textLabel
                 }
-                Text { Layout.fillWidth: true; wrapMode: Text.Wrap; text: Environment.wallpaperStatus; color: Environment.canSetWallpaper ? Theme.success : Theme.warning; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption }
+                Text { Layout.fillWidth: true; wrapMode: Text.Wrap; text: Environment.liveWallpaperActive ? "LIVE WALLPAPER RUNNING" : Undertow.active ? "WEB WALLPAPER · UNDERTOW" : Environment.wallpaperStatus; color: Environment.canSetWallpaper || Environment.liveWallpaperActive || Undertow.active ? Theme.success : Theme.warning; font.family: Theme.fontMono; font.pixelSize: Theme.textLabel }
                 Text {
                     Layout.fillWidth: true; wrapMode: Text.Wrap; visible: text.length > 0
                     text: Environment.wallpaperMessage
                     color: Environment.wallpaperMessageError ? Theme.warning : Theme.muted
-                    font.family: Theme.fontText; font.pixelSize: Theme.textCaption
+                    font.family: Theme.fontText; font.pixelSize: Theme.textLabel
                 }
                 ActionButton {
                     visible: Environment.wallpaperMessageError

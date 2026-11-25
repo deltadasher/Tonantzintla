@@ -339,7 +339,7 @@ QtObject {
     }
     property var onlineWallpapers: []
     readonly property var wallpapers: (localWallpapers.length > 0
-        ? localWallpapers : bundledEntries()).concat(onlineWallpapers)
+        ? localWallpapers : bundledEntries()).concat(onlineWallpapers).concat(liveWallpapers).concat(webWallpapers)
     readonly property bool captureActive: ShellState.ephemerisVisible
         && ShellState.ephemerisTab === "capture"
     readonly property var outputNames: {
@@ -396,7 +396,47 @@ QtObject {
             ? "SWAYBG ONLINE" : hasSwww ? "SWWW ONLINE" : "NO BACKEND"
 
     function kindFor(path) {
+        if (liveEntryFor(path)) return "live";
+        if (String(path || "").indexOf("undertow://") === 0) return "web";
         return /\.(mp4|mkv|mov|webm|avi|m4v)$/i.test(path || "") ? "video" : "image";
+    }
+
+    // Live wallpapers are scenes the shell draws itself (components/live/).
+    // shell.qml supplies the catalog, so this service has no component import.
+    // Each entry's `path` is its bundled still: the orbit, palette and optics
+    // treat it like any image, while Settings.liveWallpaper names the scene.
+    // Web wallpapers belong to the optional Undertow service. shell.qml supplies
+    // its entries and answers the request below, so this service stays standalone.
+    property var webWallpapers: []
+    signal webWallpaperRequested(string id)
+    readonly property string liveRoot: bundledRoot + "/live"
+    property var liveWallpapers: []
+    readonly property bool liveWallpaperActive: Settings.wallpaperKind === "live" && Settings.liveWallpaper.length > 0
+    function liveEntryFor(path) {
+        const value = String(path || "");
+        return liveWallpapers.find(function(entry) { return entry.path === value; }) || null;
+    }
+    function liveWallpaperShownOn(output) {
+        return liveWallpaperActive && (Settings.wallpaperOutputs === "all" || Settings.wallpaperOutputs.split(",").indexOf(output) >= 0);
+    }
+    function applyLiveWallpaper(path) {
+        const entry = liveEntryFor(path);
+        if (!entry) { wallpaperFeedback("That live wallpaper is not part of this version.", true); return; }
+        if (applyProcess.running) { wallpaperFeedback("Wallpaper application is in progress. Wait for it to finish before applying another.", false); return; }
+        // An owned video would otherwise keep playing on the same layer.
+        if (hasMpvpaper && !stopVideoProcess.running) stopVideoProcess.running = true;
+        nativeExternalRequest = null;
+        Settings.liveWallpaper = entry.liveId;
+        Settings.wallpaperPath = path;
+        Settings.wallpaperKind = "live";
+        wallpaperFeedback(entry.name + " is starting on " + (Settings.wallpaperOutputs === "all" ? "all displays" : Settings.wallpaperOutputs) + ".", false);
+        AdaptivePalette.refresh();
+    }
+    function reportLiveWallpaperFailed(output, message) {
+        wallpaperFeedback(message + " (" + output + ")", true);
+    }
+    property Process stopVideoProcess: Process {
+        command: ["bash", root.applyHelper, "stop-video"]
     }
 
     function bundledEntries() {
@@ -529,6 +569,12 @@ QtObject {
     }
 
     function applyWallpaper(path, kind) {
+        if ((kind || kindFor(path)) === "live") { applyLiveWallpaper(path); return; }
+        if ((kind || kindFor(path)) === "web") {
+            // On restore the path is still the last image; Undertow restores itself.
+            if (kindFor(path) === "web") webWallpaperRequested(String(path).substring(11));
+            return;
+        }
         if (Settings.wallpaperRenderer === "native" && path) {
             if (!nativeOutputNames.length) syncNativeOutputs(currentNativeOutputs());
             const nativeKind=kind || kindFor(path);
