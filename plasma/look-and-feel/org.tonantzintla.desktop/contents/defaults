@@ -13,6 +13,8 @@ widgetStyle=Breeze
 name=tonantzintla
 
 [kwinrc][org.kde.kdecoration2]
+BorderSize=Tiny
+BorderSizeAuto=false
 ButtonsOnLeft=
 ButtonsOnRight=IAX
 library=org.kde.kwin.aurorae

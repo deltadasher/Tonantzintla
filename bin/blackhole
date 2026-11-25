@@ -593,14 +593,14 @@ case "$command_name" in
     plasma)
         action="${2:-status}"
         case "$action" in
-            build|install|sync|apply|uninstall|status|validate)
+            build|install|sync|apply|uninstall|status|validate|restore-layout|doctor)
                 exec python3 "$libexec/plasma-theme.py" "$action" "${@:3}"
                 ;;
             help|-h|--help)
-                printf 'Usage: blackhole plasma [build|install|sync|apply|uninstall|status|validate] [--mode dark|light] [--layout]\n'
+                printf 'Usage: blackhole plasma [build|install|sync|apply|uninstall|status|validate|restore-layout|doctor] [--mode dark|light] [--keep-layout]\n'
                 ;;
             *)
-                printf 'Usage: blackhole plasma [build|install|sync|apply|uninstall|status|validate] [--mode dark|light] [--layout]\n' >&2
+                printf 'Usage: blackhole plasma [build|install|sync|apply|uninstall|status|validate|restore-layout|doctor] [--mode dark|light] [--keep-layout]\n' >&2
                 exit 2
                 ;;
         esac

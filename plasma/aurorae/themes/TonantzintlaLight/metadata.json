@@ -1,0 +1,20 @@
+{
+    "KPackageStructure": "aurorae",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Tonantzintla Contributors"
+            }
+        ],
+        "Category": "Plasma 6 Window Decorations",
+        "Description": "Serpantinum-refined matte light window decoration for Tonantzintla",
+        "EnabledByDefault": true,
+        "Id": "TonantzintlaLight",
+        "License": "GPL-3.0-or-later",
+        "Name": "Tonantzintla Light",
+        "ServiceTypes": [
+            "aurorae"
+        ],
+        "Version": "1.2.0"
+    }
+}

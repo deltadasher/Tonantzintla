@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="24" viewBox="0 0 120 24">
+  <g id="active-center"><rect x="3" y="3" width="18" height="18" rx="6" fill="transparent" fill-opacity="0.0"/><rect x="8.5" y="8.5" width="7" height="7" rx="1.6" fill="none" stroke="#1c1c28" stroke-width="1.5"/></g>
+  <g id="hover-center"><rect x="27" y="3" width="18" height="18" rx="6" fill="#6350a8" fill-opacity="0.96"/><rect x="32.5" y="8.5" width="7" height="7" rx="1.6" fill="none" stroke="#f8f7fc" stroke-width="1.5"/></g>
+  <g id="pressed-center"><rect x="51" y="3" width="18" height="18" rx="6" fill="#8071b8" fill-opacity="1.0"/><rect x="56.5" y="8.5" width="7" height="7" rx="1.6" fill="none" stroke="#f8f7fc" stroke-width="1.5"/></g>
+  <g id="inactive-center"><rect x="75" y="3" width="18" height="18" rx="6" fill="transparent" fill-opacity="0.0"/><rect x="80.5" y="8.5" width="7" height="7" rx="1.6" fill="none" stroke="#5a586e" stroke-width="1.5"/></g>
+  <g id="deactivated-center"><rect x="99" y="3" width="18" height="18" rx="6" fill="transparent" fill-opacity="0.0"/><rect x="104.5" y="8.5" width="7" height="7" rx="1.6" fill="none" stroke="#5a586e" stroke-width="1.5"/></g>
+</svg>

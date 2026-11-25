@@ -13,22 +13,46 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 
 LIBEXEC_DIR = Path(__file__).resolve().parent
 if str(LIBEXEC_DIR) not in sys.path:
     sys.path.insert(0, str(LIBEXEC_DIR))
 from plasma_plasmoids import PLASMOID_IDS, build_plasmoids, render_splash_qml  # noqa: E402
-from plasma_shaders import SHADERS as PLASMA_SHADERS, compile_shaders  # noqa: E402
+from plasma_shaders import SHADERS as PLASMA_SHADERS, compile_shaders, find_qsb  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 PLASMA_SRC = ROOT / "plasma"
-WALLPAPER_SRC = ROOT / "src/assets/wallpapers/astral-observatory.png"
-MARK_SRC = ROOT / "src/quickshell/assets/theme-marks/wabi-sabi.svg"
 
 THEME_ID = "tonantzintla"
 LOOK_AND_FEEL_ID = "org.tonantzintla.desktop"
 AURORAE_NAME = "Tonantzintla"
+AURORAE_LIGHT_NAME = "TonantzintlaLight"
+AURORAE_THEMES = (AURORAE_NAME, AURORAE_LIGHT_NAME)
 WALLPAPER_NAME = "Tonantzintla"
+COLOR_SCHEMES = ("TonantzintlaDark", "TonantzintlaLight")
+# Plasma keeps the whole panel and widget arrangement in these two files.
+LAYOUT_FILES = ("plasma-org.kde.plasma.desktop-appletsrc", "plasmashellrc")
+LAYOUT_BACKUPS_KEPT = 5
+
+
+def _first_file(*candidates: Path) -> Path:
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+    return candidates[0]
+
+
+# A standalone Uranus runtime ships only the prebuilt plasma/ tree, so the two
+# source assets fall back to the copies that tree already contains.
+WALLPAPER_SRC = _first_file(
+    ROOT / "src/assets/wallpapers/astral-observatory.png",
+    PLASMA_SRC / "wallpapers" / WALLPAPER_NAME / "contents/images/3840x2160.png",
+)
+MARK_SRC = _first_file(
+    ROOT / "src/quickshell/assets/theme-marks/wabi-sabi.svg",
+    PLASMA_SRC / "icons/hicolor/scalable/apps/tonantzintla-mark.svg",
+)
 
 DARK_DEFAULTS = {
     "void_": "#111116",
@@ -105,6 +129,10 @@ def xdg_config_home() -> Path:
 
 def xdg_cache_home() -> Path:
     return Path(os.environ.get("XDG_CACHE_HOME") or (Path.home() / ".cache")).expanduser()
+
+
+def xdg_state_home() -> Path:
+    return Path(os.environ.get("XDG_STATE_HOME") or (Path.home() / ".local/state")).expanduser()
 
 
 def load_json_dict(path: Path) -> dict:
@@ -752,6 +780,30 @@ def write_json(path: Path, payload: dict) -> None:
     write_text(path, json.dumps(payload, indent=4) + "\n")
 
 
+def copy_asset(src: Path, dst: Path) -> None:
+    """Copy a build input, tolerating a rebuild whose input already is the output."""
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    if dst.exists() and src.resolve() == dst.resolve():
+        return
+    shutil.copy2(src, dst)
+
+
+def install_file(src: Path, dst: Path) -> None:
+    """Replace one installed file atomically, never writing through a symlink."""
+    if dst.is_symlink():
+        raise RuntimeError(f"Refusing to overwrite symlink: {dst}")
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    handle, staged = tempfile.mkstemp(dir=dst.parent, prefix=f".{dst.name}.")
+    os.close(handle)
+    try:
+        shutil.copyfile(src, staged)
+        os.chmod(staged, 0o644)
+        os.replace(staged, dst)
+    except BaseException:
+        Path(staged).unlink(missing_ok=True)
+        raise
+
+
 def render_preview_images(target_dir: Path, palette: dict[str, str]) -> None:
     """Render genuine preview.png and fullscreenpreview.jpg for KDE System Settings."""
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -845,6 +897,70 @@ def render_preview_images(target_dir: Path, palette: dict[str, str]) -> None:
     composed.resize((480, 270), Image.Resampling.LANCZOS).save(target_dir / "preview.png", "PNG")
 
 
+def write_aurorae_theme(output_root: Path, name: str, display_name: str, tone: str, palette: dict[str, str]) -> None:
+    aur = output_root / "aurorae/themes" / name
+    write_json(aur / "metadata.json", {
+        "KPackageStructure": "aurorae",
+        "KPlugin": {
+            "Authors": [{"Name": "Tonantzintla Contributors"}],
+            "Category": "Plasma 6 Window Decorations",
+            "Description": f"Serpantinum-refined matte {tone} window decoration for Tonantzintla",
+            "EnabledByDefault": True,
+            "Id": name,
+            "License": "GPL-3.0-or-later",
+            "Name": display_name,
+            "ServiceTypes": ["aurorae"],
+            "Version": "1.2.0",
+        },
+    })
+    write_text(
+        aur / f"{name}rc",
+        "[General]\n"
+        f"ActiveTextColor={rgb_csv(palette['foreground'])}\n"
+        f"InactiveTextColor={rgb_csv(palette['muted'])}\n"
+        "Animation=140\n"
+        "LeftButtons=\n"
+        "RightButtons=IAX\n"
+        "Shadow=true\n"
+        "TitleAlignment=Center\n"
+        "TitleVerticalAlignment=Center\n"
+        "UseTextShadow=false\n\n"
+        "[Layout]\n"
+        "BorderBottom=1\n"
+        "BorderLeft=1\n"
+        "BorderRight=1\n"
+        "ButtonHeight=20\n"
+        "ButtonWidth=20\n"
+        "ButtonMarginTop=4\n"
+        "ButtonMarginBottom=4\n"
+        "ButtonMarginLeft=4\n"
+        "ButtonMarginRight=4\n"
+        "ButtonSpacing=6\n"
+        "ExplicitButtonSpacer=8\n"
+        "PaddingBottom=12\n"
+        "PaddingLeft=12\n"
+        "PaddingRight=12\n"
+        "PaddingTop=12\n"
+        # Aurorae centers the caption in the space left of the buttons. Reserving most of a
+        # three-button group on the left puts it within a few pixels of the window's center,
+        # for full windows and for single-button dialogs alike.
+        "TitleBorderLeft=58\n"
+        "TitleBorderRight=12\n"
+        "TitleEdgeBottom=4\n"
+        "TitleEdgeBottomMaximized=4\n"
+        "TitleEdgeLeft=10\n"
+        "TitleEdgeLeftMaximized=10\n"
+        "TitleEdgeRight=10\n"
+        "TitleEdgeRightMaximized=10\n"
+        "TitleEdgeTop=4\n"
+        "TitleEdgeTopMaximized=4\n"
+        "TitleHeight=24\n",
+    )
+    write_text(aur / "decoration.svg", build_aurorae_decoration_svg(palette))
+    for btn in ("close", "maximize", "restore", "minimize", "keepabove", "keepbelow", "alldesktops"):
+        write_text(aur / f"{btn}.svg", build_aurorae_button_svg(btn, palette))
+
+
 def build_tree(output_root: Path, settings: dict | None = None, matugen: dict | None = None) -> None:
     """Materialize the complete native KDE Plasma 6 Global Theme tree under output_root."""
     dark = resolve_palette("dark", settings, matugen)
@@ -854,9 +970,7 @@ def build_tree(output_root: Path, settings: dict | None = None, matugen: dict | 
     build_plasmoids(output_root, dark)
     compile_shaders(output_root, fallback_root=PLASMA_SRC)
     if MARK_SRC.is_file():
-        icon_dst = output_root / "icons/hicolor/scalable/apps/tonantzintla-mark.svg"
-        icon_dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(MARK_SRC, icon_dst)
+        copy_asset(MARK_SRC, output_root / "icons/hicolor/scalable/apps/tonantzintla-mark.svg")
 
     # 1. Color schemes
     write_text(
@@ -940,65 +1054,9 @@ def build_tree(output_root: Path, settings: dict | None = None, matugen: dict | 
     if MARK_SRC.is_file():
         write_svgz(dt / "widgets/branding.svgz", MARK_SRC.read_text(encoding="utf-8"))
 
-    # 3. Aurorae KWin Window Decoration
-    aur = output_root / "aurorae/themes" / AURORAE_NAME
-    write_json(aur / "metadata.json", {
-        "KPackageStructure": "aurorae",
-        "KPlugin": {
-            "Authors": [{"Name": "Tonantzintla Contributors"}],
-            "Category": "Plasma 6 Window Decorations",
-            "Description": "Serpantinum-refined matte dark window decoration for Tonantzintla",
-            "EnabledByDefault": True,
-            "Id": AURORAE_NAME,
-            "License": "GPL-3.0-or-later",
-            "Name": AURORAE_NAME,
-            "ServiceTypes": ["aurorae"],
-            "Version": "1.2.0",
-        },
-    })
-    write_text(
-        aur / f"{AURORAE_NAME}rc",
-        "[General]\n"
-        f"ActiveTextColor={rgb_csv(dark['foreground'])}\n"
-        f"InactiveTextColor={rgb_csv(dark['muted'])}\n"
-        "Animation=140\n"
-        "LeftButtons=\n"
-        "RightButtons=IAX\n"
-        "Shadow=true\n"
-        "TitleAlignment=Center\n"
-        "TitleVerticalAlignment=Center\n"
-        "UseTextShadow=false\n\n"
-        "[Layout]\n"
-        "BorderBottom=1\n"
-        "BorderLeft=1\n"
-        "BorderRight=1\n"
-        "ButtonHeight=20\n"
-        "ButtonWidth=20\n"
-        "ButtonMarginTop=4\n"
-        "ButtonMarginBottom=4\n"
-        "ButtonMarginLeft=4\n"
-        "ButtonMarginRight=4\n"
-        "ButtonSpacing=6\n"
-        "ExplicitButtonSpacer=8\n"
-        "PaddingBottom=12\n"
-        "PaddingLeft=12\n"
-        "PaddingRight=12\n"
-        "PaddingTop=12\n"
-        "TitleBorderLeft=12\n"
-        "TitleBorderRight=12\n"
-        "TitleEdgeBottom=4\n"
-        "TitleEdgeBottomMaximized=4\n"
-        "TitleEdgeLeft=10\n"
-        "TitleEdgeLeftMaximized=10\n"
-        "TitleEdgeRight=10\n"
-        "TitleEdgeRightMaximized=10\n"
-        "TitleEdgeTop=4\n"
-        "TitleEdgeTopMaximized=4\n"
-        "TitleHeight=24\n",
-    )
-    write_text(aur / "decoration.svg", build_aurorae_decoration_svg(dark))
-    for btn in ("close", "maximize", "restore", "minimize", "keepabove", "keepbelow", "alldesktops"):
-        write_text(aur / f"{btn}.svg", build_aurorae_button_svg(btn, dark))
+    # 3. Aurorae KWin window decorations, one per color scheme so title bars match their windows
+    write_aurorae_theme(output_root, AURORAE_NAME, "Tonantzintla", "dark", dark)
+    write_aurorae_theme(output_root, AURORAE_LIGHT_NAME, "Tonantzintla Light", "light", light)
 
     # 4. Wallpaper KPackage
     wp = output_root / "wallpapers" / WALLPAPER_NAME
@@ -1012,9 +1070,7 @@ def build_tree(output_root: Path, settings: dict | None = None, matugen: dict | 
         },
     })
     if WALLPAPER_SRC.is_file():
-        img_dir = wp / "contents/images"
-        img_dir.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(WALLPAPER_SRC, img_dir / "3840x2160.png")
+        copy_asset(WALLPAPER_SRC, wp / "contents/images/3840x2160.png")
 
     # 5. Look-and-Feel (KDE Plasma 6 Global Theme)
     lnf = output_root / "look-and-feel" / LOOK_AND_FEEL_ID
@@ -1048,6 +1104,9 @@ def build_tree(output_root: Path, settings: dict | None = None, matugen: dict | 
         "[plasmarc][Theme]\n"
         f"name={THEME_ID}\n\n"
         "[kwinrc][org.kde.kdecoration2]\n"
+        # Aurorae pads every border to 4px at the Normal size; Tiny is what keeps the 1px hairline.
+        "BorderSize=Tiny\n"
+        "BorderSizeAuto=false\n"
         "ButtonsOnLeft=\n"
         "ButtonsOnRight=IAX\n"
         "library=org.kde.kwin.aurorae\n"
@@ -1097,9 +1156,7 @@ def build_tree(output_root: Path, settings: dict | None = None, matugen: dict | 
         "}\n",
     )
     if MARK_SRC.is_file():
-        splash_img = lnf / "contents/splash/images/wabi-sabi.svg"
-        splash_img.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(MARK_SRC, splash_img)
+        copy_asset(MARK_SRC, lnf / "contents/splash/images/wabi-sabi.svg")
     write_text(lnf / "contents/splash/Splash.qml", render_splash_qml(dark))
     render_preview_images(lnf / "contents/previews", dark)
 
@@ -1143,25 +1200,19 @@ def install_theme(data_home: Path, *, sync_palette: bool = False) -> dict:
 
         colors_dst = data_home / "color-schemes"
         colors_dst.mkdir(parents=True, exist_ok=True)
-        for file_name in ("TonantzintlaDark.colors", "TonantzintlaLight.colors"):
-            src_file = source / "color-schemes" / file_name
-            dst_file = colors_dst / file_name
-            if dst_file.is_symlink():
-                raise RuntimeError(f"Refusing to overwrite symlink: {dst_file}")
-            shutil.copy2(src_file, dst_file)
+        for scheme in COLOR_SCHEMES:
+            install_file(source / "color-schemes" / f"{scheme}.colors", colors_dst / f"{scheme}.colors")
 
         copy_package(source / "desktoptheme" / THEME_ID, data_home / "plasma/desktoptheme" / THEME_ID)
-        copy_package(source / "aurorae/themes" / AURORAE_NAME, data_home / "aurorae/themes" / AURORAE_NAME)
+        for aurorae in AURORAE_THEMES:
+            copy_package(source / "aurorae/themes" / aurorae, data_home / "aurorae/themes" / aurorae)
         copy_package(source / "wallpapers" / WALLPAPER_NAME, data_home / "wallpapers" / WALLPAPER_NAME)
         copy_package(source / "look-and-feel" / LOOK_AND_FEEL_ID, data_home / "plasma/look-and-feel" / LOOK_AND_FEEL_ID)
         for pid in PLASMOID_IDS:
             copy_package(source / "plasmoids" / pid, data_home / "plasma/plasmoids" / pid)
         icon_src = source / "icons/hicolor/scalable/apps/tonantzintla-mark.svg"
         if icon_src.is_file():
-            icon_dst = data_home / "icons/hicolor/scalable/apps/tonantzintla-mark.svg"
-            icon_dst.parent.mkdir(parents=True, exist_ok=True)
-            if not icon_dst.is_symlink():
-                shutil.copy2(icon_src, icon_dst)
+            install_file(icon_src, data_home / "icons/hicolor/scalable/apps/tonantzintla-mark.svg")
 
     return {
         "ok": True,
@@ -1169,21 +1220,88 @@ def install_theme(data_home: Path, *, sync_palette: bool = False) -> dict:
         "look_and_feel": LOOK_AND_FEEL_ID,
         "desktop_theme": THEME_ID,
         "plasmoids": list(PLASMOID_IDS),
-        "color_schemes": ["TonantzintlaDark", "TonantzintlaLight"],
-        "window_decoration": AURORAE_NAME,
+        "color_schemes": list(COLOR_SCHEMES),
+        "window_decorations": list(AURORAE_THEMES),
         "wallpaper": WALLPAPER_NAME,
         "synced_palette": sync_palette,
     }
 
 
+def _read_setting(file_name: str, group: str, key: str) -> str:
+    result = subprocess.run(
+        ["kreadconfig6", "--file", file_name, "--group", group, "--key", key],
+        capture_output=True, text=True, timeout=10, check=False,
+    )
+    return result.stdout.strip() if result.returncode == 0 else ""
+
+
+def _write_setting(file_name: str, group: str, key: str, value: str | None, *, kind: str | None = None) -> None:
+    command = ["kwriteconfig6", "--file", file_name, "--group", group, "--key", key]
+    if value is None:
+        command.append("--delete")
+    else:
+        if kind:
+            command += ["--type", kind]
+        command.append(value)
+    subprocess.run(command, capture_output=True, timeout=10, check=False)
+
+
+def release_active_settings(data_home: Path) -> list[str]:
+    """Hand back to Breeze every setting that still names a package about to be removed.
+
+    Without this, uninstalling the active theme leaves windows without a usable
+    decoration and panels without a style until the user finds the right settings page.
+    Only the real data home is treated as live; a custom --data-home is a staging prefix.
+    """
+    if data_home.resolve() != xdg_data_home().resolve():
+        return []
+    if not (shutil.which("kreadconfig6") and shutil.which("kwriteconfig6")):
+        return []
+
+    released = []
+    decoration = _read_setting("kwinrc", "org.kde.kdecoration2", "theme")
+    if decoration in {f"__aurorae__svg__{name}" for name in AURORAE_THEMES}:
+        _write_setting("kwinrc", "org.kde.kdecoration2", "library", "org.kde.breeze")
+        _write_setting("kwinrc", "org.kde.kdecoration2", "theme", "Breeze")
+        _write_setting("kwinrc", "org.kde.kdecoration2", "BorderSize", None)
+        _write_setting("kwinrc", "org.kde.kdecoration2", "BorderSizeAuto", None)
+        released.append("window-decoration")
+    if _read_setting("plasmarc", "Theme", "name") == THEME_ID:
+        _write_setting("plasmarc", "Theme", "name", "default")
+        released.append("plasma-style")
+    scheme = _read_setting("kdeglobals", "General", "ColorScheme")
+    if scheme in COLOR_SCHEMES:
+        fallback = "BreezeLight" if scheme.endswith("Light") else "BreezeDark"
+        if shutil.which("plasma-apply-colorscheme"):
+            subprocess.run(["plasma-apply-colorscheme", fallback], capture_output=True, timeout=15, check=False)
+        else:
+            _write_setting("kdeglobals", "General", "ColorScheme", fallback)
+        released.append(f"colorscheme:{fallback}")
+    if _read_setting("kdeglobals", "KDE", "LookAndFeelPackage") == LOOK_AND_FEEL_ID:
+        _write_setting("kdeglobals", "KDE", "LookAndFeelPackage", "org.kde.breezedark.desktop")
+        released.append("global-theme")
+    if released and shutil.which("qdbus6"):
+        subprocess.run(["qdbus6", "org.kde.KWin", "/KWin", "reconfigure"], capture_output=True, timeout=10, check=False)
+    return released
+
+
+def layout_uses_theme_widgets(config_home: Path) -> bool:
+    try:
+        text = (config_home / LAYOUT_FILES[0]).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return False
+    return any(f"plugin={plasmoid}" in text for plasmoid in PLASMOID_IDS)
+
+
 def uninstall_theme(data_home: Path) -> dict:
+    released = release_active_settings(data_home)
     removed = []
     targets = [
         data_home / "color-schemes/TonantzintlaDark.colors",
         data_home / "color-schemes/TonantzintlaLight.colors",
         data_home / "icons/hicolor/scalable/apps/tonantzintla-mark.svg",
         data_home / "plasma/desktoptheme" / THEME_ID,
-        data_home / "aurorae/themes" / AURORAE_NAME,
+        *[data_home / "aurorae/themes" / aurorae for aurorae in AURORAE_THEMES],
         data_home / "wallpapers" / WALLPAPER_NAME,
         data_home / "plasma/look-and-feel" / LOOK_AND_FEEL_ID,
         *[data_home / "plasma/plasmoids" / pid for pid in PLASMOID_IDS],
@@ -1197,7 +1315,165 @@ def uninstall_theme(data_home: Path) -> dict:
         elif target.is_file():
             target.unlink()
             removed.append(str(target))
-    return {"ok": True, "removed": removed}
+    payload = {"ok": True, "removed": removed, "released_settings": released}
+    if data_home.resolve() == xdg_data_home().resolve() and layout_uses_theme_widgets(xdg_config_home()):
+        payload["note"] = (
+            "Your panels still contain Tonantzintla widgets, which are now gone. "
+            "Run 'restore-layout' to bring back the layout saved before the theme was applied, "
+            "or replace them from the panel's edit mode."
+        )
+    return payload
+
+
+def layout_backup_root() -> Path:
+    return xdg_state_home() / "tonantzintla/plasma-layouts"
+
+
+def list_layout_backups() -> list[Path]:
+    root = layout_backup_root()
+    if not root.is_dir() or root.is_symlink():
+        return []
+    return sorted(entry for entry in root.iterdir() if entry.is_dir() and not entry.is_symlink())
+
+
+def backup_layout(config_home: Path) -> Path | None:
+    """Copy the user's current panel layout aside before a Global Theme layout reset replaces it."""
+    sources = [config_home / name for name in LAYOUT_FILES]
+    sources = [path for path in sources if path.is_file() and not path.is_symlink()]
+    if not sources:
+        return None
+    root = layout_backup_root()
+    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    target = root / time.strftime("%Y%m%d-%H%M%S")
+    suffix = 1
+    while target.exists():
+        suffix += 1
+        target = root / f"{time.strftime('%Y%m%d-%H%M%S')}-{suffix}"
+    target.mkdir(mode=0o700)
+    for path in sources:
+        shutil.copyfile(path, target / path.name)
+        os.chmod(target / path.name, 0o600)
+    for stale in list_layout_backups()[:-LAYOUT_BACKUPS_KEPT]:
+        shutil.rmtree(stale, ignore_errors=True)
+    return target
+
+
+def _plasmashell_service_active() -> bool:
+    if not shutil.which("systemctl"):
+        return False
+    active = subprocess.run(
+        ["systemctl", "--user", "is-active", "plasma-plasmashell.service"],
+        capture_output=True, text=True, timeout=5, check=False,
+    )
+    return active.returncode == 0 and active.stdout.strip() == "active"
+
+
+def _running_shell_config_home() -> Path | None:
+    """The config directory the running plasmashell reads, or None when no shell is running."""
+    if not shutil.which("pgrep"):
+        return None
+    found = subprocess.run(["pgrep", "-u", str(os.getuid()), "-x", "plasmashell"],
+                           capture_output=True, text=True, timeout=5, check=False)
+    for pid in found.stdout.split():
+        try:
+            entries = Path(f"/proc/{pid}/environ").read_bytes().split(b"\0")
+        except OSError:
+            continue
+        env = dict(entry.decode("utf-8", "replace").split("=", 1) for entry in entries if b"=" in entry)
+        if env.get("XDG_CONFIG_HOME"):
+            return Path(env["XDG_CONFIG_HOME"])
+        return Path(env.get("HOME") or Path.home()) / ".config"
+    return None
+
+
+def restore_layout(config_home: Path) -> dict:
+    """Put back the newest saved panel layout.
+
+    plasmashell rewrites its layout file when it exits, so a shell that owns
+    this config directory has to be down while the files are replaced. That is
+    only done through its systemd unit; a shell started any other way is left
+    alone and reported, and a shell using some other config directory is never
+    touched at all.
+    """
+    backups = list_layout_backups()
+    if not backups:
+        return {"ok": False, "error": "No saved Plasma layout was found."}
+    newest = backups[-1]
+    shell_home = _running_shell_config_home()
+    shell_owns_config = shell_home is not None and shell_home.resolve() == config_home.resolve()
+    managed = shell_owns_config and _plasmashell_service_active()
+    if shell_owns_config and not managed:
+        return {
+            "ok": False,
+            "error": "plasmashell is running outside systemd and would overwrite the restored layout on exit.",
+            "backup": str(newest),
+            "hint": f"Quit plasmashell, copy the files in {newest} to {config_home}, then start plasmashell again.",
+        }
+    if managed:
+        subprocess.run(["systemctl", "--user", "stop", "plasma-plasmashell.service"],
+                       capture_output=True, timeout=20, check=False)
+    restored = []
+    try:
+        for name in LAYOUT_FILES:
+            saved = newest / name
+            if saved.is_file() and not saved.is_symlink():
+                install_file(saved, config_home / name)
+                os.chmod(config_home / name, 0o600)
+                restored.append(name)
+    finally:
+        if managed:
+            subprocess.run(["systemctl", "--user", "start", "plasma-plasmashell.service"],
+                           capture_output=True, timeout=20, check=False)
+    return {"ok": bool(restored), "restored": restored, "from": str(newest), "plasmashell_restarted": managed}
+
+
+def plasma_version() -> tuple[int, ...] | None:
+    if not shutil.which("plasmashell"):
+        return None
+    try:
+        result = subprocess.run(["plasmashell", "--version"], capture_output=True, text=True, timeout=10, check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    match = re.search(r"(\d+)\.(\d+)(?:\.(\d+))?", result.stdout)
+    return tuple(int(part) for part in match.groups(default="0")) if match else None
+
+
+def font_installed(family: str) -> bool | None:
+    if not shutil.which("fc-list"):
+        return None
+    try:
+        result = subprocess.run(["fc-list", ":", "family"], capture_output=True, text=True, timeout=10, check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    wanted = family.casefold()
+    return any(wanted == name.strip().casefold() for line in result.stdout.splitlines() for name in line.split(","))
+
+
+def doctor() -> dict:
+    """Report what this machine needs for the theme, separating blockers from nice-to-haves."""
+    checks = []
+
+    def check(name: str, ok: bool | None, required: bool, detail: str) -> None:
+        checks.append({"name": name, "ok": ok, "required": required, "detail": detail})
+
+    version = plasma_version()
+    check(
+        "KDE Plasma 6.3 or newer",
+        None if version is None else version >= (6, 3),
+        True,
+        "plasmashell was not found" if version is None else "found " + ".".join(str(part) for part in version),
+    )
+    for tool in ("plasma-apply-lookandfeel", "plasma-apply-colorscheme", "plasma-apply-desktoptheme", "kwriteconfig6"):
+        check(tool, bool(shutil.which(tool)), True, "applies the theme")
+    check("kreadconfig6", bool(shutil.which("kreadconfig6")), False, "lets uninstall hand settings back to Breeze")
+    font = font_installed("JetBrains Mono")
+    check("JetBrains Mono font", font, False,
+          "the theme's typeface; without it the widgets use your fixed-width font and apps fall back to the default")
+    check("Qt shader compiler (qsb)", find_qsb() is not None, False, "only for 'sync'; prebuilt shaders are used otherwise")
+    check("Pillow", importlib.util.find_spec("PIL") is not None, False, "only for 'sync'; redraws the Global Theme preview")
+    blocked = [item["name"] for item in checks if item["required"] and item["ok"] is not True]
+    return {"ok": not blocked, "ready": not blocked, "blocked_by": blocked, "checks": checks,
+            "kde_session": "kde" in os.environ.get("XDG_CURRENT_DESKTOP", "").lower()}
 
 
 def status_theme(data_home: Path) -> dict:
@@ -1206,7 +1482,7 @@ def status_theme(data_home: Path) -> dict:
         "desktop_theme": (data_home / "plasma/desktoptheme" / THEME_ID / "metadata.json").is_file(),
         "color_scheme_dark": (data_home / "color-schemes/TonantzintlaDark.colors").is_file(),
         "color_scheme_light": (data_home / "color-schemes/TonantzintlaLight.colors").is_file(),
-        "window_decoration": (data_home / "aurorae/themes" / AURORAE_NAME / "metadata.json").is_file(),
+        "window_decoration": all((data_home / "aurorae/themes" / name / "metadata.json").is_file() for name in AURORAE_THEMES),
         "wallpaper": (data_home / "wallpapers" / WALLPAPER_NAME / "metadata.json").is_file(),
         "plasmoids": all((data_home / "plasma/plasmoids" / pid / "metadata.json").is_file() for pid in PLASMOID_IDS),
     }
@@ -1215,6 +1491,7 @@ def status_theme(data_home: Path) -> dict:
         "installed": all(checks.values()),
         "components": checks,
         "kde_session": "kde" in os.environ.get("XDG_CURRENT_DESKTOP", "").lower(),
+        "layout_backups": [entry.name for entry in list_layout_backups()],
         "tools": {
             name: bool(shutil.which(name))
             for name in ("plasma-apply-lookandfeel", "plasma-apply-desktoptheme", "plasma-apply-colorscheme", "plasma-apply-wallpaperimage", "kpackagetool6")
@@ -1238,9 +1515,12 @@ def apply_theme(data_home: Path, *, mode: str = "dark", reset_layout: bool = Tru
     if qml_cache.is_dir() and not qml_cache.is_symlink():
         shutil.rmtree(qml_cache, ignore_errors=True)
 
+    layout_backup = None
     if shutil.which("plasma-apply-lookandfeel"):
         cmd = ["plasma-apply-lookandfeel", "--apply", LOOK_AND_FEEL_ID]
         if reset_layout:
+            # --resetLayout replaces every panel the user has. Keep a copy they can return to.
+            layout_backup = backup_layout(xdg_config_home())
             cmd.append("--resetLayout")
         res = subprocess.run(cmd, capture_output=True, text=True, timeout=25, check=False)
         if res.returncode == 0:
@@ -1261,9 +1541,11 @@ def apply_theme(data_home: Path, *, mode: str = "dark", reset_layout: bool = Tru
                        capture_output=True, timeout=10, check=False)
         subprocess.run(["kwriteconfig6", "--file", "kwinrc", "--group", "org.kde.kdecoration2", "--key", "library", "org.kde.kwin.aurorae"],
                        capture_output=True, timeout=10, check=False)
-        subprocess.run(["kwriteconfig6", "--file", "kwinrc", "--group", "org.kde.kdecoration2", "--key", "theme", f"__aurorae__svg__{AURORAE_NAME}"],
-                       capture_output=True, timeout=10, check=False)
-        applied.append(f"window-decoration:{AURORAE_NAME}")
+        aurorae = AURORAE_LIGHT_NAME if mode == "light" else AURORAE_NAME
+        _write_setting("kwinrc", "org.kde.kdecoration2", "theme", f"__aurorae__svg__{aurorae}")
+        _write_setting("kwinrc", "org.kde.kdecoration2", "BorderSize", "Tiny")
+        _write_setting("kwinrc", "org.kde.kdecoration2", "BorderSizeAuto", "false", kind="bool")
+        applied.append(f"window-decoration:{aurorae}")
     if shutil.which("kbuildsycoca6"):
         subprocess.run(["kbuildsycoca6"], capture_output=True, timeout=15, check=False)
 
@@ -1302,7 +1584,11 @@ def apply_theme(data_home: Path, *, mode: str = "dark", reset_layout: bool = Tru
 
     if not applied and not errors:
         errors.append("KDE Plasma apply tools (plasma-apply-*) were not found on PATH.")
-    return {"ok": bool(applied) and not errors, "applied": applied, "errors": errors}
+    payload = {"ok": bool(applied) and not errors, "applied": applied, "errors": errors}
+    if layout_backup is not None:
+        payload["layout_backup"] = str(layout_backup)
+        payload["note"] = "Your previous panels were saved. 'restore-layout' brings them back."
+    return payload
 
 
 def validate_tree(root: Path) -> dict:
@@ -1319,10 +1605,8 @@ def validate_tree(root: Path) -> dict:
         f"desktoptheme/{THEME_ID}/widgets/tooltip.svgz",
         f"desktoptheme/{THEME_ID}/widgets/tasks.svgz",
         f"desktoptheme/{THEME_ID}/widgets/clock.svgz",
-        f"aurorae/themes/{AURORAE_NAME}/metadata.json",
-        f"aurorae/themes/{AURORAE_NAME}/{AURORAE_NAME}rc",
-        f"aurorae/themes/{AURORAE_NAME}/decoration.svg",
-        f"aurorae/themes/{AURORAE_NAME}/close.svg",
+        *[f"aurorae/themes/{name}/{leaf}" for name in AURORAE_THEMES
+          for leaf in ("metadata.json", f"{name}rc", "decoration.svg", "close.svg")],
         f"wallpapers/{WALLPAPER_NAME}/metadata.json",
         f"look-and-feel/{LOOK_AND_FEEL_ID}/metadata.json",
         f"look-and-feel/{LOOK_AND_FEEL_ID}/contents/defaults",
@@ -1348,15 +1632,64 @@ def validate_tree(root: Path) -> dict:
     return {"ok": not missing and not json_errors, "missing": missing, "json_errors": json_errors}
 
 
+def render_human(action: str, payload: dict) -> str:
+    """Plain-language summary of a result for people; --json stays the stable machine format."""
+    lines: list[str] = []
+    if payload.get("error"):
+        lines.append(f"Error: {payload['error']}")
+        if payload.get("hint"):
+            lines.append(payload["hint"])
+        return "\n".join(lines)
+    if action == "doctor":
+        for item in payload["checks"]:
+            if item["ok"] is True:
+                state = "ok"
+            elif item["required"]:
+                state = "missing"
+            else:
+                state = "optional"
+            suffix = "" if item["ok"] is True else f" ({item['detail']})"
+            lines.append(f"  [{state:^8}] {item['name']}{suffix}")
+        lines.append("Ready to install." if payload["ready"] else "Not ready: " + ", ".join(payload["blocked_by"]) + ".")
+        if payload["ready"] and not payload["kde_session"]:
+            lines.append("This is not a Plasma session, so 'apply' will only take effect once you log into one.")
+    elif action == "status":
+        lines.append("Installed." if payload["installed"] else "Not fully installed.")
+        for name, present in payload["components"].items():
+            lines.append(f"  [{'ok' if present else 'missing':^8}] {name.replace('_', ' ')}")
+        if payload["layout_backups"]:
+            lines.append(f"Saved panel layouts: {len(payload['layout_backups'])} (newest {payload['layout_backups'][-1]}).")
+    elif action in ("install", "sync"):
+        lines.append(f"Installed into {payload['installed_to']}." + (" Colors follow your Tonantzintla palette." if payload["synced_palette"] else ""))
+    elif action == "apply":
+        if payload["applied"]:
+            lines.append("Applied: " + ", ".join(payload["applied"]) + ".")
+        lines.extend(f"Failed: {error}" for error in payload["errors"])
+    elif action == "uninstall":
+        lines.append(f"Removed {len(payload['removed'])} installed item(s)." if payload["removed"] else "Nothing was installed.")
+        if payload["released_settings"]:
+            lines.append("Handed back to Breeze: " + ", ".join(payload["released_settings"]) + ".")
+    elif action == "restore-layout":
+        lines.append(f"Restored {', '.join(payload['restored'])} from {payload['from']}.")
+    else:
+        return json.dumps(payload, indent=2)
+    if payload.get("note"):
+        lines.append(payload["note"])
+    return "\n".join(lines)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("build", "install", "sync", "apply", "uninstall", "status", "validate"))
+    parser.add_argument("action", choices=(
+        "build", "install", "sync", "apply", "uninstall", "status", "validate", "restore-layout", "doctor",
+    ))
     parser.add_argument("--data-home", type=Path, default=xdg_data_home())
     parser.add_argument("--output", type=Path, default=PLASMA_SRC)
     parser.add_argument("--mode", choices=("dark", "light"), default="dark")
     parser.add_argument("--layout", action="store_true", help="Apply Tonantzintla's top bar + floating dock layout (default)")
     parser.add_argument("--keep-layout", action="store_true", help="Keep your existing Plasma panel layout when applying")
     parser.add_argument("--json", action="store_true")
+    parser.add_argument("--human", action="store_true", help="Print a short plain-language summary instead of JSON")
     args = parser.parse_args()
 
     try:
@@ -1373,18 +1706,17 @@ def main() -> int:
             payload = uninstall_theme(args.data_home)
         elif args.action == "status":
             payload = status_theme(args.data_home)
+        elif args.action == "restore-layout":
+            payload = restore_layout(xdg_config_home())
+        elif args.action == "doctor":
+            payload = doctor()
         else:
             payload = validate_tree(args.output)
     except Exception as error:
         payload = {"ok": False, "error": str(error)}
 
-    if args.json:
-        print(json.dumps(payload, indent=2))
-    else:
-        if payload.get("ok"):
-            print(json.dumps(payload, indent=2))
-        else:
-            print(json.dumps(payload, indent=2), file=sys.stderr)
+    rendered = render_human(args.action, payload) if args.human and not args.json else json.dumps(payload, indent=2)
+    print(rendered, file=sys.stdout if args.json or payload.get("ok") else sys.stderr)
     return 0 if payload.get("ok") else 1
 
 
