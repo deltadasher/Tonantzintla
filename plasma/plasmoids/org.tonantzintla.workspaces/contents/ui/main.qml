@@ -4,7 +4,7 @@ import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
-import org.kde.plasma.plasma5support as Plasma5Support
+import org.kde.plasma.workspace.dbus as DBus
 import org.kde.taskmanager as TaskManager
 
 PlasmoidItem {
@@ -29,6 +29,9 @@ PlasmoidItem {
         SpringAnimation { spring: 4.8; damping: 0.34; epsilon: 0.002 }
     }
 
+    // Extra room on each side of the active capsule so every gap in the row is the same width.
+    readonly property real activeRoom: 9.0
+
     property int hoveredIndex: -1
     property real hoverAmount: hoveredIndex >= 0 ? 1.0 : 0.0
     Behavior on hoverAmount { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
@@ -42,15 +45,27 @@ PlasmoidItem {
         id: virtualDesktopInfo
     }
 
-    Plasma5Support.DataSource {
+    // Desktop switching is one typed D-Bus call to KWin: no shell and no helper binary.
+    QtObject {
         id: switcher
-        engine: "executable"
-        connectedSources: []
-        onNewData: function(sourceName) { disconnectSource(sourceName); }
+        property real wheelRemainder: 0
         function activate(oneBasedIndex) {
             const total = Math.max(1, virtualDesktopInfo.numberOfDesktops);
             const target = Math.max(1, Math.min(total, Math.floor(Number(oneBasedIndex) || 1)));
-            connectSource("qdbus6 org.kde.KWin /KWin setCurrentDesktop " + target);
+            DBus.SessionBus.asyncCall({
+                "service": "org.kde.KWin",
+                "path": "/KWin",
+                "iface": "org.kde.KWin",
+                "member": "setCurrentDesktop",
+                "arguments": [new DBus.int32(target)]
+            });
+        }
+        // Touchpads send many small deltas; move one desktop per full wheel notch.
+        function wheel(angleDeltaY) {
+            wheelRemainder += angleDeltaY;
+            if (Math.abs(wheelRemainder) < 120) return;
+            step(wheelRemainder < 0 ? 1 : -1);
+            wheelRemainder = 0;
         }
         function step(delta) {
             const total = Math.max(1, virtualDesktopInfo.numberOfDesktops);
@@ -64,7 +79,7 @@ PlasmoidItem {
     Rectangle {
         id: pill
         anchors.centerIn: parent
-        implicitWidth: root.desktopCount <= 1 ? 42 : (32 + (root.desktopCount - 1) * 20)
+        implicitWidth: 32 + root.activeRoom * 2 + (root.desktopCount - 1) * 20
         implicitHeight: 26
         radius: 8
         color: groupHover.hovered
@@ -76,7 +91,7 @@ PlasmoidItem {
 
         WheelHandler {
             onWheel: function(event) {
-                if (event.angleDelta.y !== 0) switcher.step(event.angleDelta.y < 0 ? 1 : -1);
+                switcher.wheel(event.angleDelta.y);
             }
         }
 
@@ -102,11 +117,13 @@ PlasmoidItem {
                 id: hitZone
                 required property int index
                 readonly property real padX: 16.0
-                readonly property real stepX: root.desktopCount > 1 ? (pill.width - padX * 2.0) / (root.desktopCount - 1) : 0.0
-                readonly property real cx: root.desktopCount > 1 ? (padX + index * stepX) : (pill.width * 0.5)
-                x: cx - 10
+                readonly property real stepX: root.desktopCount > 1 ? (pill.width - padX * 2.0 - root.activeRoom * 2.0) / (root.desktopCount - 1) : 0.0
+                readonly property real shift: root.activeRoom * (Math.max(-1, Math.min(1, index - root.currentIndex)) + 1)
+                readonly property real cx: root.desktopCount > 1 ? (padX + index * stepX + shift) : (pill.width * 0.5)
+                readonly property real reach: index === root.currentIndex ? 14 : 10
+                x: cx - reach
                 y: 0
-                width: 20
+                width: reach * 2
                 height: pill.height
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor

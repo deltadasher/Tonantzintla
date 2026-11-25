@@ -15,6 +15,10 @@ PlasmoidItem {
     readonly property color accentColor: Kirigami.Theme.focusColor
     function linChannel(c) { return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
     readonly property color accentFg: (0.2126 * linChannel(accentColor.r) + 0.7152 * linChannel(accentColor.g) + 0.0722 * linChannel(accentColor.b)) > 0.34 ? "#101016" : "#f8f7fc"
+    // JetBrains Mono when it is installed; otherwise the system fixed-width font, so digits never shift.
+    readonly property string monoFamily: Qt.fontFamilies().indexOf("JetBrains Mono") >= 0
+        ? "JetBrains Mono"
+        : Kirigami.Theme.fixedWidthFont.family
 
     property real progressRatio: 0.0
     property real trackLengthUs: 0.0
@@ -37,6 +41,12 @@ PlasmoidItem {
         const m = Math.floor(secs / 60);
         const s = secs % 60;
         return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+    }
+
+    // The player picks this URL, and a web page can be the player. Only ordinary image locations are loaded.
+    function safeArtUrl(url) {
+        const value = String(url || "");
+        return (/^(file|https?):\/\//i.test(value) || /^data:image\//i.test(value)) ? value : "";
     }
 
     Mpris.Mpris2Model {
@@ -92,9 +102,9 @@ PlasmoidItem {
 
                     Image {
                         id: miniArtSrc
-                        source: root.hasPlayer ? (root.player.artUrl || "") : ""
+                        source: root.hasPlayer ? root.safeArtUrl(root.player.artUrl) : ""
                         visible: false
-                        asynchronous: false
+                        asynchronous: true
                         onStatusChanged: miniVinylCanvas.requestPaint()
                         onSourceChanged: miniVinylCanvas.requestPaint()
                     }
@@ -108,7 +118,7 @@ PlasmoidItem {
                             from: 0; to: 360; duration: 6000
                             loops: Animation.Infinite
                             running: root.hasPlayer
-                            paused: !root.playing
+                            paused: running && !root.playing
                         }
 
                         Connections {
@@ -204,7 +214,7 @@ PlasmoidItem {
                     Layout.maximumWidth: 148
                     text: root.hasPlayer ? (root.player.track || root.player.identity || "Media") : ""
                     color: root.playing ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor
-                    font.family: "JetBrains Mono"
+                    font.family: root.monoFamily
                     font.pixelSize: 11
                     font.weight: Font.Medium
                     elide: Text.ElideRight
@@ -219,6 +229,7 @@ PlasmoidItem {
                     Layout.preferredWidth: 14
                     Layout.preferredHeight: 14
                     source: "media-skip-backward"
+                    isMask: true
                     color: prevMouse.containsMouse ? root.accentColor : Kirigami.Theme.disabledTextColor
                     MouseArea {
                         id: prevMouse
@@ -236,6 +247,7 @@ PlasmoidItem {
                         anchors.centerIn: parent
                         width: 12; height: 12
                         source: root.playing ? "media-playback-pause" : "media-playback-start"
+                        isMask: true
                         color: playMouse.containsMouse ? root.accentFg : Kirigami.Theme.textColor
                     }
                     MouseArea {
@@ -248,6 +260,7 @@ PlasmoidItem {
                     Layout.preferredWidth: 14
                     Layout.preferredHeight: 14
                     source: "media-skip-forward"
+                    isMask: true
                     color: nextMouse.containsMouse ? root.accentColor : Kirigami.Theme.disabledTextColor
                     MouseArea {
                         id: nextMouse
@@ -283,8 +296,11 @@ PlasmoidItem {
             }
         }
 
+        // Pinned to the top so a resized popup keeps its rhythm instead of spreading the rows apart.
         ColumnLayout {
-            anchors.fill: parent
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
             anchors.margins: 16
             spacing: 14
 
@@ -331,9 +347,9 @@ PlasmoidItem {
 
                         Image {
                             id: deckArtSrc
-                            source: root.hasPlayer ? (root.player.artUrl || "") : ""
+                            source: root.hasPlayer ? root.safeArtUrl(root.player.artUrl) : ""
                             visible: false
-                            asynchronous: false
+                            asynchronous: true
                             onStatusChanged: sleeveCanvas.requestPaint()
                             onSourceChanged: sleeveCanvas.requestPaint()
                         }
@@ -401,7 +417,7 @@ PlasmoidItem {
                         Layout.fillWidth: true
                         text: root.hasPlayer ? (root.player.track || "No Track") : "Nothing Playing"
                         color: Kirigami.Theme.textColor
-                        font.family: "JetBrains Mono"
+                        font.family: root.monoFamily
                         font.pixelSize: 13
                         font.weight: Font.Bold
                         elide: Text.ElideRight
@@ -410,7 +426,7 @@ PlasmoidItem {
                         Layout.fillWidth: true
                         text: root.hasPlayer ? (root.player.artist || root.player.identity || "") : ""
                         color: Kirigami.Theme.disabledTextColor
-                        font.family: "JetBrains Mono"
+                        font.family: root.monoFamily
                         font.pixelSize: 11
                         elide: Text.ElideRight
                     }
@@ -492,14 +508,14 @@ PlasmoidItem {
                             ? root.fmtUs(deckRoot.hoverRatio * root.trackLengthUs)
                             : root.posLabel
                         color: deckRoot.hoveringWave && root.trackLengthUs > 0 ? root.accentColor : Kirigami.Theme.disabledTextColor
-                        font.family: "JetBrains Mono"
+                        font.family: root.monoFamily
                         font.pixelSize: 10
                     }
                     Item { Layout.fillWidth: true }
                     Text {
                         text: root.lenLabel
                         color: Kirigami.Theme.disabledTextColor
-                        font.family: "JetBrains Mono"
+                        font.family: root.monoFamily
                         font.pixelSize: 10
                     }
                 }
@@ -520,6 +536,7 @@ PlasmoidItem {
                         anchors.centerIn: parent
                         width: 16; height: 16
                         source: "media-skip-backward"
+                        isMask: true
                         color: deckPrev.containsMouse ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor
                     }
                     MouseArea { id: deckPrev; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: if (root.hasPlayer) root.player.Previous() }
@@ -533,6 +550,7 @@ PlasmoidItem {
                         anchors.centerIn: parent
                         width: 17; height: 17
                         source: root.playing ? "media-playback-pause" : "media-playback-start"
+                        isMask: true
                         color: root.accentFg
                     }
                     MouseArea { id: deckPlay; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: if (root.hasPlayer) root.player.PlayPause() }
@@ -547,6 +565,7 @@ PlasmoidItem {
                         anchors.centerIn: parent
                         width: 16; height: 16
                         source: "media-skip-forward"
+                        isMask: true
                         color: deckNext.containsMouse ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor
                     }
                     MouseArea { id: deckNext; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: if (root.hasPlayer) root.player.Next() }

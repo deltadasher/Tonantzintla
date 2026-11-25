@@ -494,11 +494,13 @@ void main() {
     float cy = res.y * 0.5;
     float padX = 16.0;
     float usableW = max(1.0, res.x - padX * 2.0);
-    float stepX = (count > 1) ? (usableW / float(count - 1)) : 0.0;
+    // The active capsule is wider than a dot, so it gets extra room on both sides and every gap stays equal.
+    float room = 9.0;
+    float stepX = (count > 1) ? ((usableW - room * 2.0) / float(count - 1)) : 0.0;
 
     // Active liquid capsule position + motion stretch while gliding between desktops
     float actIdx = clamp(uActivePos, 0.0, float(count - 1));
-    float actX = (count > 1) ? (padX + actIdx * stepX) : (res.x * 0.5);
+    float actX = (count > 1) ? (padX + actIdx * stepX + room) : (res.x * 0.5);
     float transit = sin(fract(actIdx) * 3.14159265);
     float halfLen = 8.5 + transit * 5.2;
     float actR = 3.65 - transit * 0.35;
@@ -513,7 +515,7 @@ void main() {
     for (int i = 0; i < 10; i++) {
         if (i >= count) break;
         float fi = float(i);
-        float dx = (count > 1) ? (padX + fi * stepX) : (res.x * 0.5);
+        float dx = (count > 1) ? (padX + fi * stepX + room * (clamp(fi - actIdx, -1.0, 1.0) + 1.0)) : (res.x * 0.5);
         float distToActive = abs(fi - actIdx);
         float isHov = (abs(fi - uHoverIdx) < 0.25) ? uHoverAmt : 0.0;
         float dotHalf = isHov * 2.2;

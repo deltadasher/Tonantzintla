@@ -13,6 +13,10 @@ PlasmoidItem {
     readonly property color accentColor: Kirigami.Theme.focusColor
     function linChannel(c) { return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
     readonly property color accentFg: (0.2126 * linChannel(accentColor.r) + 0.7152 * linChannel(accentColor.g) + 0.0722 * linChannel(accentColor.b)) > 0.34 ? "#101016" : "#f8f7fc"
+    // JetBrains Mono when it is installed; otherwise the system fixed-width font, so digits never shift.
+    readonly property string monoFamily: Qt.fontFamilies().indexOf("JetBrains Mono") >= 0
+        ? "JetBrains Mono"
+        : Kirigami.Theme.fixedWidthFont.family
 
     readonly property real lunarCycle: {
         const refMs = Date.UTC(2000, 0, 6, 18, 14, 0);
@@ -22,6 +26,8 @@ PlasmoidItem {
         if (phase < 0) phase += 1.0;
         return phase;
     }
+    // The disc only changes visibly every few hours; repaint on that step, not every second.
+    readonly property int moonStep: Math.round(lunarCycle * 240)
 
     Timer {
         interval: 1000
@@ -53,7 +59,7 @@ PlasmoidItem {
                 Text {
                     text: Qt.formatTime(root.now, "HH:mm:ss")
                     color: Kirigami.Theme.textColor
-                    font.family: "JetBrains Mono"
+                    font.family: root.monoFamily
                     font.pixelSize: 12
                     font.weight: Font.Bold
                 }
@@ -65,7 +71,7 @@ PlasmoidItem {
                 Text {
                     text: Qt.formatDate(root.now, "ddd dd MMM")
                     color: Kirigami.Theme.disabledTextColor
-                    font.family: "JetBrains Mono"
+                    font.family: root.monoFamily
                     font.pixelSize: 11
                     font.weight: Font.Medium
                 }
@@ -74,6 +80,10 @@ PlasmoidItem {
                     width: 12; height: 12
                     anchors.verticalCenter: parent.verticalCenter
                     antialiasing: true
+                    Connections {
+                        target: root
+                        function onMoonStepChanged() { barMoon.requestPaint(); }
+                    }
                     onPaint: {
                         const ctx = getContext("2d");
                         ctx.clearRect(0, 0, width, height);
@@ -118,6 +128,9 @@ PlasmoidItem {
         property int viewYear: root.now.getFullYear()
         property int viewMonth: root.now.getMonth()
         readonly property bool isCurrentMonth: viewYear === root.now.getFullYear() && viewMonth === root.now.getMonth()
+        // Week start and weekend follow the system region instead of assuming Monday and Sat/Sun.
+        readonly property int firstDay: Qt.locale().firstDayOfWeek
+        readonly property var workDays: Qt.locale().weekDays
 
         // Continuous sub-second timestamp for buttery 60-144Hz sweeping golden second comet
         property real smoothSecs: root.now.getSeconds() + root.now.getMilliseconds() / 1000.0
@@ -138,7 +151,7 @@ PlasmoidItem {
 
         Connections {
             target: root
-            function onLunarCycleChanged() {
+            function onMoonStepChanged() {
                 if (calRoot.visible) popupMoon.requestPaint();
             }
         }
@@ -153,8 +166,8 @@ PlasmoidItem {
         }
         function cellDate(cellIndex) {
             const first = new Date(viewYear, viewMonth, 1);
-            const mondayOffset = (first.getDay() + 6) % 7;
-            return new Date(viewYear, viewMonth, 1 - mondayOffset + cellIndex);
+            const lead = (first.getDay() - firstDay + 7) % 7;
+            return new Date(viewYear, viewMonth, 1 - lead + cellIndex);
         }
 
         ColumnLayout {
@@ -187,7 +200,7 @@ PlasmoidItem {
                     Text {
                         text: Qt.formatTime(root.now, "HH:mm:ss")
                         color: root.accentColor
-                        font.family: "JetBrains Mono"
+                        font.family: root.monoFamily
                         font.pixelSize: 24
                         font.weight: Font.Bold
                     }
@@ -226,7 +239,7 @@ PlasmoidItem {
                         Text {
                             text: Qt.formatDate(root.now, "dddd, MMM d")
                             color: Kirigami.Theme.disabledTextColor
-                            font.family: "JetBrains Mono"
+                            font.family: root.monoFamily
                             font.pixelSize: 11
                             font.weight: Font.Medium
                             anchors.verticalCenter: parent.verticalCenter
@@ -248,7 +261,7 @@ PlasmoidItem {
                     Layout.preferredWidth: 26; Layout.preferredHeight: 26; radius: 7
                     color: prevMo.containsMouse ? Kirigami.Theme.alternateBackgroundColor : "transparent"
                     Behavior on color { ColorAnimation { duration: 110 } }
-                    Text { anchors.centerIn: parent; text: "‹"; color: prevMo.containsMouse ? root.accentColor : Kirigami.Theme.textColor; font.family: "JetBrains Mono"; font.pixelSize: 15; font.bold: true }
+                    Text { anchors.centerIn: parent; text: "‹"; color: prevMo.containsMouse ? root.accentColor : Kirigami.Theme.textColor; font.family: root.monoFamily; font.pixelSize: 15; font.bold: true }
                     MouseArea { id: prevMo; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: calRoot.shiftMonth(-1) }
                 }
                 Text {
@@ -256,7 +269,7 @@ PlasmoidItem {
                     horizontalAlignment: Text.AlignHCenter
                     text: Qt.formatDate(new Date(calRoot.viewYear, calRoot.viewMonth, 1), "MMMM yyyy")
                     color: Kirigami.Theme.textColor
-                    font.family: "JetBrains Mono"
+                    font.family: root.monoFamily
                     font.pixelSize: 12
                     font.weight: Font.Bold
                     MouseArea {
@@ -272,14 +285,14 @@ PlasmoidItem {
                     visible: !calRoot.isCurrentMonth
                     Layout.preferredWidth: todayTxt.implicitWidth + 12; Layout.preferredHeight: 22; radius: 6
                     color: Kirigami.Theme.alternateBackgroundColor
-                    Text { id: todayTxt; anchors.centerIn: parent; text: "Today"; color: root.accentColor; font.family: "JetBrains Mono"; font.pixelSize: 10; font.weight: Font.Bold }
+                    Text { id: todayTxt; anchors.centerIn: parent; text: "Today"; color: root.accentColor; font.family: root.monoFamily; font.pixelSize: 10; font.weight: Font.Bold }
                     MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { calRoot.viewYear = root.now.getFullYear(); calRoot.viewMonth = root.now.getMonth(); } }
                 }
                 Rectangle {
                     Layout.preferredWidth: 26; Layout.preferredHeight: 26; radius: 7
                     color: nextMo.containsMouse ? Kirigami.Theme.alternateBackgroundColor : "transparent"
                     Behavior on color { ColorAnimation { duration: 110 } }
-                    Text { anchors.centerIn: parent; text: "›"; color: nextMo.containsMouse ? root.accentColor : Kirigami.Theme.textColor; font.family: "JetBrains Mono"; font.pixelSize: 15; font.bold: true }
+                    Text { anchors.centerIn: parent; text: "›"; color: nextMo.containsMouse ? root.accentColor : Kirigami.Theme.textColor; font.family: root.monoFamily; font.pixelSize: 15; font.bold: true }
                     MouseArea { id: nextMo; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: calRoot.shiftMonth(1) }
                 }
             }
@@ -289,17 +302,17 @@ PlasmoidItem {
                 columns: 7
                 columnSpacing: 2
                 Repeater {
-                    model: ["M", "T", "W", "T", "F", "S", "S"]
+                    model: 7
                     Text {
                         required property int index
-                        required property string modelData
+                        readonly property int weekday: (calRoot.firstDay + index) % 7
                         Layout.fillWidth: true
                         horizontalAlignment: Text.AlignHCenter
-                        text: modelData
-                        color: index >= 5
+                        text: Qt.locale().dayName(weekday, Locale.NarrowFormat)
+                        color: calRoot.workDays.indexOf(weekday) < 0
                             ? Qt.rgba(root.accentColor.r, root.accentColor.g, root.accentColor.b, 0.70)
                             : Kirigami.Theme.disabledTextColor
-                        font.family: "JetBrains Mono"
+                        font.family: root.monoFamily
                         font.pixelSize: 10
                         font.weight: Font.Bold
                     }
@@ -342,7 +355,7 @@ PlasmoidItem {
                                 text: dayCell.dt.getDate()
                                 color: dayCell.isToday ? root.accentFg : Kirigami.Theme.textColor
                                 opacity: dayCell.isToday ? 1.0 : (dayCell.inMonth ? 0.92 : 0.24)
-                                font.family: "JetBrains Mono"
+                                font.family: root.monoFamily
                                 font.pixelSize: 11
                                 font.weight: dayCell.isToday ? Font.Bold : Font.Medium
                             }

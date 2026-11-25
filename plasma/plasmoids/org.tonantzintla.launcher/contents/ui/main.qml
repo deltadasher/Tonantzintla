@@ -5,7 +5,7 @@ import QtQuick.Controls as QQC2
 import org.kde.kirigami as Kirigami
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
-import org.kde.plasma.plasma5support as Plasma5Support
+import org.kde.taskmanager as TaskManager
 import org.kde.plasma.private.kicker as Kicker
 import org.kde.plasma.private.sessions as Sessions
 
@@ -36,6 +36,10 @@ PlasmoidItem {
         return (0.2126 * linChannel(col.r) + 0.7152 * linChannel(col.g) + 0.0722 * linChannel(col.b)) > 0.34 ? "#101016" : "#f8f7fc";
     }
     readonly property color accentFg: contrastFor(accentColor)
+    // JetBrains Mono when it is installed; otherwise the system fixed-width font, so digits never shift.
+    readonly property string monoFamily: Qt.fontFamilies().indexOf("JetBrains Mono") >= 0
+        ? "JetBrains Mono"
+        : Kirigami.Theme.fixedWidthFont.family
 
     readonly property real lunarCycle: {
         const refMs = Date.UTC(2000, 0, 6, 18, 14, 0);
@@ -45,6 +49,8 @@ PlasmoidItem {
         if (phase < 0) phase += 1.0;
         return phase;
     }
+    // The disc only changes visibly every few hours; repaint on that step, not every second.
+    readonly property int moonStep: Math.round(lunarCycle * 240)
 
     // Safe arithmetic-only evaluator (no eval/Function)
     function evalSafeMath(expr) {
@@ -86,7 +92,7 @@ PlasmoidItem {
                 return base;
             }
             function parseUnary() {
-                if (peek() === "-") { take(); return -parseUnary(); }
+                if (peek() === "-") { take(); return -parsePow(); }
                 if (peek() === "+") { take(); return parseUnary(); }
                 if (peek() === "(") {
                     take();
@@ -164,15 +170,35 @@ PlasmoidItem {
         id: sessions
     }
 
-    Plasma5Support.DataSource {
-        id: quickExec
-        engine: "executable"
-        connectedSources: []
-        onNewData: function(sourceName) { disconnectSource(sourceName); }
-        function runCmd(cmd) {
-            connectSource(cmd);
-            root.expanded = false;
+    // Quick actions open the user's own default apps through the task manager. Nothing passes through a shell.
+    readonly property var quickActions: [
+        { icon: "system-file-manager", url: "preferred://filemanager", tip: "Files" },
+        { icon: "utilities-terminal", url: "preferred://terminal", tip: "Terminal" },
+        { icon: "internet-web-browser", url: "preferred://browser", tip: "Browser" },
+        { icon: "preferences-system", url: "applications:systemsettings.desktop", tip: "Settings" }
+    ]
+
+    TaskManager.TasksModel {
+        id: quickTasks
+        launcherList: root.quickActions.map(function(action) { return action.url; })
+        separateLaunchers: true
+        launchInPlace: false
+        groupMode: TaskManager.TasksModel.GroupDisabled
+        sortMode: TaskManager.TasksModel.SortDisabled
+    }
+
+    function runQuickAction(slot) {
+        let row = -1;
+        let launchers = 0;
+        for (let i = 0; i < quickTasks.count; i++) {
+            if (!quickTasks.data(quickTasks.makeModelIndex(i), TaskManager.AbstractTasksModel.IsLauncher)) continue;
+            if (launchers === slot) row = i;
+            launchers++;
         }
+        // Slots are positional, so they are only trusted when every default app resolved.
+        if (row < 0 || launchers !== quickActions.length) return;
+        quickTasks.requestNewInstance(quickTasks.makeModelIndex(row));
+        root.expanded = false;
     }
 
     Kicker.RootModel {
@@ -327,6 +353,13 @@ PlasmoidItem {
         rebuildFiltered();
         if (orbitalMode && expanded) triggerOrbitBloom();
     }
+    onSelectedAppIndexChanged: {
+        // Arrow keys can walk past the twelve visible nodes; bring the orbit page along.
+        if (orbitalMode && selectedAppIndex >= 0 && searchText.trim().length === 0) {
+            const page = Math.floor(selectedAppIndex / orbitPageSize);
+            if (page !== orbitPage) orbitPage = page;
+        }
+    }
     onOrbitPageChanged: {
         typingEnergy = 0.65;
         if (orbitalMode && expanded) triggerOrbitBloom();
@@ -420,7 +453,7 @@ PlasmoidItem {
                     searchList.positionViewAtIndex(root.selectedAppIndex, ListView.Contain);
                 }
             }
-            function onLunarCycleChanged() {
+            function onMoonStepChanged() {
                 if (deck.visible) footerMoon.requestPaint();
             }
         }
@@ -467,6 +500,7 @@ PlasmoidItem {
                             Layout.preferredWidth: 15
                             Layout.preferredHeight: 15
                             source: "search"
+                            isMask: true
                             color: searchField.activeFocus ? root.accentColor : Kirigami.Theme.disabledTextColor
                         }
 
@@ -478,7 +512,7 @@ PlasmoidItem {
                             placeholderText: "Search"
                             placeholderTextColor: Kirigami.Theme.disabledTextColor
                             color: Kirigami.Theme.textColor
-                            font.family: "JetBrains Mono"
+                            font.family: root.monoFamily
                             font.pixelSize: 13
                             background: Item {}
                             selectByMouse: true
@@ -524,7 +558,7 @@ PlasmoidItem {
                                 anchors.centerIn: parent
                                 text: root.mathCopied ? "Copied" : ("= " + root.mathResult)
                                 color: root.accentFg
-                                font.family: "JetBrains Mono"
+                                font.family: root.monoFamily
                                 font.pixelSize: 12
                                 font.weight: Font.Bold
                             }
@@ -543,6 +577,7 @@ PlasmoidItem {
                             Layout.preferredWidth: 14
                             Layout.preferredHeight: 14
                             source: "edit-clear"
+                            isMask: true
                             color: clearMouse.containsMouse ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor
                             MouseArea {
                                 id: clearMouse
@@ -707,7 +742,7 @@ PlasmoidItem {
                                     anchors.centerIn: parent
                                     text: catPill.modelData.label
                                     color: catPill.active ? root.accentFg : (catMouse.containsMouse ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor)
-                                    font.family: "JetBrains Mono"
+                                    font.family: root.monoFamily
                                     font.pixelSize: 12
                                     font.weight: catPill.active ? Font.Bold : Font.Medium
                                 }
@@ -892,7 +927,7 @@ PlasmoidItem {
                         horizontalAlignment: Text.AlignHCenter
                         text: activeBadge.cachedName
                         color: Kirigami.Theme.textColor
-                        font.family: "JetBrains Mono"
+                        font.family: root.monoFamily
                         font.pixelSize: 12
                         font.weight: Font.Bold
                         elide: Text.ElideRight
@@ -961,7 +996,7 @@ PlasmoidItem {
                         anchors.verticalCenter: parent.verticalCenter
                         color: pgPrevMouse.containsMouse ? root.accentColor : Kirigami.Theme.disabledTextColor
                         opacity: pgPrevMouse.containsMouse ? 1.0 : 0.55
-                        font.family: "JetBrains Mono"
+                        font.family: root.monoFamily
                         font.pixelSize: 13
                         font.bold: true
                         MouseArea {
@@ -978,11 +1013,15 @@ PlasmoidItem {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 6
                         Repeater {
+                            id: pgDots
+                            // Eight dots at most; the window slides so the current page always has one.
+                            readonly property int first: Math.max(0, Math.min(root.orbitPageCount - 8, root.orbitPage - 3))
                             model: Math.min(8, root.orbitPageCount)
                             Rectangle {
                                 id: pgDot
                                 required property int index
-                                readonly property bool active: index === root.orbitPage
+                                readonly property int page: pgDots.first + index
+                                readonly property bool active: page === root.orbitPage
                                 width: active ? 18 : 5
                                 height: 5
                                 radius: 2.5
@@ -996,7 +1035,7 @@ PlasmoidItem {
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: {
-                                        root.orbitPage = pgDot.index;
+                                        root.orbitPage = pgDot.page;
                                         root.selectedAppIndex = -1;
                                     }
                                 }
@@ -1009,7 +1048,7 @@ PlasmoidItem {
                         anchors.verticalCenter: parent.verticalCenter
                         color: pgNextMouse.containsMouse ? root.accentColor : Kirigami.Theme.disabledTextColor
                         opacity: pgNextMouse.containsMouse ? 1.0 : 0.55
-                        font.family: "JetBrains Mono"
+                        font.family: root.monoFamily
                         font.pixelSize: 13
                         font.bold: true
                         MouseArea {
@@ -1081,7 +1120,7 @@ PlasmoidItem {
                                 horizontalAlignment: Text.AlignHCenter
                                 text: cardWrap.name
                                 color: cardWrap.highlighted ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor
-                                font.family: "JetBrains Mono"
+                                font.family: root.monoFamily
                                 font.pixelSize: 11
                                 font.weight: cardWrap.highlighted ? Font.Bold : Font.Medium
                                 elide: Text.ElideRight
@@ -1169,7 +1208,7 @@ PlasmoidItem {
                                     Layout.fillWidth: true
                                     text: resRow.name
                                     color: Kirigami.Theme.textColor
-                                    font.family: "JetBrains Mono"
+                                    font.family: root.monoFamily
                                     font.pixelSize: 12
                                     font.weight: Font.Bold
                                     elide: Text.ElideRight
@@ -1179,7 +1218,7 @@ PlasmoidItem {
                                     Layout.fillWidth: true
                                     text: resRow.desc
                                     color: Kirigami.Theme.disabledTextColor
-                                    font.family: "JetBrains Mono"
+                                    font.family: root.monoFamily
                                     font.pixelSize: 10
                                     elide: Text.ElideRight
                                 }
@@ -1207,14 +1246,14 @@ PlasmoidItem {
                         anchors.horizontalCenter: parent.horizontalCenter
                         text: root.searchText.trim()
                         color: Kirigami.Theme.disabledTextColor
-                        font.family: "JetBrains Mono"
+                        font.family: root.monoFamily
                         font.pixelSize: 13
                     }
                     Text {
                         anchors.horizontalCenter: parent.horizontalCenter
                         text: "= " + root.mathResult
                         color: root.accentColor
-                        font.family: "JetBrains Mono"
+                        font.family: root.monoFamily
                         font.pixelSize: 42
                         font.weight: Font.Bold
                     }
@@ -1234,7 +1273,7 @@ PlasmoidItem {
                             anchors.centerIn: parent
                             text: root.mathCopied ? "Copied" : "Copy result"
                             color: root.mathCopied ? root.accentFg : Kirigami.Theme.textColor
-                            font.family: "JetBrains Mono"
+                            font.family: root.monoFamily
                             font.pixelSize: 11
                             font.weight: Font.Medium
                         }
@@ -1254,7 +1293,7 @@ PlasmoidItem {
                     anchors.centerIn: parent
                     text: "No matching applications"
                     color: Kirigami.Theme.disabledTextColor
-                    font.family: "JetBrains Mono"
+                    font.family: root.monoFamily
                     font.pixelSize: 12
                 }
             }
@@ -1309,7 +1348,7 @@ PlasmoidItem {
                     Text {
                         text: Qt.formatTime(root.now, "HH:mm")
                         color: Kirigami.Theme.textColor
-                        font.family: "JetBrains Mono"
+                        font.family: root.monoFamily
                         font.pixelSize: 12
                         font.weight: Font.Bold
                         anchors.verticalCenter: parent.verticalCenter
@@ -1317,7 +1356,7 @@ PlasmoidItem {
                     Text {
                         text: Qt.formatDate(root.now, "ddd dd MMM")
                         color: Kirigami.Theme.disabledTextColor
-                        font.family: "JetBrains Mono"
+                        font.family: root.monoFamily
                         font.pixelSize: 11
                         anchors.verticalCenter: parent.verticalCenter
                     }
@@ -1329,14 +1368,10 @@ PlasmoidItem {
                 Row {
                     spacing: 4
                     Repeater {
-                        model: [
-                            { icon: "system-file-manager", cmd: "dolphin", tip: "Files" },
-                            { icon: "utilities-terminal", cmd: "konsole", tip: "Terminal" },
-                            { icon: "internet-web-browser", cmd: "xdg-open https://", tip: "Browser" },
-                            { icon: "preferences-system", cmd: "systemsettings", tip: "Settings" }
-                        ]
+                        model: root.quickActions
                         Rectangle {
                             id: qBtn
+                            required property int index
                             required property var modelData
                             width: 28; height: 28; radius: 8
                             color: qMouse.containsMouse
@@ -1358,7 +1393,7 @@ PlasmoidItem {
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: quickExec.runCmd(qBtn.modelData.cmd)
+                                onClicked: root.runQuickAction(qBtn.index)
                             }
                         }
                     }
@@ -1388,6 +1423,7 @@ PlasmoidItem {
                                 anchors.centerIn: parent
                                 width: 15; height: 15
                                 source: sBtn.modelData.icon
+                                isMask: true
                                 color: sMouse.containsMouse
                                     ? (sBtn.modelData.danger ? "#101016" : Kirigami.Theme.textColor)
                                     : Kirigami.Theme.disabledTextColor
