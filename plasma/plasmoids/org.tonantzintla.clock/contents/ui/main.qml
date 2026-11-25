@@ -9,17 +9,33 @@ PlasmoidItem {
     id: root
     property date now: new Date()
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
+
+    readonly property color accentColor: Kirigami.Theme.focusColor
+    function linChannel(c) { return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+    readonly property color accentFg: (0.2126 * linChannel(accentColor.r) + 0.7152 * linChannel(accentColor.g) + 0.0722 * linChannel(accentColor.b)) > 0.34 ? "#101016" : "#f8f7fc"
+
+    readonly property real lunarCycle: {
+        const refMs = Date.UTC(2000, 0, 6, 18, 14, 0);
+        const days = (now.getTime() - refMs) / 86400000.0;
+        const synodic = 29.53058867;
+        let phase = (days % synodic) / synodic;
+        if (phase < 0) phase += 1.0;
+        return phase;
+    }
+
     Timer {
         interval: 1000
         running: true
         repeat: true
         onTriggered: root.now = new Date()
     }
+
     compactRepresentation: Item {
         Layout.minimumWidth: clockPill.implicitWidth
         Layout.preferredWidth: clockPill.implicitWidth
         Layout.maximumWidth: clockPill.implicitWidth
         Layout.fillHeight: true
+
         Rectangle {
             id: clockPill
             anchors.centerIn: parent
@@ -28,10 +44,12 @@ PlasmoidItem {
             radius: 8
             color: clockMouse.containsMouse || root.expanded ? Kirigami.Theme.alternateBackgroundColor : "transparent"
             Behavior on color { ColorAnimation { duration: 120 } }
+
             Row {
                 id: clockRow
                 anchors.centerIn: parent
                 spacing: 8
+
                 Text {
                     text: Qt.formatTime(root.now, "HH:mm:ss")
                     color: Kirigami.Theme.textColor
@@ -42,7 +60,7 @@ PlasmoidItem {
                 Rectangle {
                     width: 4; height: 4; radius: 2
                     anchors.verticalCenter: parent.verticalCenter
-                    color: Kirigami.Theme.focusColor
+                    color: root.accentColor
                 }
                 Text {
                     text: Qt.formatDate(root.now, "ddd dd MMM")
@@ -50,6 +68,36 @@ PlasmoidItem {
                     font.family: "JetBrains Mono"
                     font.pixelSize: 11
                     font.weight: Font.Medium
+                }
+                Canvas {
+                    id: barMoon
+                    width: 12; height: 12
+                    anchors.verticalCenter: parent.verticalCenter
+                    antialiasing: true
+                    onPaint: {
+                        const ctx = getContext("2d");
+                        ctx.clearRect(0, 0, width, height);
+                        const cx = 6, cy = 6, r = 4.6;
+                        ctx.fillStyle = "rgba(140,142,158,0.22)";
+                        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+                        const phase = root.lunarCycle;
+                        const waxing = phase < 0.5;
+                        const k = Math.cos(phase * 2.0 * Math.PI);
+                        ctx.save();
+                        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
+                        ctx.fillStyle = "#eee9dc";
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, r, waxing ? -Math.PI * 0.5 : Math.PI * 0.5, waxing ? Math.PI * 0.5 : Math.PI * 1.5);
+                        ctx.closePath(); ctx.fill();
+                        ctx.fillStyle = (k >= 0) ? "#16161d" : "#eee9dc";
+                        ctx.beginPath();
+                        ctx.ellipse(cx - Math.abs(k) * r, cy - r, Math.abs(k) * r * 2, r * 2);
+                        ctx.fill();
+                        ctx.restore();
+                        ctx.strokeStyle = "rgba(238,233,220,0.24)";
+                        ctx.lineWidth = 0.75;
+                        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+                    }
                 }
             }
             MouseArea {
@@ -61,16 +109,43 @@ PlasmoidItem {
             }
         }
     }
+
+    // ULTRA-CLEAN GLSL SCALLOPED CHRONOMETER & CALENDAR POPUP
     fullRepresentation: Item {
         id: calRoot
-        implicitWidth: 284
-        implicitHeight: 332
+        implicitWidth: 312
+        implicitHeight: 382
         property int viewYear: root.now.getFullYear()
         property int viewMonth: root.now.getMonth()
         readonly property bool isCurrentMonth: viewYear === root.now.getFullYear() && viewMonth === root.now.getMonth()
-        readonly property color accentColor: Kirigami.Theme.focusColor
-        function linChannel(c) { return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
-        readonly property color accentFg: (0.2126 * linChannel(accentColor.r) + 0.7152 * linChannel(accentColor.g) + 0.0722 * linChannel(accentColor.b)) > 0.34 ? "#101016" : "#f8f7fc"
+
+        // Continuous sub-second timestamp for buttery 60-144Hz sweeping golden second comet
+        property real smoothSecs: root.now.getSeconds() + root.now.getMilliseconds() / 1000.0
+        property real smoothMins: root.now.getMinutes() + smoothSecs / 60.0
+        property real smoothHrs: (root.now.getHours() % 12) + smoothMins / 60.0
+
+        FrameAnimation {
+            running: calRoot.visible
+            onTriggered: {
+                const d = new Date();
+                const s = d.getSeconds() + d.getMilliseconds() / 1000.0;
+                const m = d.getMinutes() + s / 60.0;
+                calRoot.smoothSecs = s;
+                calRoot.smoothMins = m;
+                calRoot.smoothHrs = (d.getHours() % 12) + m / 60.0;
+            }
+        }
+
+        Connections {
+            target: root
+            function onLunarCycleChanged() {
+                if (calRoot.visible) popupMoon.requestPaint();
+            }
+        }
+        onVisibleChanged: {
+            if (calRoot.visible) popupMoon.requestPaint();
+        }
+
         function shiftMonth(delta) {
             const d = new Date(viewYear, viewMonth + delta, 1);
             viewYear = d.getFullYear();
@@ -84,121 +159,193 @@ PlasmoidItem {
 
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 10
-            spacing: 10
+            anchors.margins: 16
+            spacing: 12
 
-            // Large tabular clock header
-            ColumnLayout {
+            RowLayout {
                 Layout.fillWidth: true
-                spacing: 2
-                Text {
-                    Layout.fillWidth: true
-                    horizontalAlignment: Text.AlignHCenter
-                    text: Qt.formatTime(root.now, "HH:mm:ss")
-                    color: calRoot.accentColor
-                    font.family: "JetBrains Mono"
-                    font.pixelSize: 32
-                    font.weight: Font.Bold
+                spacing: 14
+
+                // GPU SDF 12-Lobed Scalloped Chronometer Shader
+                ShaderEffect {
+                    id: analogDial
+                    Layout.preferredWidth: 88
+                    Layout.preferredHeight: 88
+                    property real uHourAngle: (calRoot.smoothHrs / 12.0) * 6.2831853 - 1.5707963
+                    property real uMinAngle: (calRoot.smoothMins / 60.0) * 6.2831853 - 1.5707963
+                    property real uSecAngle: (calRoot.smoothSecs / 60.0) * 6.2831853 - 1.5707963
+                    property vector2d uResolution: Qt.vector2d(width, height)
+                    property color uAccent: root.accentColor
+                    property color uText: Kirigami.Theme.textColor
+                    property color uSurface: Kirigami.Theme.alternateBackgroundColor
+                    fragmentShader: Qt.resolvedUrl("../shaders/clock_dial.frag.qsb")
                 }
-                Text {
+
+                ColumnLayout {
                     Layout.fillWidth: true
-                    horizontalAlignment: Text.AlignHCenter
-                    text: Qt.formatDate(root.now, "dddd, MMMM d, yyyy")
-                    color: Kirigami.Theme.disabledTextColor
-                    font.family: "JetBrains Mono"
-                    font.pixelSize: 11
+                    spacing: 5
+                    Text {
+                        text: Qt.formatTime(root.now, "HH:mm:ss")
+                        color: root.accentColor
+                        font.family: "JetBrains Mono"
+                        font.pixelSize: 24
+                        font.weight: Font.Bold
+                    }
+                    Row {
+                        spacing: 7
+                        Canvas {
+                            id: popupMoon
+                            width: 13; height: 13
+                            anchors.verticalCenter: parent.verticalCenter
+                            antialiasing: true
+                            onPaint: {
+                                const ctx = getContext("2d");
+                                ctx.clearRect(0, 0, width, height);
+                                const cx = 6.5, cy = 6.5, r = 5.0;
+                                ctx.fillStyle = "rgba(140,142,158,0.22)";
+                                ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+                                const phase = root.lunarCycle;
+                                const waxing = phase < 0.5;
+                                const k = Math.cos(phase * 2.0 * Math.PI);
+                                ctx.save();
+                                ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
+                                ctx.fillStyle = "#eee9dc";
+                                ctx.beginPath();
+                                ctx.arc(cx, cy, r, waxing ? -Math.PI * 0.5 : Math.PI * 0.5, waxing ? Math.PI * 0.5 : Math.PI * 1.5);
+                                ctx.closePath(); ctx.fill();
+                                ctx.fillStyle = (k >= 0) ? "#16161d" : "#eee9dc";
+                                ctx.beginPath();
+                                ctx.ellipse(cx - Math.abs(k) * r, cy - r, Math.abs(k) * r * 2, r * 2);
+                                ctx.fill();
+                                ctx.restore();
+                                ctx.strokeStyle = "rgba(238,233,220,0.24)";
+                                ctx.lineWidth = 0.75;
+                                ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+                            }
+                        }
+                        Text {
+                            text: Qt.formatDate(root.now, "dddd, MMM d")
+                            color: Kirigami.Theme.disabledTextColor
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: 11
+                            font.weight: Font.Medium
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
                 }
             }
 
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 1
-                color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.08)
+                color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.06)
             }
 
-            // Month navigation bar
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 6
                 Rectangle {
-                    Layout.preferredWidth: 24; Layout.preferredHeight: 24; radius: 6
+                    Layout.preferredWidth: 26; Layout.preferredHeight: 26; radius: 7
                     color: prevMo.containsMouse ? Kirigami.Theme.alternateBackgroundColor : "transparent"
-                    Text { anchors.centerIn: parent; text: "‹"; color: Kirigami.Theme.textColor; font.family: "JetBrains Mono"; font.pixelSize: 14; font.bold: true }
+                    Behavior on color { ColorAnimation { duration: 110 } }
+                    Text { anchors.centerIn: parent; text: "‹"; color: prevMo.containsMouse ? root.accentColor : Kirigami.Theme.textColor; font.family: "JetBrains Mono"; font.pixelSize: 15; font.bold: true }
                     MouseArea { id: prevMo; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: calRoot.shiftMonth(-1) }
                 }
                 Text {
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignHCenter
-                    text: Qt.formatDate(new Date(calRoot.viewYear, calRoot.viewMonth, 1), "MMMM yyyy").toUpperCase()
+                    text: Qt.formatDate(new Date(calRoot.viewYear, calRoot.viewMonth, 1), "MMMM yyyy")
                     color: Kirigami.Theme.textColor
                     font.family: "JetBrains Mono"
-                    font.pixelSize: 11
+                    font.pixelSize: 12
                     font.weight: Font.Bold
-                    font.letterSpacing: 0.8
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: !calRoot.isCurrentMonth ? Qt.PointingHandCursor : Qt.ArrowCursor
+                        onClicked: {
+                            calRoot.viewYear = root.now.getFullYear();
+                            calRoot.viewMonth = root.now.getMonth();
+                        }
+                    }
                 }
                 Rectangle {
                     visible: !calRoot.isCurrentMonth
-                    Layout.preferredWidth: todayTxt.implicitWidth + 10; Layout.preferredHeight: 20; radius: 5
+                    Layout.preferredWidth: todayTxt.implicitWidth + 12; Layout.preferredHeight: 22; radius: 6
                     color: Kirigami.Theme.alternateBackgroundColor
-                    Text { id: todayTxt; anchors.centerIn: parent; text: "TODAY"; color: calRoot.accentColor; font.family: "JetBrains Mono"; font.pixelSize: 9; font.weight: Font.Bold }
+                    Text { id: todayTxt; anchors.centerIn: parent; text: "Today"; color: root.accentColor; font.family: "JetBrains Mono"; font.pixelSize: 10; font.weight: Font.Bold }
                     MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { calRoot.viewYear = root.now.getFullYear(); calRoot.viewMonth = root.now.getMonth(); } }
                 }
                 Rectangle {
-                    Layout.preferredWidth: 24; Layout.preferredHeight: 24; radius: 6
+                    Layout.preferredWidth: 26; Layout.preferredHeight: 26; radius: 7
                     color: nextMo.containsMouse ? Kirigami.Theme.alternateBackgroundColor : "transparent"
-                    Text { anchors.centerIn: parent; text: "›"; color: Kirigami.Theme.textColor; font.family: "JetBrains Mono"; font.pixelSize: 14; font.bold: true }
+                    Behavior on color { ColorAnimation { duration: 110 } }
+                    Text { anchors.centerIn: parent; text: "›"; color: nextMo.containsMouse ? root.accentColor : Kirigami.Theme.textColor; font.family: "JetBrains Mono"; font.pixelSize: 15; font.bold: true }
                     MouseArea { id: nextMo; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: calRoot.shiftMonth(1) }
                 }
             }
 
-            // Weekday header
             GridLayout {
                 Layout.fillWidth: true
                 columns: 7
                 columnSpacing: 2
                 Repeater {
-                    model: ["MO", "TU", "WE", "TH", "FR", "SA", "SU"]
+                    model: ["M", "T", "W", "T", "F", "S", "S"]
                     Text {
+                        required property int index
                         required property string modelData
                         Layout.fillWidth: true
                         horizontalAlignment: Text.AlignHCenter
                         text: modelData
-                        color: Kirigami.Theme.disabledTextColor
+                        color: index >= 5
+                            ? Qt.rgba(root.accentColor.r, root.accentColor.g, root.accentColor.b, 0.70)
+                            : Kirigami.Theme.disabledTextColor
                         font.family: "JetBrains Mono"
-                        font.pixelSize: 9
+                        font.pixelSize: 10
                         font.weight: Font.Bold
                     }
                 }
             }
 
-            // 6-week calendar grid
-            GridLayout {
+            Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                columns: 7
-                rowSpacing: 2
-                columnSpacing: 2
-                Repeater {
-                    model: 42
-                    Rectangle {
-                        id: dayCell
-                        required property int index
-                        readonly property date dt: calRoot.cellDate(index)
-                        readonly property bool inMonth: dt.getMonth() === calRoot.viewMonth
-                        readonly property bool isToday: dt.getFullYear() === root.now.getFullYear() && dt.getMonth() === root.now.getMonth() && dt.getDate() === root.now.getDate()
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 28
-                        radius: 7
-                        color: isToday ? calRoot.accentColor : (dayHover.hovered && inMonth ? Kirigami.Theme.alternateBackgroundColor : "transparent")
-                        HoverHandler { id: dayHover }
-                        Text {
-                            anchors.centerIn: parent
-                            text: dayCell.dt.getDate()
-                            color: dayCell.isToday ? calRoot.accentFg : Kirigami.Theme.textColor
-                            opacity: dayCell.isToday ? 1.0 : (dayCell.inMonth ? 0.92 : 0.28)
-                            font.family: "JetBrains Mono"
-                            font.pixelSize: 11
-                            font.weight: dayCell.isToday ? Font.Bold : Font.Medium
+
+                WheelHandler {
+                    onWheel: function(event) {
+                        if (event.angleDelta.y !== 0) calRoot.shiftMonth(event.angleDelta.y < 0 ? 1 : -1);
+                    }
+                }
+
+                GridLayout {
+                    anchors.fill: parent
+                    columns: 7
+                    rowSpacing: 3
+                    columnSpacing: 3
+                    Repeater {
+                        model: 42
+                        Rectangle {
+                            id: dayCell
+                            required property int index
+                            readonly property date dt: calRoot.cellDate(index)
+                            readonly property bool inMonth: dt.getMonth() === calRoot.viewMonth
+                            readonly property bool isToday: dt.getFullYear() === root.now.getFullYear() && dt.getMonth() === root.now.getMonth() && dt.getDate() === root.now.getDate()
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 28
+                            radius: 8
+                            color: isToday
+                                ? root.accentColor
+                                : (dayHover.hovered && inMonth ? Kirigami.Theme.alternateBackgroundColor : "transparent")
+                            Behavior on color { ColorAnimation { duration: 100 } }
+                            HoverHandler { id: dayHover }
+                            Text {
+                                anchors.centerIn: parent
+                                text: dayCell.dt.getDate()
+                                color: dayCell.isToday ? root.accentFg : Kirigami.Theme.textColor
+                                opacity: dayCell.isToday ? 1.0 : (dayCell.inMonth ? 0.92 : 0.24)
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: 11
+                                font.weight: dayCell.isToday ? Font.Bold : Font.Medium
+                            }
                         }
                     }
                 }

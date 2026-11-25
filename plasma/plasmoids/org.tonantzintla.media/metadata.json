@@ -7,11 +7,11 @@
             }
         ],
         "Category": "Multimedia",
-        "Description": "Serpantinum-style compact media strip for Tonantzintla",
+        "Description": "Spinning vinyl disc and acoustic waveform media deck for Tonantzintla",
         "Icon": "media-playback-start",
         "Id": "org.tonantzintla.media",
         "License": "GPL-3.0-or-later",
-        "Name": "Tonantzintla Media Pill",
+        "Name": "Tonantzintla Media",
         "Version": "1.2.0"
     },
     "X-Plasma-API-Minimum-Version": "6.0"

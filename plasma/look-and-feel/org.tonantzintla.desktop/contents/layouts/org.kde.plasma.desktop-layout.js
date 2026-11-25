@@ -7,10 +7,8 @@ topBar.hiding = 'none';
 topBar.alignment = 'center';
 topBar.lengthMode = 'fill';
 
-var launcher = topBar.addWidget('org.kde.plasma.kickoff');
-launcher.currentConfigGroup = ['General'];
-launcher.writeConfig('icon', 'tonantzintla-mark');
-launcher.writeConfig('showActionButtonCaptions', false);
+var launcher = topBar.addWidget('org.tonantzintla.launcher');
+launcher.globalShortcut = 'Alt+F1';
 
 topBar.addWidget('org.tonantzintla.workspaces');
 topBar.addWidget('org.tonantzintla.media');

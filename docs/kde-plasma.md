@@ -11,7 +11,7 @@ Tonantzintla ships as a complete, native **KDE Plasma 6 Global Theme** alongside
 | Color Schemes | `TonantzintlaDark`, `TonantzintlaLight` | `color-schemes/Tonantzintla*.colors` |
 | Window Decoration (Aurorae) | `Tonantzintla` | `aurorae/themes/Tonantzintla` |
 | Wallpaper Package | `Tonantzintla` (`Tonantzintla Observatory`) | `wallpapers/Tonantzintla` |
-| Native Plasmoids | `org.tonantzintla.{workspaces,media,clock,status}` | `plasma/plasmoids/org.tonantzintla.*` |
+| Native Plasmoids | `org.tonantzintla.{launcher,workspaces,media,clock,status}` | `plasma/plasmoids/org.tonantzintla.*` |
 | Splash Screen | Bundled inside `org.tonantzintla.desktop` | `contents/splash/Splash.qml` |
 | Desktop Layout | Top floating Aperture bar + centered bottom dock | `contents/layouts/org.kde.plasma.desktop-layout.js` |
 

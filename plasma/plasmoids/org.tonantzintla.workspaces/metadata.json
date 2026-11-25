@@ -7,7 +7,7 @@
             }
         ],
         "Category": "Windows and Tasks",
-        "Description": "Serpantinum-style pill and dot virtual desktop indicator for Tonantzintla",
+        "Description": "Minimal virtual desktop pill indicator and wheel switcher for Tonantzintla",
         "Icon": "preferences-desktop-virtual",
         "Id": "org.tonantzintla.workspaces",
         "License": "GPL-3.0-or-later",

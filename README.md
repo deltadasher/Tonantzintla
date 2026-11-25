@@ -50,7 +50,7 @@ The shell is supervised within your Wayland session on both Arch and Obarun.
 
 ### KDE Plasma 6
 
-Tonantzintla also ships as a native **KDE Plasma 6 Global Theme** (Look & Feel, Plasma Style, Dark/Light color schemes, Aurorae window decorations, wallpaper, splash screen, and four native Plasma 6 Plasmoids):
+Tonantzintla also ships as a native **KDE Plasma 6 Global Theme** (Look & Feel, Plasma Style, Dark/Light color schemes, Aurorae window decorations, wallpaper, animated astrolabe splash screen, and five native Plasma 6 Observatory Plasmoids including the **Event Horizon** constellation launcher, **Ephemeris** scalloped clock & lunar calendar, and **Resonance** vinyl/waveform deck):
 
 ```bash
 bin/blackhole plasma install

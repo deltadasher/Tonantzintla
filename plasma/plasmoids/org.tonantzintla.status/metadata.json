@@ -7,11 +7,11 @@
             }
         ],
         "Category": "System Information",
-        "Description": "Serpantinum-style high-contrast inverted audio and battery status pills",
+        "Description": "Inverted audio and battery status pills with tactile slider popup",
         "Icon": "audio-volume-high",
         "Id": "org.tonantzintla.status",
         "License": "GPL-3.0-or-later",
-        "Name": "Tonantzintla Status Pills",
+        "Name": "Tonantzintla Status",
         "Version": "1.2.0"
     },
     "X-Plasma-API-Minimum-Version": "6.0"

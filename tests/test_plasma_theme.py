@@ -51,6 +51,10 @@ class PlasmaThemeTests(unittest.TestCase):
         for required_id in ("decoration-topleft", "decoration-inactive-topleft", "decoration-maximized-center", "mask-topleft"):
             self.assertIn(required_id, aur_ids)
 
+        # Ensure Event Horizon launcher declares org.kde.plasma.launchermenu for Meta/Super key binding
+        launcher_meta = json.loads((plasma_root / "plasmoids/org.tonantzintla.launcher/metadata.json").read_text(encoding="utf-8"))
+        self.assertIn("org.kde.plasma.launchermenu", launcher_meta.get("X-Plasma-Provides", []))
+
         for svg in plasma_root.rglob("*.svg"):
             root = ET.fromstring(svg.read_bytes())
             self.assertTrue(root.tag.endswith("svg"), str(svg))

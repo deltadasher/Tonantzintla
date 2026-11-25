@@ -7,7 +7,7 @@
             }
         ],
         "Category": "Date and Time",
-        "Description": "Serpantinum-style tabular monospace clock for Tonantzintla",
+        "Description": "Scalloped analog clock, live lunar disc, and calendar for Tonantzintla",
         "Icon": "clock",
         "Id": "org.tonantzintla.clock",
         "License": "GPL-3.0-or-later",
