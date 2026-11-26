@@ -23,10 +23,10 @@ Use the five public entry points to see what each part does and find its direct 
 ### Install
 
 ```bash
-sudo pacman -S --needed git rust base-devel
-git clone https://github.com/deltadasher/Tonantzintla.git Tonantzintla
-cd Tonantzintla
-bin/blackhole install --profile recommended --niri keep --umbra lock --yes
+sudo pacman -S --needed git rust base-devel &&
+git clone https://github.com/deltadasher/Tonantzintla.git Tonantzintla &&
+cd Tonantzintla &&
+bin/blackhole install --profile recommended --niri keep --umbra lock --yes &&
 ~/.local/bin/blackhole start
 ```
 

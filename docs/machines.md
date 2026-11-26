@@ -31,9 +31,9 @@ XDG variable is unset.
 ## First installation
 
 ```bash
-git clone git@github.com:deltadasher/Tonantzintla.git
-cd Tonantzintla
-./bin/blackhole doctor
+git clone git@github.com:deltadasher/Tonantzintla.git &&
+cd Tonantzintla &&
+./bin/blackhole doctor &&
 ./bin/blackhole install
 ```
 
@@ -45,9 +45,9 @@ links it. Contributor tooling (`cargo`, `qmllint` from `qt6-declarative`) is not
 part of the runtime; install it separately to run `./tools/check`:
 
 ```bash
-git clone git@github.com:deltadasher/Tonantzintla.git
-cd Tonantzintla
-git switch 1.0-RC
+git clone git@github.com:deltadasher/Tonantzintla.git &&
+cd Tonantzintla &&
+git switch 1.0-RC &&
 ./bin/blackhole install
 ```
 
