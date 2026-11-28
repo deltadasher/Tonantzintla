@@ -11,7 +11,7 @@
         "Id": "tonantzintla",
         "License": "GPL-3.0-or-later",
         "Name": "Tonantzintla",
-        "Version": "1.2.0",
+        "Version": "1.5.0",
         "Website": "https://github.com/deltadasher/Tonantzintla"
     },
     "X-Plasma-API": "5.0"

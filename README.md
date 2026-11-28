@@ -2,7 +2,7 @@
 
 ![Tonantzintla black hole](src/assets/illustrations/wabi-sabi-black-hole.svg)
 
-## Tonantzintla 1.2
+## Tonantzintla 1.5
 
 Built with Quickshell for Niri & Hyprland (to be extended to other wayland compositors in the near future).
 The installer supports Arch Linux and compatible Arch derivatives, including Obarun. On Fedora and Debian the installer can report the configuration but does not install the shell.

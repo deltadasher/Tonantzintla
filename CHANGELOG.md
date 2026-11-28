@@ -1,6 +1,59 @@
 # Changelog
 
-## Unreleased
+## 1.5 - 2026-11-27
+
+- Add a native KDE Plasma 6 global theme (look and feel, Plasma style, dark and
+  light color schemes, Aurorae decoration, wallpaper, splash and four widgets)
+  through `blackhole plasma`.
+- Harden helper command execution, URL validation, file writes, permissions and
+  temporary files across `blackhole` and the helpers.
+- The installer finds its source checkout at run time when a checkout moves, and
+  install commands stop when a prerequisite fails.
+
+- Notifications: a notification its app had already closed could no longer be
+  dismissed or cleared, and once it became the 100th-oldest record every later
+  notification was dropped until restart. Closed notifications are now skipped.
+  A message fused into a hovered popup no longer restarts its countdown.
+- The volume, brightness and status OSD now plays its exit animation; its window
+  was destroyed the moment it should have started.
+- Bar: GPU temperature and disk use stay current instead of keeping their
+  start-up value until the System panel is opened. A vertical bar no longer
+  ticks every second for seconds it never draws. Workspace urgency follows
+  Niri's event, and a window that opens focused no longer leaves two windows
+  marked focused. Media transport buttons keep keyboard focus across play and
+  pause, and a hidden progress bar no longer animates.
+- Dock: window title, focus and workspace events no longer rebuild every dock
+  button on every output, and pointer movement over an open dock no longer
+  repaints an unchanged contour.
+- Clipboard panel: an unchanged poll keeps the list, its scroll position and the
+  hovered preview, and the redundant pin listing that dropped clicks is gone.
+- Calendar: the weather ribbon highlights the right day after noon. Sun and
+  weather values update once a second instead of on every frame.
+- Session supervisor: the Niri ownership check runs before every shell start and
+  then every five seconds, instead of about four times a second for the whole
+  session (13% of one core down to under 1% in an isolated harness). A status
+  request arriving with a stop signal no longer cancels the stop.
+- Native wallpaper stills prepare about three times faster with identical
+  pixels. A video ffmpeg cannot thumbnail no longer reports the whole library as
+  failed. `blackhole stop` exits successfully after a normal stop.
+- Smaller work removed: lyrics are kept when the Media panel reopens, a running
+  recording is polled every 2.5 s instead of twice a second, the Niri output
+  page polls once a second only during a scale preview, network lists are not
+  rebuilt by unchanged polls, the Aurora wallpaper builds its colors once per
+  frame, the Matrix clock updates digits in place, the launcher sorts
+  applications with one hash each, and the compact media panel decodes cover art
+  at tile size. The idle spectrum orbit no longer jumps when its loop wraps.
+- Installer: an empty or relative `XDG_*` value counts as unset; a failed staging
+  removes its partial copy and names the file; `uninstall` removes its links
+  when the data home is reached through a symlink; `update` stops when git
+  fails and says so when the shell does not restart; a checkout cloned to the
+  Quickshell link path is refused instead of being moved into a backup; the plan
+  says "Back up, then replace" where that is what happens.
+- The login greeter's fallback palette matches the shell's again. Settings and
+  the Guide show the real version, read from `VERSION`. Bar Studio shows the
+  actual bar size. The polkit prompt accepts keypad Enter.
+- Tests: update the instrument tests to the current setting labels so
+  `./tools/check` passes again, and add release-consistency checks.
 
 - Add live wallpapers to Parallax: Snowfall, Life, Flow field, Deep field,
   Constellations, Aurora, Orrery and a System monitor, drawn by the shell itself

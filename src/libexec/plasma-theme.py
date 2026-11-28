@@ -868,7 +868,7 @@ def build_plasmoids(output_root: Path, palette: dict[str, str]) -> None:
             "Id": "org.tonantzintla.workspaces",
             "License": "GPL-3.0-or-later",
             "Name": "Tonantzintla Workspaces",
-            "Version": "1.2.0",
+            "Version": "1.5.0",
         },
         "X-Plasma-API-Minimum-Version": "6.0",
     })
@@ -969,7 +969,7 @@ def build_plasmoids(output_root: Path, palette: dict[str, str]) -> None:
             "Id": "org.tonantzintla.media",
             "License": "GPL-3.0-or-later",
             "Name": "Tonantzintla Media Pill",
-            "Version": "1.2.0",
+            "Version": "1.5.0",
         },
         "X-Plasma-API-Minimum-Version": "6.0",
     })
@@ -1134,7 +1134,7 @@ def build_plasmoids(output_root: Path, palette: dict[str, str]) -> None:
             "Id": "org.tonantzintla.clock",
             "License": "GPL-3.0-or-later",
             "Name": "Tonantzintla Clock",
-            "Version": "1.2.0",
+            "Version": "1.5.0",
         },
         "X-Plasma-API-Minimum-Version": "6.0",
     })
@@ -1355,7 +1355,7 @@ def build_plasmoids(output_root: Path, palette: dict[str, str]) -> None:
             "Id": "org.tonantzintla.status",
             "License": "GPL-3.0-or-later",
             "Name": "Tonantzintla Status Pills",
-            "Version": "1.2.0",
+            "Version": "1.5.0",
         },
         "X-Plasma-API-Minimum-Version": "6.0",
     })
@@ -1481,7 +1481,7 @@ def build_tree(output_root: Path, settings: dict | None = None, matugen: dict | 
             "Id": THEME_ID,
             "License": "GPL-3.0-or-later",
             "Name": "Tonantzintla",
-            "Version": "1.2.0",
+            "Version": "1.5.0",
             "Website": "https://github.com/deltadasher/Tonantzintla",
         },
         "X-Plasma-API": "5.0",
@@ -1555,7 +1555,7 @@ def build_tree(output_root: Path, settings: dict | None = None, matugen: dict | 
             "License": "GPL-3.0-or-later",
             "Name": AURORAE_NAME,
             "ServiceTypes": ["aurorae"],
-            "Version": "1.2.0",
+            "Version": "1.5.0",
         },
     })
     write_text(
@@ -1629,7 +1629,7 @@ def build_tree(output_root: Path, settings: dict | None = None, matugen: dict | 
             "Id": LOOK_AND_FEEL_ID,
             "License": "GPL-3.0-or-later",
             "Name": "Tonantzintla",
-            "Version": "1.2.0",
+            "Version": "1.5.0",
             "Website": "https://github.com/deltadasher/Tonantzintla",
         },
         "Keywords": "Desktop;Workspace;Appearance;Look and Feel;Tonantzintla;Serpantinum;",
