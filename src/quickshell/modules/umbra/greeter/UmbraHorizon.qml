@@ -3,10 +3,10 @@ import QtQuick 2.15
 Item {
     id: root
 
-    property color voidColor: "#080910"
+    property color voidColor: "#101016"
     property color accent: "#a99cff"
-    property color secondary: "#72d9e7"
-    property color danger: "#ed7d8f"
+    property color secondary: "#7cd8e6"
+    property color danger: "#f08094"
     property real deployment: 1
     property real energy: 0
     property real capture: 0

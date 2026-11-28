@@ -13,19 +13,19 @@ QtObject {
     property bool busy: false
     readonly property string helperPath: Environment.script("palette-state.py")
 
-    property color void_: "#080910"
-    property color mantle: "#10121d"
-    property color elevated: "#171a28"
-    property color line: "#30354a"
-    property color lineBright: "#555d7c"
+    property color void_: "#101016"
+    property color mantle: "#16161e"
+    property color elevated: "#1f1f2b"
+    property color line: "#2f3042"
+    property color lineBright: "#565874"
     property color moon: "#eee9dc"
-    property color muted: "#8e94aa"
+    property color muted: "#8e90a6"
     property color accent: "#a99cff"
     property color rose: "#ec8eae"
-    property color cyan: "#72d9e7"
-    property color warning: "#e9b872"
-    property color danger: "#ed7d8f"
-    property color success: "#77d6ae"
+    property color cyan: "#7cd8e6"
+    property color warning: "#ecc078"
+    property color danger: "#f08094"
+    property color success: "#7cd9b0"
 
     function colorOf(data, name, fallback, mode) {
         const entry = data && data.colors ? data.colors[name] : null;
@@ -163,7 +163,8 @@ QtObject {
     }
     property Timer refreshDelay: Timer { interval: 280; onTriggered: root.regenerate() }
     function initialize() {
-        if (!Settings.persistenceReady) return;
+        // The cached read is discarded unless adaptation is on, so do not spawn it.
+        if (!Settings.persistenceReady || !Settings.adaptivePalette) return;
         if (!cachedProcess.running) cachedProcess.running = true;
         refreshDelay.restart();
     }

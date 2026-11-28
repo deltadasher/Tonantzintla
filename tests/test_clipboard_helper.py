@@ -32,22 +32,25 @@ clipboard_index = load_helper()
 
 class ClipboardHelperTests(unittest.TestCase):
     def test_text_size_is_decoded_once_then_cached(self) -> None:
+        # The listing goes through subprocess.run; entry bodies go through the
+        # size-bounded decoder. Patch both so the real clipboard is never read.
         listing = mock.Mock(stdout="12\tshort preview\n")
-        decoded = mock.Mock(stdout=("x" * 240).encode())
         with tempfile.TemporaryDirectory() as cache_dir:
             with (
                 mock.patch.object(
-                    clipboard_index.subprocess,
-                    "run",
-                    side_effect=[listing, decoded],
+                    clipboard_index.subprocess, "run", return_value=listing
                 ) as first_run,
+                mock.patch.object(
+                    clipboard_index, "decode_bounded", return_value=b"x" * 240
+                ) as first_decode,
                 mock.patch.object(
                     sys, "argv", ["clipboard-index.py", cache_dir]
                 ),
                 contextlib.redirect_stdout(io.StringIO()) as output,
             ):
                 clipboard_index.main()
-            self.assertEqual(2, first_run.call_count)
+            self.assertEqual(1, first_run.call_count)
+            first_decode.assert_called_once_with("12")
             self.assertEqual(240, json.loads(output.getvalue())[0]["size"])
 
             with (
@@ -55,12 +58,16 @@ class ClipboardHelperTests(unittest.TestCase):
                     clipboard_index.subprocess, "run", return_value=listing
                 ) as second_run,
                 mock.patch.object(
+                    clipboard_index, "decode_bounded", return_value=b""
+                ) as second_decode,
+                mock.patch.object(
                     sys, "argv", ["clipboard-index.py", cache_dir]
                 ),
                 contextlib.redirect_stdout(io.StringIO()) as cached_output,
             ):
                 clipboard_index.main()
             self.assertEqual(1, second_run.call_count)
+            second_decode.assert_not_called()
             self.assertEqual(240, json.loads(cached_output.getvalue())[0]["size"])
 
     def test_help_does_not_create_a_literal_help_directory(self) -> None:

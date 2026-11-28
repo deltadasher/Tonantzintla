@@ -24,7 +24,7 @@ Window {
   if(!loader.item)return;
   if(stage===0){
    check(Settings.wallpaperRenderer==="external","portable default stays external");
-   loader.item.optionsOpen=true;press("Renderer: Native stills");check(Settings.wallpaperRenderer==="native","native key choice updates real Settings");
+   loader.item.optionsOpen=true;press("Wallpaper method: Built-in images");check(Settings.wallpaperRenderer==="native","native key choice updates real Settings");
    stage++;
   }else if(stage===1){
    const effect=press("none wallpaper transition");check(Settings.wallpaperTransition==="none","native reveal choice has real preference consumer");
@@ -39,7 +39,7 @@ Window {
    scene.grabToImage(function(result){result.saveToFile(Quickshell.env("NATIVE_UI_SCREENSHOT"));});
    stage++;
   }else if(stage===3){
-   press("Renderer: External");stage++;
+   press("Wallpaper method: External app");stage++;
   }else{
    check(Settings.wallpaperRenderer==="external","keyboard returns to external renderer");
    console.log("NATIVE UI COMPLETE",failures);Qt.quit();

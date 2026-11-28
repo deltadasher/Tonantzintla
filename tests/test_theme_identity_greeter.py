@@ -80,7 +80,7 @@ console.log(JSON.stringify(JSON.parse(process.argv[1]).map(color=>model.match(co
             return dict(line.split('=', 1) for line in exporter.render(data, preferences).splitlines() if '=' in line)
         disabled = values()
         self.assertEqual((disabled['themeIdentity'], disabled['themeMode']), ('ringed-planet', 'dark'))
-        self.assertEqual(disabled['voidColor'], '#080910')
+        self.assertEqual(disabled['voidColor'], '#101016')
         self.assertEqual(disabled['accent'], '#a99cff')
         # Settings defaults disable adaptation, even when the key is absent.
         missing = dict(settings); missing.pop('adaptivePalette')
@@ -93,7 +93,7 @@ console.log(JSON.stringify(JSON.parse(process.argv[1]).map(color=>model.match(co
         # An identity source may still be used when the cached material mode differs;
         # its material colors must not be applied until it matches the chosen mode.
         dark = values(preferences=dict(enabled, themeMode='dark'))
-        self.assertEqual((dark['themeIdentity'], dark['themeMode'], dark['voidColor']), ('ruby', 'dark', '#080910'))
+        self.assertEqual((dark['themeIdentity'], dark['themeMode'], dark['voidColor']), ('ruby', 'dark', '#101016'))
         for adaptive in (False, True):
             exact = values(preferences=dict(settings, adaptivePalette=adaptive, paletteSeedColor='#ffffff',
                            spectralColors={'accent': '#83dad9'}))

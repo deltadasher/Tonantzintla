@@ -89,10 +89,10 @@ Window {
                     else check(false,"context body loads");
                 } else if(step===2) {
                     check(clock.faceName==="stacked","native key applies stacked clock");
-                    if(editor.item) {press("Clock face: Compact");press("Density: Compact");editor.item.islandId="system_stats";}
+                    if(editor.item) {press("Clock face: Compact");press("Spacing: Compact");editor.item.islandId="system_stats";}
                 } else if(step===3) {
                     check(clock.compactContent,"local density reaches clock");
-                    if(editor.item) {press("Telemetry face: Trace");press("GPU temperature");press("Disk usage");}
+                    if(editor.item) {press("Stats style: Graph");press("GPU temperature");press("Disk usage");}
                 } else if(step===4) {
                     check(telemetry.faceName==="trace","trace face reaches consumer");
                     check(telemetry.metricsModel && telemetry.metricsModel.length===2,"metric subset removes actual delegates");
@@ -130,7 +130,7 @@ Window {
                     editor.item.islandId="launcher";launcher.active=true;
                 } else if(step===31) {
                     check(launcher.item && launcher.item.preferredSurfaceWidth===0,"launcher default adaptive width");
-                    press("Adaptive launcher width");press("Adaptive result rows");
+                    press("Automatic launcher width");press("Automatic result count");
                 } else if(step===32) {
                     check(launcher.item.preferredSurfaceWidth===720,"launcher chosen width reaches host interface");
                     check(launcher.item.preferredSurfaceHeight===658,"six visible rows reach height consumer");

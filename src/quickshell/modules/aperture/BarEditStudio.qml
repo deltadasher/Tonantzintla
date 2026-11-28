@@ -1122,7 +1122,8 @@ PanelWindow {
                     Text { font.family: Theme.fontText; text: "Bar size"; color: Theme.moon; font.pixelSize: Theme.textLabel }
                     Item { Layout.fillWidth: true }
                     Text {
-                        text: Settings.compact ? "36px" : (Settings.barHeightProfile === "tall" || Settings.barHeightProfile === "spacious" ? "52px" : "44px")
+                        // The live island thickness on this edge, not a fixed table.
+                        text: Math.round(root.barThickness - 8) + "px"
                         color: Theme.accent; font.family: Theme.fontMono; font.pixelSize: Theme.textCaption
                     }
                 }
@@ -1130,9 +1131,9 @@ PanelWindow {
                     Layout.fillWidth: true; spacing: 4
                     Repeater {
                         model: [
-                            { label: "Compact", value: "compact", pixels: "36px" },
-                            { label: "Standard", value: "nominal", pixels: "44px" },
-                            { label: "Tall", value: "tall", pixels: "52px" }
+                            { label: "Compact", value: "compact" },
+                            { label: "Standard", value: "nominal" },
+                            { label: "Tall", value: "tall" }
                         ]
                         Rectangle {
                             Layout.fillWidth: true; implicitHeight: 24; radius: 4

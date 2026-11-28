@@ -1,12 +1,12 @@
 :root {
-  --void: #080910;
-  --mantle: #10121d;
-  --surface: #171a28;
+  --void: #101016;
+  --mantle: #16161e;
+  --surface: #1f1f2b;
   --fg: #eee9dc;
-  --muted: #8e94aa;
+  --muted: #8e90a6;
   --accent: #a99cff;
-  --secondary: #72d9e7;
-  --danger: #ed7d8f;
+  --secondary: #7cd8e6;
+  --danger: #f08094;
 }
 
 * {
@@ -50,7 +50,7 @@ body {
 .panel {
   width: min(28rem, 100%);
   padding: 2rem;
-  background: #171a28d9;
+  background: #1f1f2bd9;
   border: 1px solid #a99cff55;
   box-shadow: 0 0 5rem #0008;
 }

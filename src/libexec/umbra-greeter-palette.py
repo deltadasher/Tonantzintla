@@ -16,14 +16,14 @@ identity = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(identity)
 
 FALLBACKS = {
-    "voidColor": "#080910",
-    "mantle": "#10121d",
-    "surface": "#171a28",
+    "voidColor": "#101016",
+    "mantle": "#16161e",
+    "surface": "#1f1f2b",
     "foreground": "#eee9dc",
-    "muted": "#8e94aa",
+    "muted": "#8e90a6",
     "accent": "#a99cff",
-    "secondary": "#72d9e7",
-    "danger": "#ed7d8f",
+    "secondary": "#7cd8e6",
+    "danger": "#f08094",
 }
 
 MATERIAL_KEYS = {
@@ -87,7 +87,7 @@ def render(payload: dict, settings: dict | None = None) -> str:
     lines = ["[General]"]
     for name, fallback in FALLBACKS.items():
         if mode == "light":
-            fallback = {"voidColor":"#f8f7fc", "mantle":"#f0eff7", "surface":"#e7e6ef", "foreground":"#23232e", "muted":"#5b596c", "danger":"#a93649"}.get(name, fallback)
+            fallback = {"voidColor":"#f6f5fa", "mantle":"#eeedf5", "surface":"#e4e2ee", "foreground":"#23232e", "muted":"#5a586e", "danger":"#a93649"}.get(name, fallback)
         if name == "accent" and not palette_only:
             fallback = preset_accent[0 if mode == "light" else 1]
         value = material_color(material, MATERIAL_KEYS[name], fallback, mode)

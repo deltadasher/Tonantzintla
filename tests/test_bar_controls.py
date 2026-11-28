@@ -30,10 +30,13 @@ class BarControlsTests(unittest.TestCase):
         studio = (repo / 'src/quickshell/modules/aperture/BarEditStudio.qml').read_text()
         drawer = studio[studio.index('SIDE DRAWER'):]
         self.assertIn('height: 354', drawer)
-        self.assertIn('text: "Bar Thickness"', drawer)
-        self.assertIn('{ label: "Compact", value: "compact", pixels: "36px" }', drawer)
-        self.assertIn('{ label: "Nominal", value: "nominal", pixels: "44px" }', drawer)
-        self.assertIn('{ label: "Tall", value: "tall", pixels: "52px" }', drawer)
+        self.assertIn('text: "Bar size"', drawer)
+        self.assertIn('{ label: "Compact", value: "compact" }', drawer)
+        self.assertIn('{ label: "Standard", value: "nominal" }', drawer)
+        self.assertIn('{ label: "Tall", value: "tall" }', drawer)
+        # The readout follows the real island thickness instead of a fixed table.
+        self.assertIn('text: Math.round(root.barThickness - 8) + "px"', drawer)
+        self.assertNotIn('"44px"', drawer)
 
     def test_studio_spawning_uses_the_current_edge_and_detects_placements(self):
         repo = Path(__file__).resolve().parents[1]
@@ -46,7 +49,7 @@ class BarControlsTests(unittest.TestCase):
     def test_live_islands_remain_outlined_in_studio(self):
         repo = Path(__file__).resolve().parents[1]
         island = (repo / 'src/quickshell/components/BarIsland.qml').read_text()
-        self.assertIn('border.width: ShellState.barEditMode && barWindow ? 1 : 0', island)
+        self.assertIn('border.width: (ShellState.barEditMode && barWindow) ? 1 : (root.separate ? 1 : 0)', island)
 
     def test_panel_activation_clears_stale_bar_hover(self):
         repo = Path(__file__).resolve().parents[1]

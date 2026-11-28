@@ -21,7 +21,7 @@ Window {
         control.forceActiveFocus(); events.keyClick(Qt.Key_Space, Qt.NoModifier, -1);
     }
     function typeColor(value) {
-        const editor = find(panel, "Hex color"); check(editor !== null, "editable hex field");
+        const editor = find(panel, "Color code"); check(editor !== null, "editable hex field");
         if (!editor) return;
         editor.forceActiveFocus(); events.keyClick(Qt.Key_A, Qt.ControlModifier, -1);
         for (const character of value) events.keyClickChar(character, Qt.NoModifier, -1);
@@ -54,25 +54,25 @@ Window {
                     Settings.undoAppearance();
                     window.check(Object.keys(Settings.spectralColors).length === 0, "appearance undo restores palette");
                     typeColor("#080910");
-                    press("Reset this channel");
-                    window.check(find(panel, "Hex color").text === "#a99cff", "reset discards invalid draft even if effective color did not change");
+                    press("Reset this color");
+                    window.check(find(panel, "Color code").text === "#a99cff", "reset discards invalid draft even if effective color did not change");
                 } else if (window.step === 1) {
-                    press("Channel: Media / signals");
-                    press("Use Amber for Media / signals");
+                    press("Color for: Media");
+                    press("Use Amber for Media");
                     window.check(String(Theme.rose) === "#e9b872", "swatch changes selected channel");
-                    press("Reset this channel");
+                    press("Reset this color");
                     window.check(!Settings.spectralColors.rose && String(Theme.rose) === "#ec8eae", "channel reset restores fallback");
-                    press("Channel: Success"); typeColor("#ffffff");
-                    press("Channel: Warning"); typeColor("#ffffff");
-                    press("Reset all channels");
+                    press("Color for: Success"); typeColor("#ffffff");
+                    press("Color for: Warning"); typeColor("#ffffff");
+                    press("Reset all colors");
                     window.check(Object.keys(Settings.spectralColors).length === 0, "reset all clears overrides");
-                    press("Channel: Cool telemetry");
-                    const swatch = find(panel, "Use Silver for Cool telemetry");
+                    press("Color for: System stats");
+                    const swatch = find(panel, "Use Silver for System stats");
                     events.mouseClick(swatch, swatch.width / 2, swatch.height / 2, Qt.LeftButton, Qt.NoModifier, -1);
                     window.check(String(Theme.cyan) === "#d4d8e8", "native swatch click changes telemetry color");
                 } else if (window.step === 2) {
                     window.check(panel.width <= 320 && panel.height <= 696, "compact 320px content fits fixture");
-                    const editor = find(panel, "Hex color"); editor.forceActiveFocus();
+                    const editor = find(panel, "Color code"); editor.forceActiveFocus();
                     events.keyClick(Qt.Key_Tab, Qt.NoModifier, -1);
                     window.check(window.activeFocusItem !== editor, "native Tab exits editor");
                 } else {
