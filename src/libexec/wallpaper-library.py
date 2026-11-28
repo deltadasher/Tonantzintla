@@ -222,6 +222,9 @@ def video_preview(path: Path) -> str:
             subprocess.run(
                 ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-threads", "1", "-filter_threads", "1", "-ss", "2", "-i", str(path),
                  "-frames:v", "1", "-vf", "scale=640:-2", "-threads", "1", str(thumb)],
+                # The shell reads any stderr from this helper as a failed library
+                # load, so a clip ffmpeg cannot thumbnail must stay quiet.
+                stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                 timeout=16,
                 check=False,
             )
@@ -347,7 +350,9 @@ def image_preview(path: Path, extent: int = 512, *, no_upscale: bool = False) ->
         result = subprocess.run(
             [converter, "-hide_banner", "-loglevel", "error", "-y", "-threads", "1", "-filter_threads", "1"] + decode_options + [
              "-i", str(path), "-frames:v", "1", "-vf",
-             scale, "-threads", "1", str(temporary)],
+             # Level 1 decodes to identical pixels; the default level spent most
+             # of each native still's preparation time in the PNG encoder.
+             scale, "-threads", "1", "-compression_level", "1", str(temporary)],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=12, check=False,
         )
         if result.returncode or not prepared_dimensions(temporary, extent):

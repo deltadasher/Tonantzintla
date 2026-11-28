@@ -494,7 +494,9 @@ case "$command_name" in
         ;;
     stop)
         python3 "$libexec/session-daemon.py" stop
-        qs -p "$shell_root" kill
+        # The supervisor has normally taken the shell down already; qs then
+        # reports "no running instances" with a failing status.
+        qs -p "$shell_root" kill >/dev/null 2>&1 || true
         ;;
     restart)
         check_niri_start_allowed

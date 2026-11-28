@@ -14,6 +14,10 @@ import time
 
 
 ROOT = Path(__file__).resolve().parents[2]
+# The ownership check is a Python process. It always runs before a (re)spawn;
+# a shell that is already running is re-checked on this period rather than on
+# every 0.25 s pass of the accept loop.
+OWNERSHIP_RECHECK_SECONDS = 5.0
 OWNERSHIP = ROOT / "src/libexec/niri-ownership.py"
 _GRAPHICS_SPEC = importlib.util.spec_from_file_location(
     "tonantzintla_graphics_policy", ROOT / "src/libexec/graphics_policy.py")
@@ -107,16 +111,20 @@ def serve(directory):
         server.bind(str(endpoint))
         server.listen(4)
         server.settimeout(0.25)
+        checked = float("-inf")
         try:
             while not stopping:
                 if not display_path.exists() or display_path.stat().st_ino != identity:
                     break
-                allowed, reason = ownership_allows_start()
-                if not allowed:
-                    log.write(("Tonantzintla supervisor stopped: " + reason + "\n").encode())
-                    terminate(child)
-                    child = None
-                    break
+                now = time.monotonic()
+                if child is None or now - checked >= OWNERSHIP_RECHECK_SECONDS:
+                    checked = now
+                    allowed, reason = ownership_allows_start()
+                    if not allowed:
+                        log.write(("Tonantzintla supervisor stopped: " + reason + "\n").encode())
+                        terminate(child)
+                        child = None
+                        break
                 if child is None:
                     child = subprocess.Popen(["qs", "-n", "-p", str(ROOT / "src/quickshell")],
                                              stdin=subprocess.DEVNULL, stdout=log, stderr=log,
@@ -130,7 +138,8 @@ def serve(directory):
                             connection.sendall(json.dumps({"supervisor": os.getpid(),
                                 "pid": child.pid, "root": str(ROOT),
                                 "running": child.poll() is None}).encode())
-                            stopping = action == "stop"
+                            # Never clear a stop already requested by a signal.
+                            stopping = stopping or action == "stop"
                         except (OSError, UnicodeError):
                             pass
                 except socket.timeout:
