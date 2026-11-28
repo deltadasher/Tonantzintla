@@ -40,7 +40,8 @@ BarIsland {
     SystemClock {
         id: islandClock
         enabled: root.visible
-        precision: Settings.showSeconds || (root.faceName === "classic" && !root.compactContent) ? SystemClock.Seconds : SystemClock.Minutes
+        // No face draws seconds on a vertical bar, so it need not tick each second.
+        precision: !root.isVertical && (Settings.showSeconds || (root.faceName === "classic" && !root.compactContent)) ? SystemClock.Seconds : SystemClock.Minutes
     }
 
     Rectangle {

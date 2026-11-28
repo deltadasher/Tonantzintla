@@ -14,7 +14,9 @@ Canvas {
     onHeightChanged: requestPaint()
     onEdgeChanged: requestPaint()
     onRevealChanged: requestPaint()
-    onCursorAlongChanged: requestPaint()
+    // The cursor only bends the contour mid-reveal (wave is 0 at rest and when
+    // fully open), so pointer movement over an open dock paints nothing new.
+    onCursorAlongChanged: if (reveal > 0.001 && reveal < 0.999) requestPaint()
     onFillColorChanged: requestPaint()
     antialiasing: true
     onPaint: {

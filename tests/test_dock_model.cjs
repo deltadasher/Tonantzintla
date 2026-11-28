@@ -62,3 +62,12 @@ test('scope preserves pins while limiting focus cycles to matching windows', () 
     const rows=ctx.entries(apps,scoped,['org.browser.desktop','terminal.desktop'],true);
     assert.deepEqual(plain(rows.map(e=>e.windows)),[[1],[]]);
 });
+test('signature ignores title and focus churn but tracks what the strip draws', () => {
+    const saved = ['org.browser.desktop'];
+    const base = ctx.signature(ctx.entries(apps,windows,saved,true));
+    const retitled = windows.map(win => Object.assign({}, win, {title:'New title', is_focused: win.id === 2}));
+    assert.equal(ctx.signature(ctx.entries(apps,retitled,saved,true)), base);
+    assert.notEqual(ctx.signature(ctx.entries(apps,windows.concat([{id:9,app_id:'terminal'}]),saved,true)), base);
+    assert.notEqual(ctx.signature(ctx.entries(apps,windows.slice(0,2),saved,true)), base);
+    assert.notEqual(ctx.signature(ctx.entries(apps,windows,[],true)), base);
+});

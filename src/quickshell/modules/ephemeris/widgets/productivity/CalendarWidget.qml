@@ -71,22 +71,26 @@ Item {
     readonly property real minutes: liveClock.getMinutes() + liveClock.getSeconds() / 60
         + liveClock.getMilliseconds() / 60000
     readonly property real seconds: liveClock.getSeconds() + liveClock.getMilliseconds() / 1000
+    // Only the clock hands need the 16 ms epoch. Sun and weather values have
+    // minute resolution, so they follow a once-per-second clock instead of
+    // re-running (and repainting the daylight line) on every frame.
+    readonly property double slowEpoch: Math.floor(smoothEpoch / 1000) * 1000
     readonly property var todayWeather: Weather.daily.find(function(day) {
-        return day.solar && smoothEpoch / 1000 >= day.solar.start
-            && smoothEpoch / 1000 < day.solar.end;
+        return day.solar && slowEpoch / 1000 >= day.solar.start
+            && slowEpoch / 1000 < day.solar.end;
     }) || null
-    readonly property bool localDaylight: userInDaylight(liveClock)
+    readonly property bool localDaylight: userInDaylight(new Date(slowEpoch))
     readonly property real daylightProgress: {
         if (!todayWeather || !todayWeather.solar || !todayWeather.solar.sunrise || !todayWeather.solar.sunset)
             return 0.5;
         const start = todayWeather.solar.sunrise.epoch;
         const end = todayWeather.solar.sunset.epoch;
-        const now = smoothEpoch / 1000;
+        const now = slowEpoch / 1000;
         if (end <= start) return 0.5;
         return Math.max(0, Math.min(1, (now - start) / (end - start)));
     }
     readonly property var nextSolarEvent: {
-        const now = smoothEpoch / 1000;
+        const now = slowEpoch / 1000;
         const events = [];
         for (const day of Weather.daily) {
             if (!day.solar) continue;
@@ -1363,7 +1367,10 @@ Item {
             forecast: Weather.daily
             unitSymbol: Weather.unitSymbol
             selectedIndex: Math.max(0, Math.min(dayCount - 1,
-                Math.round((root.selectedDate.getTime() - root.today.getTime()) / 86400000)))
+                // `today` carries the time of day; compare against its midnight, or
+                // tomorrow rounds down to today once it is past noon.
+                Math.round((root.selectedDate.getTime() - new Date(root.today.getFullYear(),
+                    root.today.getMonth(), root.today.getDate()).getTime()) / 86400000)))
             onDayActivated: function(index) {
                 root.selectedDate = new Date(root.today.getFullYear(), root.today.getMonth(),
                     root.today.getDate() + index);

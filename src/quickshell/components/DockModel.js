@@ -55,6 +55,15 @@ function entries(apps, windows, saved, showRunning) {
     return order.map(function(id) { return groups[id]; });
 }
 
+// What the strip draws for a list from entries(). Window titles, focus and
+// workspace activation replace the compositor's window list without changing it.
+function signature(list) {
+    return list.map(function(entry) {
+        return [entry.id, entry.appId, entry.name, entry.icon, entry.app ? 1 : 0,
+            entry.pinned ? 1 : 0, entry.windows.join(",")].join("\u001f");
+    }).join("\u001e");
+}
+
 function nextWindow(ids, focused) {
     if (!ids.length) return -1;
     return ids[(ids.indexOf(focused) + 1) % ids.length];

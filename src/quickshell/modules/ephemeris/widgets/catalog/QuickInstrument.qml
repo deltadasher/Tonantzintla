@@ -25,7 +25,7 @@ Item {
             ClippingRectangle {
                 Layout.preferredWidth: 80; Layout.preferredHeight: 80
                 radius: 18; color: Theme.controlRest
-                Image { anchors.fill: parent; source: Media.artUrl; fillMode: Image.PreserveAspectCrop; asynchronous: true }
+                Image { anchors.fill: parent; source: Media.artUrl; sourceSize: Qt.size(160, 160); fillMode: Image.PreserveAspectCrop; asynchronous: true }
             }
             ColumnLayout {
                 Layout.fillWidth: true

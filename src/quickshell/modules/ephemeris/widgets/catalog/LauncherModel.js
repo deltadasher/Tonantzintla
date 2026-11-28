@@ -20,10 +20,14 @@ function applications(values) {
             return false;
         seen[id] = true;
         return true;
-    }).sort(function(first, second) {
-        const difference = stableHash(first.id || first.name) - stableHash(second.id || second.name);
-        return difference || String(first.name).localeCompare(String(second.name));
     }).map(function(app) {
+        // Hash once per app; the comparator otherwise re-reads entry properties
+        // and re-hashes on every comparison, each time the launcher opens.
+        return { app: app, hash: stableHash(app.id || app.name), name: String(app.name) };
+    }).sort(function(first, second) {
+        return first.hash - second.hash || first.name.localeCompare(second.name);
+    }).map(function(item) {
+        const app = item.app;
         return { id: "app:" + (app.id || app.name), appId: app.id || app.name,
             kind: "app", name: app.name, detail: app.genericName || app.comment || app.id || "Application",
             keywords: [app.name, app.genericName, app.comment, app.id].join(" "), app: app,

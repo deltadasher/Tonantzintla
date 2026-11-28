@@ -13,8 +13,10 @@ Item {
 
     NumberAnimation on phase {
         from: 0
-        to: Math.PI * 2
-        duration: 2600
+        // Same speed, but a period on which every phase term (x0.2, x1, x1.7)
+        // closes, so the idle orbit no longer jumps when the loop wraps.
+        to: Math.PI * 20
+        duration: 26000
         loops: Animation.Infinite
         running: Settings.motion && root.visible
     }

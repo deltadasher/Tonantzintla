@@ -144,12 +144,15 @@ ClippingRectangle {
                 clip: true
 
                 Rectangle {
+                    id: progressFill
                     width: Math.max(3, parent.width * root.media.progress)
                     height: parent.height
                     radius: parent.radius
                     color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.86)
 
                     Behavior on width {
+                        // Nothing to ease while the bar or its island is hidden.
+                        enabled: progressFill.visible
                         NumberAnimation {
                             duration: Settings.motion ? 700 : 0
                             easing.type: Easing.Linear
@@ -164,15 +167,17 @@ ClippingRectangle {
             spacing: 1
 
             Repeater {
-                model: [
-                    { "glyph": "‹", "action": "previous", "label": "Previous track" },
-                    { "glyph": root.media.playing ? "Ⅱ" : "▶", "action": "toggle", "label": root.media.playing ? "Pause" : "Play" },
-                    { "glyph": "›", "action": "next", "label": "Next track" }
-                ]
+                // A constant model: binding the glyph into it rebuilt all three
+                // buttons on every play/pause and dropped keyboard focus.
+                model: [{ "action": "previous" }, { "action": "toggle" }, { "action": "next" }]
 
                 Rectangle {
                     id: control
                     required property var modelData
+                    readonly property string glyph: modelData.action === "previous" ? "‹"
+                        : modelData.action === "next" ? "›" : root.media.playing ? "Ⅱ" : "▶"
+                    readonly property string label: modelData.action === "previous" ? "Previous track"
+                        : modelData.action === "next" ? "Next track" : root.media.playing ? "Pause" : "Play"
                     Layout.preferredWidth: control.modelData.action === "toggle" ? 36 : 30
                     Layout.preferredHeight: root.compactContent ? 30 : 36
                     radius: 10
@@ -183,7 +188,7 @@ ClippingRectangle {
                     opacity: supported ? 1 : 0.35
                     activeFocusOnTab: supported
                     Accessible.role: Accessible.Button
-                    Accessible.name: control.modelData.label
+                    Accessible.name: control.label
                     Accessible.onPressAction: activate()
                     Keys.onReturnPressed: activate()
                     Keys.onSpacePressed: activate()
@@ -198,14 +203,14 @@ ClippingRectangle {
                     ToolTip {
                         visible: controlPointer.containsMouse || control.activeFocus
                         delay: 500
-                        text: control.modelData.label
+                        text: control.label
                         background: Rectangle { color: Theme.mantle; radius: Theme.radiusSmall; border.color: Theme.accentLine }
-                        contentItem: Text { text: control.modelData.label; color: Theme.moon; font.family: Theme.fontText; font.pixelSize: 11 }
+                        contentItem: Text { text: control.label; color: Theme.moon; font.family: Theme.fontText; font.pixelSize: 11 }
                     }
 
                     Text {
                         anchors.centerIn: parent
-                        text: control.modelData.glyph
+                        text: control.glyph
                         color: controlPointer.containsMouse || control.activeFocus
                             ? (control.modelData.action === "toggle" ? Theme.success : Theme.accent)
                             : Theme.muted

@@ -30,8 +30,18 @@ PanelWindow {
     readonly property real endPadding: Math.ceil(Math.max(0, (iconSize * hoverScale - cellSize) / 2))
     readonly property real thickness: Math.ceil(Math.max(iconSize + 32, iconSize * hoverScale + 24))
     readonly property bool motion: Settings.motion && Theme.motionScale > 0
-    readonly property var entries: DockModel.entries(DesktopEntries.applications.values,
+    readonly property var installedApps: DesktopEntries.applications.values
+    readonly property var liveEntries: DockModel.entries(installedApps,
         DockModel.scopedWindows(Compositor.windows, Compositor.workspaces, Settings.dockWindowScope, modelData.name), DockModel.pins(Settings.dockPins), Settings.dockShowRunning)
+    // A fresh array resets the Repeater and rebuilds every button, even while the
+    // dock is hidden. Publish one only when what the strip draws has changed.
+    readonly property string entriesKey: DockModel.signature(liveEntries)
+    property var entries: []
+    function publishEntries() { entries = liveEntries; }
+    onEntriesKeyChanged: publishEntries()
+    // A rescan can replace desktop entry objects without changing any id.
+    onInstalledAppsChanged: Qt.callLater(publishEntries)
+    Component.onCompleted: publishEntries()
     readonly property real length: Math.max(1, Math.min((vertical ? modelData.height : modelData.width) - 24,
         (entries.length + (includeLauncher ? 1 : 0)) * cellSize + 96 + endPadding * 2))
     readonly property bool includeLauncher: Settings.dockShowLauncher || entries.length === 0

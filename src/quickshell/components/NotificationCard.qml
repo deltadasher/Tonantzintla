@@ -311,7 +311,10 @@ Rectangle {
         if (!popup)
             return;
         timeout.progress = 0;
-        timeout.restart();
+        // A fused message must not restart the countdown under the pointer; the
+        // `running` binding resumes it from zero when hover ends.
+        if (!hover.hovered)
+            timeout.restart();
         if (Settings.motion) {
             revealedSummary = 0;
             revealedBody = 0;

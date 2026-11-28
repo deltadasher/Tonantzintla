@@ -34,7 +34,6 @@ Rectangle {
     property real intro: 0
     property real capture: 0
     property real shock: 0
-    property real identityPhase: 0
     property date clockDate: new Date()
     readonly property bool portrait: height > width * 1.12
     readonly property real pad: Math.max(26, width * .045)
@@ -155,14 +154,6 @@ Rectangle {
         to: 1
         duration: 1250
         easing.type: Easing.OutExpo
-    }
-
-    NumberAnimation on identityPhase {
-        from: 0
-        to: 1
-        duration: 15000
-        loops: Animation.Infinite
-        running: root.visible && root.sceneMotion
     }
 
     SequentialAnimation {
@@ -304,7 +295,11 @@ Rectangle {
     }
     Timer {
         interval: 1000; running: root.visible; repeat: true
-        onTriggered: root.clockDate = new Date()
+        // The face shows hours and minutes; only a new minute needs a redraw.
+        onTriggered: {
+            const now = new Date();
+            if (now.getMinutes() !== root.clockDate.getMinutes()) root.clockDate = now;
+        }
     }
 
     // The password is never drawn: each character adds one glyph to the

@@ -15,7 +15,9 @@ ColumnLayout {
     spacing: 12
     function refresh() { if (!reader.running) reader.running = true; }
     Component.onCompleted: refresh()
-    Timer { interval: 1000; running: root.visible; repeat: true; onTriggered: root.refresh() }
+    // Each refresh starts a Python helper. Once a second is only needed while a
+    // scale preview is counting down.
+    Timer { interval: root.pending ? 1000 : 5000; running: root.visible; repeat: true; onTriggered: root.refresh() }
     Process {
         id: reader
         command: ["python3", Environment.script("output-preview.py")]

@@ -43,10 +43,13 @@ Item {
         width: parent.width
         spacing: root.vertical ? 3 : 1
         Repeater {
-            model: root.lines
+            // Count-based so a tick updates digits in place instead of rebuilding
+            // every dot of the matrix.
+            model: root.lines.length
             Row {
                 id: line
-                required property string modelData
+                required property int index
+                readonly property string modelData: root.lines[index] || ""
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: root.pitch
                 Repeater {

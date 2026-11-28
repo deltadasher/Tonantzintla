@@ -55,6 +55,12 @@ Item {
             // Two curtains, each a row of narrow columns: brightest at the hem and
             // fading upward from green through cyan to rose. Neighbouring columns
             // differ in height and brightness, which is what reads as rays.
+            // Colour strings shared by every column; only the alpha differs.
+            const head = function(color) {
+                return "rgba(" + Math.round(color.r * 255) + "," + Math.round(color.g * 255) + "," + Math.round(color.b * 255) + ",";
+            };
+            const hemZero = tone(Theme.success, 0), topZero = tone(Theme.rose, 0);
+            const successHead = head(Theme.success), cyanHead = head(Theme.cyan);
             for (let c = 0; c < 2; ++c) {
                 const base = h * (0.56 + c * 0.14), k = 0.013 + c * 0.006;
                 for (let x = 0; x < w; x += 3) {
@@ -65,10 +71,10 @@ Item {
                     const tall = h * (0.2 + 0.2 * ray + 0.08 * lift + scene.surge * 0.08);
                     const alpha = Math.min(0.9, (0.2 + 0.5 * ray + 0.25 * lift) * strength * (c === 0 ? 1 : 0.7));
                     const column = ctx.createLinearGradient(0, hem + 3, 0, hem - tall);
-                    column.addColorStop(0, tone(Theme.success, 0));
-                    column.addColorStop(0.07, tone(Theme.success, alpha));
-                    column.addColorStop(0.45, tone(Theme.cyan, alpha * 0.4));
-                    column.addColorStop(1, tone(Theme.rose, 0));
+                    column.addColorStop(0, hemZero);
+                    column.addColorStop(0.07, successHead + alpha + ")");
+                    column.addColorStop(0.45, cyanHead + alpha * 0.4 + ")");
+                    column.addColorStop(1, topZero);
                     ctx.fillStyle = column;
                     ctx.fillRect(x, hem - tall, 3, tall + 3);
                 }

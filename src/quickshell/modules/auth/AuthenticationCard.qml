@@ -45,6 +45,7 @@ Rectangle {
                         Accessible.name: root.flow ? root.flow.inputPrompt : "Authentication response"
                         function submit() { if (root.flow && root.flow.isResponseRequired) { const response = text; clear(); root.flow.submit(response); } }
                         Keys.onReturnPressed: submit()
+                        Keys.onEnterPressed: submit()
                     }
                 }
                 Text {
