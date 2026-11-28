@@ -335,13 +335,13 @@ fn add_link_operation(
             } else {
                 (
                     OperationState::Conflict,
-                    format!("Review existing link {}", target.display()),
+                    format!("Back up, then replace existing link {}", target.display()),
                 )
             }
         }
         Ok(_) => (
             OperationState::Conflict,
-            format!("Preserve existing {}", target.display()),
+            format!("Back up, then replace existing {}", target.display()),
         ),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => (
             OperationState::Planned,

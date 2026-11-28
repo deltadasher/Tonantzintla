@@ -36,6 +36,22 @@ pub fn execute(plan: &InstallPlan, options: &InstallOptions, assume_yes: bool) -
         "the Tonantzintla runtime destination is occupied by an unrelated path"
     );
 
+    // A checkout cloned to the Quickshell link path would be moved into the
+    // backup directory and replaced by a link while the installer runs from it.
+    let shell_link = plan.machine.config_home.join("quickshell/tonantzintla");
+    let checkout = plan
+        .source
+        .canonicalize()
+        .unwrap_or_else(|_| plan.source.clone());
+    ensure!(
+        !(fs::symlink_metadata(&shell_link).is_ok_and(|metadata| metadata.is_dir())
+            && shell_link
+                .canonicalize()
+                .is_ok_and(|resolved| checkout.starts_with(resolved))),
+        "the source checkout is at {}, where the shell link must go; move the checkout and run the installer from there",
+        shell_link.display()
+    );
+
     println!("{}", render::execution_plan_text(plan));
     if !assume_yes && !confirm_install()? {
         println!("Installation cancelled. Nothing was changed.");
@@ -356,11 +372,21 @@ fn install_runtime(
         .unwrap_or("tonantzintla");
     let stage = parent.join(format!(".{name}.stage-{}", journal.id));
     remove_path(&stage)?;
-    copy_tree(&plan.source, &stage, true)?;
-    write_runtime_support_files(&stage, plan, options)?;
-    if let Err(error) = validate_runtime(&stage) {
+    // Any failure removes the stage. Its name is unique to this run, so a copy
+    // left behind by a full disk or an unreadable file was never cleaned up.
+    let staged = copy_tree(&plan.source, &stage, true)
+        .with_context(|| {
+            format!(
+                "could not stage {} at {}",
+                plan.source.display(),
+                stage.display()
+            )
+        })
+        .and_then(|()| write_runtime_support_files(&stage, plan, options))
+        .and_then(|()| validate_runtime(&stage).context("staged Tonantzintla validation failed"));
+    if let Err(error) = staged {
         let _ = remove_path(&stage);
-        return Err(error.context("staged Tonantzintla validation failed"));
+        return Err(error);
     }
 
     if path_exists(&plan.install_root) {
@@ -658,6 +684,7 @@ fn backup_existing(
         .join(format!("{:03}-{name}", journal.backups.len()));
     copy_tree(original, &backup, false)?;
     remove_path(original)?;
+    println!("  Backed up {} -> {}", original.display(), backup.display());
     journal.backups.push(BackupRecord {
         original: original.to_path_buf(),
         backup,
@@ -725,7 +752,13 @@ fn copy_tree(source: &Path, destination: &Path, filter_runtime: bool) -> Result<
         if let Some(parent) = destination.parent() {
             fs::create_dir_all(parent)?;
         }
-        fs::copy(source, destination)?;
+        fs::copy(source, destination).with_context(|| {
+            format!(
+                "could not copy {} -> {}",
+                source.display(),
+                destination.display()
+            )
+        })?;
         fs::set_permissions(destination, metadata.permissions())?;
     } else {
         bail!(

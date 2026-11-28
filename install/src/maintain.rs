@@ -44,6 +44,13 @@ fn git(repository: &Path, arguments: &[&str]) -> Result<std::process::Output> {
 
 fn git_stdout(repository: &Path, arguments: &[&str]) -> Result<String> {
     let output = git(repository, arguments)?;
+    // A failed `git status` printed nothing, which read as a clean tree.
+    ensure!(
+        output.status.success(),
+        "git {} failed: {}",
+        arguments.join(" "),
+        String::from_utf8_lossy(&output.stderr).trim()
+    );
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
 
@@ -144,9 +151,15 @@ pub fn update(probe: &ProbeContext, assume_yes: bool) -> Result<()> {
 
     if running {
         println!("\nRestarting the active Tonantzintla shell...");
-        let _ = Command::new(install_root.join("bin/blackhole"))
+        let restarted = Command::new(install_root.join("bin/blackhole"))
             .arg("restart")
             .status();
+        if !restarted.is_ok_and(|status| status.success()) {
+            eprintln!(
+                "The update is installed, but the shell did not restart. Run: {} restart",
+                install_root.join("bin/blackhole").display()
+            );
+        }
     } else {
         println!(
             "\nUpdate complete. Start Tonantzintla with: {} start",
@@ -206,6 +219,9 @@ pub fn uninstall(probe: &ProbeContext, remove_runtime: bool) -> Result<()> {
     ];
 
     for (link, expected) in &links {
+        // Compare resolved with resolved: a data home reached through a symlink
+        // otherwise left every link behind as "unrelated".
+        let expected = fs::canonicalize(expected).unwrap_or_else(|_| expected.clone());
         match fs::read_link(link) {
             Ok(_) if fs::canonicalize(link).ok().as_deref() == Some(expected.as_path()) => {
                 fs::remove_file(link).with_context(|| format!("removing {}", link.display()))?;

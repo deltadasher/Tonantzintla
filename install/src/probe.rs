@@ -71,15 +71,18 @@ pub struct ProbeContext {
 impl ProbeContext {
     pub fn from_process() -> Result<Self> {
         let home = PathBuf::from(env::var_os("HOME").context("HOME is not set")?);
-        let config_home = env::var_os("XDG_CONFIG_HOME")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| home.join(".config"));
-        let data_home = env::var_os("XDG_DATA_HOME")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| home.join(".local/share"));
-        let state_home = env::var_os("XDG_STATE_HOME")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| home.join(".local/state"));
+        // XDG: an empty or relative value means "unset". Honouring one would
+        // install under the current directory, where the CLI and helpers (which
+        // already treat empty as unset) would never look.
+        let xdg = |variable: &str, fallback: &str| {
+            env::var_os(variable)
+                .map(PathBuf::from)
+                .filter(|path| path.is_absolute())
+                .unwrap_or_else(|| home.join(fallback))
+        };
+        let config_home = xdg("XDG_CONFIG_HOME", ".config");
+        let data_home = xdg("XDG_DATA_HOME", ".local/share");
+        let state_home = xdg("XDG_STATE_HOME", ".local/state");
         let path_entries = env::split_paths(&env::var_os("PATH").unwrap_or_default()).collect();
         let os_release = env::var_os("TONANTZINTLA_INSTALLER_OS_RELEASE")
             .map(PathBuf::from)
