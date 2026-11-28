@@ -11,6 +11,8 @@ QtObject {
     property bool available: false
     property bool loading: false
     property var historyEntries: []
+    property string historyText: ""
+    property bool pinsLoaded: false
     property var pins: []
     readonly property var entries: pins.concat(historyEntries)
     property string status: ""
@@ -51,7 +53,9 @@ QtObject {
             return;
         loading = true;
         fetchProcess.running = true;
-        action("list", "", "text");
+        // Pins change only through action(), and every reply already carries them.
+        // Listing them on each poll also held `busy`, which dropped clicks.
+        if (!pinsLoaded) action("list", "", "text");
     }
 
     function copy(entryId) { action("copy",String(entryId),"text"); }
@@ -90,10 +94,16 @@ QtObject {
         command: ["python3", root.helperPath, root.cachePath]
         stdout: StdioCollector {
             onStreamFinished: {
-                try {
-                    root.historyEntries = JSON.parse(text.length > 0 ? text : "[]").slice(0,120);
-                } catch (error) {
-                    root.historyEntries = [];
+                // An unchanged poll keeps the same array, so the open list is not
+                // rebuilt (losing scroll position and hover) every 2.2 seconds.
+                if (text !== root.historyText) {
+                    try {
+                        root.historyEntries = JSON.parse(text.length > 0 ? text : "[]").slice(0,120);
+                        root.historyText = text;
+                    } catch (error) {
+                        root.historyEntries = [];
+                        root.historyText = "";
+                    }
                 }
                 root.loading = false;
             }
@@ -106,7 +116,9 @@ QtObject {
                 try {
                     const result=JSON.parse(text);
                     if(result.ok) {
-                        root.pins=(result.pins || []).slice(0,24);
+                        root.pinsLoaded=true;
+                        const pins=(result.pins || []).slice(0,24);
+                        if(JSON.stringify(pins)!==JSON.stringify(root.pins)) root.pins=pins;
                         root.status=actionProcess.command[2]==="list" ? root.status : "Clipboard updated.";
                         if(actionProcess.command[2]==="copy") root.copied(String(actionProcess.command[4]));
                         else if(actionProcess.command[2]!=="list") root.refreshDelay.restart();

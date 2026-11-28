@@ -8,9 +8,18 @@ import ".."
 QtObject {
     id: root
 
-    // Single source of truth for the version the shell reports. Keep this in
-    // step with the newest heading in CHANGELOG.md.
-    readonly property string version: "1.0.0"
+    // The version the shell reports. The checkout's VERSION file is the source of
+    // truth (the same file `blackhole version` prints); the literal is only the
+    // fallback when it cannot be read, and tests keep the two in step.
+    property string version: "1.5"
+    property FileView versionFile: FileView {
+        path: Quickshell.shellDir + "/../../VERSION"
+        printErrors: false
+        onLoaded: {
+            const value = text().trim();
+            if (/^[0-9][0-9A-Za-z.+-]{0,31}$/.test(value)) root.version = value;
+        }
+    }
 
     property bool hasGrim: false
     property bool hasSlurp: false
@@ -834,7 +843,9 @@ QtObject {
     }
 
     property Timer recordPoll: Timer {
-        interval: root.recordingBusy ? 500 : 2500
+        // The fast rate is for the countdown, portal prompt and finalizing. A
+        // steady recording only needs to notice an outside stop.
+        interval: root.recordingState === "recording" ? 2500 : root.recordingBusy ? 500 : 2500
         running: root.recordingBusy || root.captureActive
         repeat: true
         onTriggered: root.refreshRecordingState()

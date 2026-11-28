@@ -260,11 +260,17 @@ QtObject {
         onTriggered: root.refreshFast()
     }
 
+    // The bar shows GPU temperature and disk use by default. Without this they
+    // kept their boot-time value until the System panel was opened.
+    readonly property bool barSlowActive: Settings.showSystemStats
+        && (Settings.barTelemetryMetrics.indexOf("gpu") >= 0
+            || Settings.barTelemetryMetrics.indexOf("disk") >= 0)
+
     property Timer slowTimer: Timer {
-        interval: 30000
-        running: root.detailActive
+        interval: root.detailActive ? 30000 : 60000
+        running: root.detailActive || root.barSlowActive
         repeat: true
-        triggeredOnStart: true
+        // bootProbe covers start-up and onDetailActiveChanged covers opening a panel.
         onTriggered: root.refreshSlow()
     }
 }

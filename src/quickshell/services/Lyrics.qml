@@ -104,7 +104,10 @@ QtObject {
         clear(Media.available ? "loading" : "idle");
         if (requested) requestTimer.restart();
     }
-    onRequestedChanged: if (requested) requestTimer.restart()
+    // Reopening the panel keeps lyrics already resolved for this track; a track
+    // change or the Refresh button still fetches.
+    onRequestedChanged: if (requested && !(requestedKey === trackKey
+            && (status === "ready" || status === "instrumental"))) requestTimer.restart()
 
     property Timer requestTimer: Timer {
         interval: 520

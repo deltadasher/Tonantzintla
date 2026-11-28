@@ -81,7 +81,11 @@ QtObject {
 
 
     function notificationFor(uid) {
-        return liveNotifications[uid] || null;
+        const notification = liveNotifications[uid];
+        // Quickshell deletes a notification once it closes. The stale reference
+        // stays truthy but has no members, so calling dismiss() on it throws and
+        // would abort dismissal, Clear, and the 100-record eviction in remember().
+        return notification && notification.id !== undefined ? notification : null;
     }
 
     function containsUid(row, uid) {
@@ -160,6 +164,7 @@ QtObject {
         notification.tracked = true;
         const uid = ++nextUid;
         liveNotifications[uid] = notification;
+        notification.closed.connect(function() { delete root.liveNotifications[uid]; });
 
         const actions = [];
         if (notification.actions) {
@@ -282,7 +287,9 @@ QtObject {
 
     property Timer ageClock: Timer {
         interval: 15000
-        running: root.history.count > 0
+        // Only history cards read `now`; popups pin their freshness.
+        running: root.history.count > 0 && ShellState.ephemerisVisible
+            && ShellState.ephemerisTab === "notifications"
         repeat: true
         triggeredOnStart: true
         onTriggered: root.now = Date.now()

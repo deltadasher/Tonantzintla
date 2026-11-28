@@ -83,6 +83,12 @@ QtObject {
         refreshDelay.restart();
     }
 
+    // A poll that changed nothing keeps the same array, so the lists that show
+    // these rows are not rebuilt (losing scroll position and hover) every 10 s.
+    function assignRows(name, rows) {
+        if (JSON.stringify(root[name]) !== JSON.stringify(rows)) root[name] = rows;
+    }
+
     function refresh() {
         if (stateProcess.running) {
             refreshPending = true;
@@ -187,7 +193,7 @@ QtObject {
                 try {
                     const data = JSON.parse(text);
                     root.managerAvailable = data.available === true;
-                    root.wifiNetworks = data.wifi || [];
+                    root.assignRows("wifiNetworks", data.wifi || []);
                     root.manager = data.manager || "external";
                     const activeWifi = root.wifiNetworks.find(function(network) {
                         return network.connected === true;
@@ -203,9 +209,9 @@ QtObject {
                         : activeEthernet ? "LINK" : "NET");
                     if (data.summary !== true) {
                         root.apiAvailable = data.apiAvailable === true;
-                        root.vpnProfiles = data.vpn || [];
-                        root.bluetoothDevices = data.bluetooth || [];
-                        root.ethernetDevices = data.ethernet || [];
+                        root.assignRows("vpnProfiles", data.vpn || []);
+                        root.assignRows("bluetoothDevices", data.bluetooth || []);
+                        root.assignRows("ethernetDevices", data.ethernet || []);
                     }
                     root.helperStateReady = true;
                     if (root.actionState === "idle") root.statusMessage = "Network updated.";

@@ -39,7 +39,10 @@ QtObject {
                 found = true;
                 return win;
             }
-            return candidate;
+            // Niri reports a newly focused window through this event alone, so
+            // the previously focused entry must give the flag up here.
+            return win.is_focused && candidate.is_focused
+                ? Object.assign({}, candidate, { is_focused: false }) : candidate;
         });
         if (!found)
             next.push(win);
@@ -122,6 +125,15 @@ QtObject {
                     });
                     if (root.focusedWindowId === closedId)
                         root.focusedWindowId = -1;
+                    return;
+                }
+
+                if (message.WorkspaceUrgencyChanged !== undefined) {
+                    const event = message.WorkspaceUrgencyChanged;
+                    root.workspaces = root.workspaces.map(function(workspace) {
+                        return workspace.id === event.id
+                            ? Object.assign({}, workspace, { is_urgent: event.urgent === true }) : workspace;
+                    });
                     return;
                 }
 

@@ -92,6 +92,9 @@ ShellRoot {
     property bool ephemerisResident: ShellState.ephemerisVisible
     property bool umbraPreviewResident: Umbra.previewActive
     property bool umbraRevealResident: false
+    // Keeps the OSD window alive for its exit animation; dropping the Variants
+    // model the moment Osd.visible clears destroys it before `dismiss` can run.
+    property bool osdResident: Osd.visible
     readonly property bool sessionIngress: Quickshell.env("TONANTZINTLA_SESSION_INGRESS") === "1"
 
     Connections {
@@ -173,6 +176,25 @@ ShellRoot {
         id: ephemerisUnload
         interval: Theme.surfaceExitDuration + 48
         onTriggered: root.ephemerisResident = false
+    }
+
+    Connections {
+        target: Osd
+
+        function onVisibleChanged() {
+            if (Osd.visible) {
+                osdUnload.stop();
+                root.osdResident = true;
+            } else {
+                osdUnload.restart();
+            }
+        }
+    }
+
+    Timer {
+        id: osdUnload
+        interval: Theme.motionFast + 48
+        onTriggered: root.osdResident = false
     }
 
     Component.onCompleted: {
@@ -321,7 +343,7 @@ ShellRoot {
     }
 
     Variants {
-        model: Osd.visible ? root.focusedScreens : []
+        model: root.osdResident ? root.focusedScreens : []
         OsdPopup {}
     }
 
